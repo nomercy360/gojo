@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+ * Gojo USM — "Tokyo Office at Dusk"
+ * Linear's cleanliness + Muji's soul + traditional Japanese accents.
+ */
+
+@theme {
+  /* Neutrals — base surface */
+  --color-bg-primary: #faf8f5;
+  --color-bg-secondary: #f2efe9;
+  --color-bg-tertiary: #e8e3da;
+  --color-bg-elevated: #ffffff;
+
+  --color-border-subtle: #e5dfd3;
+  --color-border-default: #d4ccbc;
+  --color-border-strong: #1a1a1a;
+
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #5c5751;
+  --color-text-tertiary: #8b847a;
+  --color-text-disabled: #b8b0a3;
+
+  /* 朱色 shu-iro — primary CTA, streaks */
+  --color-shu: #c8463c;
+  --color-shu-hover: #b33c32;
+  --color-shu-soft: #fbe8e5;
+
+  /* 藍色 ai-iro — secondary, info, links */
+  --color-ai: #2c5f7c;
+  --color-ai-soft: #e5eef3;
+
+  /* 山吹色 yamabuki-iro — XP, achievements */
+  --color-yamabuki: #d4a248;
+  --color-yamabuki-soft: #faf1de;
+
+  /* 松葉色 matsuba-iro — success, active */
+  --color-matsuba: #4a7c59;
+  --color-matsuba-soft: #e8f0ea;
+
+  /* Semantic aliases */
+  --color-success: var(--color-matsuba);
+  --color-success-soft: var(--color-matsuba-soft);
+  --color-warning: var(--color-yamabuki);
+  --color-warning-soft: var(--color-yamabuki-soft);
+  --color-error: var(--color-shu-hover);
+  --color-error-soft: var(--color-shu-soft);
+  --color-info: var(--color-ai);
+  --color-info-soft: var(--color-ai-soft);
+
+  /* Typography */
+  --font-sans: "Inter", "Noto Sans JP", -apple-system, system-ui, sans-serif;
+  --font-serif: "Noto Serif JP", "Source Serif 4", Georgia, serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --font-display: "Noto Serif JP", serif;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Warm shadows */
+  --shadow-sm: 0 1px 2px rgb(26 24 21 / 0.04);
+  --shadow-md: 0 2px 8px rgb(26 24 21 / 0.06), 0 1px 2px rgb(26 24 21 / 0.04);
+  --shadow-lg: 0 8px 24px rgb(26 24 21 / 0.08), 0 2px 4px rgb(26 24 21 / 0.04);
+  --shadow-xl: 0 16px 48px rgb(26 24 21 / 0.12);
+  --shadow-warm: 0 4px 16px rgb(200 70 60 / 0.08);
+}
+
+html,
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-jp {
+  font-family: var(--font-sans);
+  font-size: 0.95em;
+  letter-spacing: 0.02em;
+}
+
+.font-jp-display {
+  font-family: var(--font-display);
+  font-feature-settings: "palt";
+}

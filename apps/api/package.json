@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gojo/db": "workspace:*",
+    "@gojo/shared": "workspace:*",
+    "@hono/zod-validator": "^0.4.2",
+    "drizzle-orm": "^0.38.3",
+    "hono": "^4.6.14",
+    "jose": "^5.9.6",
+    "livekit-server-sdk": "^2.9.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  }
+}
