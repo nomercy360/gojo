@@ -6,6 +6,7 @@ import { env } from "./env.ts";
 import { authRoute } from "./routes/auth.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
 import { livekitRoute } from "./routes/livekit.ts";
+import { teacherRoute } from "./routes/teacher.ts";
 import { usersRoute } from "./routes/users.ts";
 
 const app = new Hono();
@@ -33,6 +34,7 @@ app.route("/auth", authRoute);
 app.route("/users", usersRoute);
 app.route("/lessons", lessonsRoute);
 app.route("/livekit", livekitRoute);
+app.route("/teacher", teacherRoute);
 
 console.log(`api listening on :${env.API_PORT}`);
 

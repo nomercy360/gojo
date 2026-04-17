@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -26,8 +27,10 @@ export const lessons = pgTable("lessons", {
   status: lessonStatus().notNull().default("scheduled"),
   startsAt: timestamp({ withTimezone: true }).notNull(),
   endsAt: timestamp({ withTimezone: true }).notNull(),
+  maxStudents: integer().notNull().default(8),
+  jlptLevel: text(),
   recordingUrl: text(),
-  metadata: jsonb().$type<{ topic?: string; level?: string }>(),
+  metadata: jsonb().$type<{ topic?: string }>(),
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp({ withTimezone: true }),

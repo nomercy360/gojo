@@ -11,8 +11,8 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "bun run src/migrate.ts",
-    "seed": "bun run src/seed.ts",
+    "migrate": "bun --env-file=../../.env run src/migrate.ts",
+    "seed": "bun --env-file=../../.env run src/seed.ts",
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },

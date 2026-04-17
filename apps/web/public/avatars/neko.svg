@@ -1,0 +1,24 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#FAF8F5"/>
+    <!-- ears -->
+    <polygon points="55,80 65,35 95,72" fill="#1A1A1A"/>
+    <polygon points="145,80 135,35 105,72" fill="#1A1A1A"/>
+    <polygon points="62,72 68,48 84,68" fill="#FBE8E5"/>
+    <polygon points="138,72 132,48 116,68" fill="#FBE8E5"/>
+    <!-- face -->
+    <circle cx="100" cy="115" r="55" fill="#1A1A1A"/>
+    <!-- eyes (closed/winking — cute) -->
+    <path d="M 70 110 Q 80 102 90 110" stroke="#FAF8F5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 110 110 Q 120 102 130 110" stroke="#FAF8F5" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- nose (small triangle) -->
+    <polygon points="100,128 96,133 104,133" fill="#FBE8E5"/>
+    <!-- mouth -->
+    <path d="M 100 134 L 100 140" stroke="#FBE8E5" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 100 140 Q 94 145 90 142" stroke="#FBE8E5" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M 100 140 Q 106 145 110 142" stroke="#FBE8E5" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- whiskers -->
+    <line x1="55" y1="128" x2="75" y2="130" stroke="#FAF8F5" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="55" y1="138" x2="75" y2="135" stroke="#FAF8F5" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="145" y1="128" x2="125" y2="130" stroke="#FAF8F5" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="145" y1="138" x2="125" y2="135" stroke="#FAF8F5" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

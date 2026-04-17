@@ -1,0 +1,43 @@
+{$DOMAIN:localhost} {
+	# API
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy api:3001
+	}
+
+	# Direct API routes (auth, lessons, users, livekit, teacher, health)
+	handle /auth/* {
+		reverse_proxy api:3001
+	}
+	handle /lessons/* {
+		reverse_proxy api:3001
+	}
+	handle /users/* {
+		reverse_proxy api:3001
+	}
+	handle /livekit/* {
+		reverse_proxy api:3001
+	}
+	handle /teacher/* {
+		reverse_proxy api:3001
+	}
+	handle /health {
+		reverse_proxy api:3001
+	}
+
+	# S3/Minio public assets
+	handle /s3/* {
+		uri strip_prefix /s3
+		reverse_proxy minio:9000
+	}
+
+	# LiveKit WebSocket
+	handle /lk-ws/* {
+		reverse_proxy livekit:7880
+	}
+
+	# Everything else → Next.js
+	handle {
+		reverse_proxy web:3000
+	}
+}

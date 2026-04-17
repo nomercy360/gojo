@@ -16,6 +16,7 @@ export function toUserDto(user: User): UserDto {
 export function toLessonDto(
   lesson: Lesson,
   teacherNickname: string | null,
+  opts?: { booked?: boolean; studentCount?: number },
 ): LessonDto {
   return {
     id: lesson.id,
@@ -25,6 +26,10 @@ export function toLessonDto(
     status: lesson.status,
     startsAt: lesson.startsAt.toISOString(),
     endsAt: lesson.endsAt.toISOString(),
+    maxStudents: lesson.maxStudents,
+    jlptLevel: lesson.jlptLevel,
     recordingUrl: lesson.recordingUrl,
+    ...(opts?.booked !== undefined ? { booked: opts.booked } : {}),
+    ...(opts?.studentCount !== undefined ? { studentCount: opts.studentCount } : {}),
   };
 }

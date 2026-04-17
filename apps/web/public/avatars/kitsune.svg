@@ -1,0 +1,20 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#FAF8F5"/>
+    <!-- ears -->
+    <polygon points="55,75 70,30 95,70" fill="#C8463C"/>
+    <polygon points="145,75 130,30 105,70" fill="#C8463C"/>
+    <polygon points="62,68 70,42 86,65" fill="#FAF8F5"/>
+    <polygon points="138,68 130,42 114,65" fill="#FAF8F5"/>
+    <!-- face -->
+    <ellipse cx="100" cy="115" rx="55" ry="52" fill="#C8463C"/>
+    <!-- white muzzle area -->
+    <ellipse cx="100" cy="135" rx="38" ry="32" fill="#FAF8F5"/>
+    <!-- eyes -->
+    <circle cx="80" cy="115" r="6" fill="#1A1A1A"/>
+    <circle cx="120" cy="115" r="6" fill="#1A1A1A"/>
+    <!-- nose -->
+    <ellipse cx="100" cy="138" rx="5" ry="4" fill="#1A1A1A"/>
+    <!-- mouth -->
+    <path d="M 100 145 Q 92 152 86 148" stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 100 145 Q 108 152 114 148" stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+</svg>

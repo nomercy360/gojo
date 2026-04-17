@@ -10,7 +10,10 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      # PG18 image stores data under /var/lib/postgresql/<major>, so we mount
+      # the parent directory. A new path ("pg18") avoids silently adopting any
+      # legacy ./data/postgres cluster left over from earlier PG16 configs.
+      - ./data/pg18:/var/lib/postgresql
       - ./init/01-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gojo -d gojo"]

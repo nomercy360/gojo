@@ -15,4 +15,5 @@ bun.lockb
 .vercel
 .vscode/*
 !.vscode/extensions.json
+.idea
 infra/data

@@ -1,9 +1,17 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  output: "standalone",
   reactStrictMode: true,
   experimental: {
-    typedRoutes: true,
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost", port: "9000", pathname: "/gojo-dev/**" },
+    ],
   },
 };
 

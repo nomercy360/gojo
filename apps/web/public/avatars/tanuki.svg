@@ -1,0 +1,25 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#FAF8F5"/>
+    <!-- ears -->
+    <circle cx="60" cy="65" r="18" fill="#5C4433"/>
+    <circle cx="140" cy="65" r="18" fill="#5C4433"/>
+    <circle cx="60" cy="65" r="9" fill="#8B6F55"/>
+    <circle cx="140" cy="65" r="9" fill="#8B6F55"/>
+    <!-- face -->
+    <circle cx="100" cy="115" r="58" fill="#8B6F55"/>
+    <!-- mask markings -->
+    <ellipse cx="78" cy="115" rx="18" ry="14" fill="#1A1A1A"/>
+    <ellipse cx="122" cy="115" rx="18" ry="14" fill="#1A1A1A"/>
+    <!-- muzzle -->
+    <ellipse cx="100" cy="140" rx="22" ry="18" fill="#FAF8F5"/>
+    <!-- eyes -->
+    <circle cx="78" cy="115" r="5" fill="#FAF8F5"/>
+    <circle cx="122" cy="115" r="5" fill="#FAF8F5"/>
+    <circle cx="78" cy="115" r="2.5" fill="#1A1A1A"/>
+    <circle cx="122" cy="115" r="2.5" fill="#1A1A1A"/>
+    <!-- nose -->
+    <ellipse cx="100" cy="138" rx="4" ry="3" fill="#1A1A1A"/>
+    <!-- mouth -->
+    <path d="M 100 144 Q 95 150 90 147" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M 100 144 Q 105 150 110 147" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

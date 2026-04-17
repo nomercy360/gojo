@@ -1,89 +1,133 @@
 @import "tailwindcss";
 
 /*
- * Gojo USM — "Tokyo Office at Dusk"
- * Linear's cleanliness + Muji's soul + traditional Japanese accents.
+ * Gojo Learn — Manga-inspired design system v1.0
+ * Manga-panels, chunky borders, pop-shadows, PT Serif headlines.
  */
 
 @theme {
-  /* Neutrals — base surface */
-  --color-bg-primary: #faf8f5;
-  --color-bg-secondary: #f2efe9;
-  --color-bg-tertiary: #e8e3da;
-  --color-bg-elevated: #ffffff;
+  /* Paper & ink */
+  --color-gojo-paper: #fff8f0;
+  --color-gojo-paper-2: #fdf2e4;
+  --color-gojo-ink: #1a1a1a;
+  --color-gojo-ink-soft: #2a2a2a;
+  --color-gojo-ink-muted: #666666;
+  --color-gojo-ink-ghost: #999999;
 
-  --color-border-subtle: #e5dfd3;
-  --color-border-default: #d4ccbc;
-  --color-border-strong: #1a1a1a;
+  /* Surfaces */
+  --color-gojo-surface: #ffffff;
+  --color-gojo-surface-2: #f7f3ed;
 
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #5c5751;
-  --color-text-tertiary: #8b847a;
-  --color-text-disabled: #b8b0a3;
+  /* Orange — CTA & active states only */
+  --color-gojo-orange: #ff6f00;
+  --color-gojo-orange-hover: #e66300;
+  --color-gojo-orange-soft: #ffe5cc;
+  --color-gojo-orange-ink: #8b3a00;
 
-  /* 朱色 shu-iro — primary CTA, streaks */
-  --color-shu: #c8463c;
-  --color-shu-hover: #b33c32;
-  --color-shu-soft: #fbe8e5;
+  /* Brand red — logo & brand moments, NOT for CTA */
+  --color-gojo-red: #e30613;
+  --color-gojo-red-ink: #8b0510;
 
-  /* 藍色 ai-iro — secondary, info, links */
-  --color-ai: #2c5f7c;
-  --color-ai-soft: #e5eef3;
-
-  /* 山吹色 yamabuki-iro — XP, achievements */
-  --color-yamabuki: #d4a248;
-  --color-yamabuki-soft: #faf1de;
-
-  /* 松葉色 matsuba-iro — success, active */
-  --color-matsuba: #4a7c59;
-  --color-matsuba-soft: #e8f0ea;
-
-  /* Semantic aliases */
-  --color-success: var(--color-matsuba);
-  --color-success-soft: var(--color-matsuba-soft);
-  --color-warning: var(--color-yamabuki);
-  --color-warning-soft: var(--color-yamabuki-soft);
-  --color-error: var(--color-shu-hover);
-  --color-error-soft: var(--color-shu-soft);
-  --color-info: var(--color-ai);
-  --color-info-soft: var(--color-ai-soft);
+  /* Semantic */
+  --color-gojo-success: #4a8f3a;
+  --color-gojo-success-soft: #e5f0de;
+  --color-gojo-error: #c8302c;
+  --color-gojo-error-soft: #fbe5e3;
+  --color-gojo-info: #2c5f7c;
+  --color-gojo-info-soft: #e0ecf2;
 
   /* Typography */
-  --font-sans: "Inter", "Noto Sans JP", -apple-system, system-ui, sans-serif;
-  --font-serif: "Noto Serif JP", "Source Serif 4", Georgia, serif;
+  --font-serif: "PT Serif", Georgia, serif;
+  --font-sans: "Inter", -apple-system, system-ui, sans-serif;
+  --font-jp: "Noto Sans JP", sans-serif;
+  --font-jp-serif: "Noto Serif JP", serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
-  --font-display: "Noto Serif JP", serif;
 
   /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  /* Warm shadows */
-  --shadow-sm: 0 1px 2px rgb(26 24 21 / 0.04);
-  --shadow-md: 0 2px 8px rgb(26 24 21 / 0.06), 0 1px 2px rgb(26 24 21 / 0.04);
-  --shadow-lg: 0 8px 24px rgb(26 24 21 / 0.08), 0 2px 4px rgb(26 24 21 / 0.04);
-  --shadow-xl: 0 16px 48px rgb(26 24 21 / 0.12);
-  --shadow-warm: 0 4px 16px rgb(200 70 60 / 0.08);
+  /* Chunky pop-shadows (manga-style) */
+  --shadow-pop-sm: 3px 3px 0 #1a1a1a;
+  --shadow-pop: 4px 4px 0 #1a1a1a;
+  --shadow-pop-lg: 6px 6px 0 #1a1a1a;
+  --shadow-pop-hover: 2px 2px 0 #1a1a1a;
+  --shadow-pop-orange: 4px 4px 0 #e66300;
 }
 
 html,
 body {
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background: var(--color-gojo-paper);
+  color: var(--color-gojo-ink);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+.display {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+h3,
+h4 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+}
+
+::selection {
+  background: var(--color-gojo-orange);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-gojo-paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-gojo-ink);
+  border: 2px solid var(--color-gojo-paper);
+  border-radius: 6px;
 }
 
 .font-jp {
-  font-family: var(--font-sans);
-  font-size: 0.95em;
-  letter-spacing: 0.02em;
+  font-family: var(--font-jp);
+}
+.font-jp-serif {
+  font-family: var(--font-jp-serif);
 }
 
-.font-jp-display {
-  font-family: var(--font-display);
-  font-feature-settings: "palt";
+/* Manga card press effect */
+.card-pop {
+  box-shadow: var(--shadow-pop);
+  transform: translate(0, 0);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.card-pop:hover {
+  box-shadow: var(--shadow-pop-hover);
+  transform: translate(2px, 2px);
+}
+
+/* Button press effect */
+.btn-pop {
+  box-shadow: 3px 3px 0 var(--color-gojo-ink);
+  transform: translate(0, 0);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.btn-pop:hover {
+  box-shadow: 2px 2px 0 var(--color-gojo-ink);
+  transform: translate(1px, 1px);
+}
+.btn-pop:active {
+  box-shadow: 0 0 0 var(--color-gojo-ink);
+  transform: translate(3px, 3px);
 }
