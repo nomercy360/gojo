@@ -74,9 +74,8 @@ services:
     command: --dev --bind 0.0.0.0
 
   api:
-    build:
-      context: ..
-      dockerfile: apps/api/Dockerfile
+    image: ${GOJO_IMAGE_API:-ghcr.io/nomercy360/gojo-api:latest}
+    pull_policy: always
     container_name: gojo-api
     restart: unless-stopped
     depends_on:
@@ -102,9 +101,8 @@ services:
       S3_BUCKET: ${S3_BUCKET:-gojo}
 
   web:
-    build:
-      context: ..
-      dockerfile: apps/web/Dockerfile
+    image: ${GOJO_IMAGE_WEB:-ghcr.io/nomercy360/gojo-web:latest}
+    pull_policy: always
     container_name: gojo-web
     restart: unless-stopped
     depends_on:
