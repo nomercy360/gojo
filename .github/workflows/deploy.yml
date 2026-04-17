@@ -57,7 +57,7 @@ jobs:
       - name: Rsync infra files to VM
         uses: burnett01/rsync-deployments@7.0.2
         with:
-          switches: -avz --delete
+          switches: -avz --exclude=.env.prod --exclude=data
           path: infra/
           remote_path: /root/gojo/infra/
           remote_host: ${{ secrets.SSH_HOST }}
@@ -67,7 +67,7 @@ jobs:
       - name: Sync migrations to VM
         uses: burnett01/rsync-deployments@7.0.2
         with:
-          switches: -avz --delete
+          switches: -avz --exclude=.env.prod --exclude=data
           path: packages/db/drizzle/
           remote_path: /root/gojo/packages/db/drizzle/
           remote_host: ${{ secrets.SSH_HOST }}
