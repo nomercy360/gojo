@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { users } from "./users.ts";
+import { user } from "./auth.ts";
 
 export const lessonStatus = pgEnum("lesson_status", [
   "scheduled",
@@ -20,9 +20,9 @@ export const lessonStatus = pgEnum("lesson_status", [
 
 export const lessons = pgTable("lessons", {
   id: uuid().default(sql`uuidv7()`).primaryKey(),
-  teacherId: uuid()
+  teacherId: text()
     .notNull()
-    .references(() => users.id),
+    .references(() => user.id),
   title: text().notNull(),
   status: lessonStatus().notNull().default("scheduled"),
   startsAt: timestamp({ withTimezone: true }).notNull(),
@@ -43,9 +43,9 @@ export const bookings = pgTable(
     lessonId: uuid()
       .notNull()
       .references(() => lessons.id, { onDelete: "cascade" }),
-    studentId: uuid()
+    studentId: text()
       .notNull()
-      .references(() => users.id),
+      .references(() => user.id),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("bookings_lesson_student_uniq").on(t.lessonId, t.studentId)],

@@ -1,8 +1,7 @@
-import { bookings, lessonMaterials, lessons, users } from "@gojo/db";
+import { bookings, lessonMaterials, lessons, user as userTable } from "@gojo/db";
 import { and, asc, count, eq, gte, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { verifySession } from "../auth/jwt.ts";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { toLessonDto } from "./mappers.ts";
@@ -10,47 +9,37 @@ import { toLessonDto } from "./mappers.ts";
 export const lessonsRoute = new Hono<AuthContext>();
 
 lessonsRoute.get("/", async (c) => {
-  // Optional auth: if Bearer is present, include booking status per lesson
-  let userId: string | null = null;
-  const header = c.req.header("authorization");
-  if (header?.startsWith("Bearer ")) {
-    try {
-      const payload = await verifySession(header.slice(7));
-      userId = payload.sub;
-    } catch {
-      // anonymous — fine
-    }
-  }
+  const user = c.get("user");
 
   const rows = await db
     .select({
       lesson: lessons,
-      teacherNickname: users.nickname,
+      teacherNickname: userTable.nickname,
       studentCount:
         sql<number>`(SELECT COUNT(*) FROM ${bookings} WHERE ${bookings.lessonId} = ${lessons.id})`.as(
           "student_count",
         ),
     })
     .from(lessons)
-    .leftJoin(users, eq(users.id, lessons.teacherId))
+    .leftJoin(userTable, eq(userTable.id, lessons.teacherId))
     .where(and(gte(lessons.startsAt, new Date()), eq(lessons.status, "scheduled")))
     .orderBy(asc(lessons.startsAt))
     .limit(50);
 
   let bookedSet = new Set<string>();
-  if (userId && rows.length > 0) {
+  if (user && rows.length > 0) {
     const lessonIds = rows.map((r) => r.lesson.id);
     const userBookings = await db
       .select({ lessonId: bookings.lessonId })
       .from(bookings)
-      .where(and(eq(bookings.studentId, userId), inArray(bookings.lessonId, lessonIds)));
+      .where(and(eq(bookings.studentId, user.id), inArray(bookings.lessonId, lessonIds)));
     bookedSet = new Set(userBookings.map((b) => b.lessonId));
   }
 
   return c.json(
     rows.map((r) =>
       toLessonDto(r.lesson, r.teacherNickname, {
-        booked: userId ? bookedSet.has(r.lesson.id) : undefined,
+        booked: user ? bookedSet.has(r.lesson.id) : undefined,
         studentCount: Number(r.studentCount),
       }),
     ),
@@ -58,19 +47,14 @@ lessonsRoute.get("/", async (c) => {
 });
 
 lessonsRoute.get("/my-stats", requireAuth, async (c) => {
-  const auth = c.get("auth");
+  const user = c.get("user")!;
   const now = new Date();
 
   const [completed] = await db
     .select({ value: count() })
     .from(bookings)
     .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
-    .where(
-      and(
-        eq(bookings.studentId, auth.sub),
-        eq(lessons.status, "completed"),
-      ),
-    );
+    .where(and(eq(bookings.studentId, user.id), eq(lessons.status, "completed")));
 
   const [upcoming] = await db
     .select({ value: count() })
@@ -78,7 +62,7 @@ lessonsRoute.get("/my-stats", requireAuth, async (c) => {
     .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
     .where(
       and(
-        eq(bookings.studentId, auth.sub),
+        eq(bookings.studentId, user.id),
         eq(lessons.status, "scheduled"),
         gte(lessons.startsAt, now),
       ),
@@ -87,7 +71,7 @@ lessonsRoute.get("/my-stats", requireAuth, async (c) => {
   const [total] = await db
     .select({ value: count() })
     .from(bookings)
-    .where(eq(bookings.studentId, auth.sub));
+    .where(eq(bookings.studentId, user.id));
 
   return c.json({
     completedLessons: completed?.value ?? 0,
@@ -119,9 +103,9 @@ lessonsRoute.get("/:id/materials", async (c) => {
 lessonsRoute.get("/:id", async (c) => {
   const id = c.req.param("id");
   const [row] = await db
-    .select({ lesson: lessons, teacherNickname: users.nickname })
+    .select({ lesson: lessons, teacherNickname: userTable.nickname })
     .from(lessons)
-    .leftJoin(users, eq(users.id, lessons.teacherId))
+    .leftJoin(userTable, eq(userTable.id, lessons.teacherId))
     .where(eq(lessons.id, id))
     .limit(1);
   if (!row) throw new HTTPException(404, { message: "lesson not found" });
@@ -129,7 +113,7 @@ lessonsRoute.get("/:id", async (c) => {
 });
 
 lessonsRoute.post("/:id/book", requireAuth, async (c) => {
-  const auth = c.get("auth");
+  const user = c.get("user")!;
   const lessonId = c.req.param("id");
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
@@ -140,7 +124,7 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
 
   const [booking] = await db
     .insert(bookings)
-    .values({ lessonId, studentId: auth.sub })
+    .values({ lessonId, studentId: user.id })
     .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
     .returning();
 
@@ -149,7 +133,7 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
   const [existing] = await db
     .select()
     .from(bookings)
-    .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, auth.sub)))
+    .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, user.id)))
     .limit(1);
   return c.json(existing, 200);
 });

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { LessonDto } from "@gojo/shared";
 import { fetchLessons } from "@/lib/api";
-import { getCurrentUser, getSessionToken } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { bookLessonAction } from "./actions";
 import { CalendarView } from "./calendar";
 import { ViewToggle } from "./view-toggle";
@@ -15,10 +15,9 @@ export default async function LessonsPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view = "list" } = await searchParams;
-  const token = await getSessionToken();
   const [user, lessonsResult] = await Promise.all([
     getCurrentUser(),
-    fetchLessons(token).catch((e: unknown) =>
+    fetchLessons().catch((e: unknown) =>
       e instanceof Error ? e.message : "unknown error",
     ),
   ]);

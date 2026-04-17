@@ -1,15 +1,15 @@
 import type { Lesson, User } from "@gojo/db";
 import type { LessonDto, UserDto } from "@gojo/shared";
 
-export function toUserDto(user: User): UserDto {
+export function toUserDto(u: User): UserDto {
   return {
-    id: user.id,
-    email: user.email,
-    nickname: user.nickname,
-    avatarUrl: user.avatarUrl,
-    role: user.role,
-    jlptLevel: user.jlptLevel,
-    createdAt: user.createdAt.toISOString(),
+    id: u.id,
+    email: u.email,
+    nickname: u.nickname ?? null,
+    avatarUrl: u.image ?? null,
+    role: u.role,
+    jlptLevel: u.jlptLevel ?? null,
+    createdAt: u.createdAt.toISOString(),
   };
 }
 

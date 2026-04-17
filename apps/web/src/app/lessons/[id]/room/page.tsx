@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ApiError, fetchLesson, fetchLivekitToken } from "@/lib/api";
-import { getSessionToken } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { RoomClient } from "./room-client";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +10,8 @@ type Props = { params: Promise<{ id: string }> };
 
 export default async function RoomPage({ params }: Props) {
   const { id } = await params;
-  const token = await getSessionToken();
-  if (!token) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
   let lesson;
   try {
@@ -22,7 +22,7 @@ export default async function RoomPage({ params }: Props) {
 
   let lk;
   try {
-    lk = await fetchLivekitToken(id, token);
+    lk = await fetchLivekitToken(id);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) redirect("/login");
     if (e instanceof ApiError && e.status === 403) {

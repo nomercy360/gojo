@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 import type { TeacherLessonDto } from "@/lib/api";
 import { fetchTeacherLessons } from "@/lib/api";
-import { getCurrentUser, getSessionToken } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { cancelLessonAction } from "./actions";
 import { CreateLessonForm } from "./create-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeacherPage() {
-  const token = await getSessionToken();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "teacher" && user.role !== "admin") {
@@ -28,7 +27,7 @@ export default async function TeacherPage() {
   let lessons: TeacherLessonDto[] = [];
   let error: string | null = null;
   try {
-    lessons = await fetchTeacherLessons(token!);
+    lessons = await fetchTeacherLessons();
   } catch (e) {
     error = e instanceof Error ? e.message : "unknown";
   }

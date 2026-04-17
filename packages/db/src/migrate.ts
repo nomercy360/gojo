@@ -6,6 +6,7 @@ const url = process.env.DATABASE_URL ?? "postgres://gojo:gojo@localhost:5432/goj
 const client = postgres(url, { max: 1 });
 const db = drizzle(client);
 
-await migrate(db, { migrationsFolder: "./drizzle" });
+const dir = new URL("../drizzle", import.meta.url).pathname;
+await migrate(db, { migrationsFolder: dir });
 await client.end();
 console.log("migrations applied");

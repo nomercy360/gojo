@@ -3,22 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ApiError, cancelLesson, createLesson } from "@/lib/api";
-import { getSessionToken } from "@/lib/session";
 
 export type TeacherActionState = { error?: string; ok?: boolean };
-
-async function requireToken() {
-  const token = await getSessionToken();
-  if (!token) redirect("/login");
-  return token;
-}
 
 export async function createLessonAction(
   _prev: TeacherActionState,
   formData: FormData,
 ): Promise<TeacherActionState> {
-  const token = await requireToken();
-
   const title = String(formData.get("title") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   const time = String(formData.get("time") ?? "");
@@ -32,14 +23,11 @@ export async function createLessonAction(
   const endsAt = new Date(startsAt.getTime() + durationMin * 60000);
 
   try {
-    await createLesson(
-      {
-        title,
-        startsAt: startsAt.toISOString(),
-        endsAt: endsAt.toISOString(),
-      },
-      token,
-    );
+    await createLesson({
+      title,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+    });
   } catch (e) {
     if (e instanceof ApiError) {
       if (e.status === 401) redirect("/login");
@@ -54,12 +42,11 @@ export async function createLessonAction(
 }
 
 export async function cancelLessonAction(formData: FormData) {
-  const token = await requireToken();
   const lessonId = String(formData.get("lessonId") ?? "");
   if (!lessonId) return;
 
   try {
-    await cancelLesson(lessonId, token);
+    await cancelLesson(lessonId);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) redirect("/login");
   }

@@ -40,8 +40,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gojo Learn — Школа японского",
-  description: "五条 · Школа японского: живые уроки, AI-практика, путь от ноля до JLPT N1.",
+  title: "Gojo Learn — Школа японского нового поколения",
+  description:
+    "Японский как система: урок → разбор → повторение → прогресс. От нуля до N2 с живыми преподавателями и технологиями. 五条",
 };
 
 export const viewport: Viewport = {

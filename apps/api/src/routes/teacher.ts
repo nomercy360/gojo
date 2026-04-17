@@ -1,23 +1,15 @@
-import { bookings, lessonMaterials, lessons, users } from "@gojo/db";
+import { bookings, lessonMaterials, lessons, user as userTable } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { type AuthContext, requireAuth } from "../auth/middleware.ts";
+import { type AuthContext, requireAuth, requireTeacher } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { putObject } from "../s3.ts";
 import { toLessonDto } from "./mappers.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
-
-const requireTeacher = async (c: { get: (key: "auth") => { sub: string; role: string } }) => {
-  const auth = c.get("auth");
-  if (auth.role !== "teacher" && auth.role !== "admin") {
-    throw new HTTPException(403, { message: "teacher access required" });
-  }
-  return auth;
-};
 
 const createLessonInput = z.object({
   title: z.string().min(1).max(200),
@@ -26,7 +18,6 @@ const createLessonInput = z.object({
   metadata: z
     .object({
       topic: z.string().optional(),
-      level: z.string().optional(),
     })
     .optional(),
 });
@@ -38,36 +29,37 @@ const updateLessonInput = z.object({
   status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
 });
 
-teacherRoute.use("*", requireAuth);
+teacherRoute.use("*", requireAuth, requireTeacher);
 
 teacherRoute.get("/lessons", async (c) => {
-  const auth = await requireTeacher(c);
+  const u = c.get("user")!;
 
   const rows = await db
     .select({
       lesson: lessons,
-      studentCount: sql<number>`(SELECT COUNT(*) FROM ${bookings} WHERE ${bookings.lessonId} = ${lessons.id})`.as("student_count"),
+      studentCount:
+        sql<number>`(SELECT COUNT(*) FROM ${bookings} WHERE ${bookings.lessonId} = ${lessons.id})`.as(
+          "student_count",
+        ),
     })
     .from(lessons)
-    .where(and(eq(lessons.teacherId, auth.sub), eq(lessons.deletedAt, sql`NULL`).if(false)))
+    .where(and(eq(lessons.teacherId, u.id), isNull(lessons.deletedAt)))
     .orderBy(desc(lessons.startsAt))
     .limit(100);
 
   return c.json(
-    rows.map((r) => ({
-      ...toLessonDto(r.lesson, null, { studentCount: Number(r.studentCount) }),
-    })),
+    rows.map((r) => toLessonDto(r.lesson, null, { studentCount: Number(r.studentCount) })),
   );
 });
 
 teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) => {
-  const auth = await requireTeacher(c);
+  const u = c.get("user")!;
   const body = c.req.valid("json");
 
   const [row] = await db
     .insert(lessons)
     .values({
-      teacherId: auth.sub,
+      teacherId: u.id,
       title: body.title,
       startsAt: new Date(body.startsAt),
       endsAt: new Date(body.endsAt),
@@ -80,15 +72,13 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
 });
 
 teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async (c) => {
-  const auth = await requireTeacher(c);
+  const u = c.get("user")!;
   const id = c.req.param("id");
   const body = c.req.valid("json");
 
   const [existing] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
   if (!existing) throw new HTTPException(404, { message: "lesson not found" });
-  if (existing.teacherId !== auth.sub) {
-    throw new HTTPException(403, { message: "not your lesson" });
-  }
+  if (existing.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
 
   const patch: Partial<typeof lessons.$inferInsert> = { updatedAt: new Date() };
   if (body.title !== undefined) patch.title = body.title;
@@ -102,14 +92,12 @@ teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async 
 });
 
 teacherRoute.delete("/lessons/:id", async (c) => {
-  const auth = await requireTeacher(c);
+  const u = c.get("user")!;
   const id = c.req.param("id");
 
   const [existing] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
   if (!existing) throw new HTTPException(404, { message: "lesson not found" });
-  if (existing.teacherId !== auth.sub) {
-    throw new HTTPException(403, { message: "not your lesson" });
-  }
+  if (existing.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
 
   await db
     .update(lessons)
@@ -119,26 +107,24 @@ teacherRoute.delete("/lessons/:id", async (c) => {
 });
 
 teacherRoute.get("/lessons/:id/students", async (c) => {
-  const auth = await requireTeacher(c);
+  const u = c.get("user")!;
   const id = c.req.param("id");
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== auth.sub) {
-    throw new HTTPException(403, { message: "not your lesson" });
-  }
+  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
 
   const rows = await db
     .select({
       bookingId: bookings.id,
-      studentId: users.id,
-      nickname: users.nickname,
-      email: users.email,
-      avatarUrl: users.avatarUrl,
+      studentId: userTable.id,
+      nickname: userTable.nickname,
+      email: userTable.email,
+      avatarUrl: userTable.image,
       bookedAt: bookings.createdAt,
     })
     .from(bookings)
-    .innerJoin(users, eq(users.id, bookings.studentId))
+    .innerJoin(userTable, eq(userTable.id, bookings.studentId))
     .where(eq(bookings.lessonId, id));
 
   return c.json(rows);
@@ -147,14 +133,12 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
 const MAX_MATERIAL_SIZE = 10 * 1024 * 1024;
 
 teacherRoute.post("/lessons/:id/materials", async (c) => {
-  const auth = await requireTeacher(c);
+  const u = c.get("user")!;
   const lessonId = c.req.param("id");
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== auth.sub) {
-    throw new HTTPException(403, { message: "not your lesson" });
-  }
+  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
 
   const form = await c.req.formData();
   const file = form.get("file");
@@ -175,7 +159,7 @@ teacherRoute.post("/lessons/:id/materials", async (c) => {
     .insert(lessonMaterials)
     .values({
       lessonId,
-      uploadedBy: auth.sub,
+      uploadedBy: u.id,
       title: title || file.name,
       fileUrl: url,
       fileType: file.type,

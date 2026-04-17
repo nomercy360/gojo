@@ -1,23 +1,22 @@
-FROM oven/bun:1.3-alpine AS base
+FROM oven/bun:1.3-alpine
 WORKDIR /app
 
-# Install deps
-FROM base AS deps
-COPY package.json bun.lock* ./
+# Copy everything (workspace needs all package.json files)
+COPY package.json bun.lock ./
 COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-RUN bun install --frozen-lockfile --production
 
-# Build
-FROM base AS runner
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY packages/db packages/db
+RUN bun install
+
+COPY packages/db/src packages/db/src
+COPY packages/db/drizzle packages/db/drizzle
+COPY packages/db/package.json packages/db/package.json
+COPY packages/db/drizzle.config.ts packages/db/drizzle.config.ts
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+COPY tsconfig.base.json .
 
 EXPOSE 3001
 ENV NODE_ENV=production

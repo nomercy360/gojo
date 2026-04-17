@@ -90,6 +90,7 @@ services:
       REDIS_URL: redis://redis:6379
       API_PORT: "3001"
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-false}
       LIVEKIT_URL: ${LIVEKIT_URL:-ws://livekit:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
@@ -118,6 +119,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

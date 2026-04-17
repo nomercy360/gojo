@@ -2,23 +2,21 @@ import Link from "next/link";
 import type { LessonDto, StudentStatsDto } from "@gojo/shared";
 import { fetchLessons, fetchStudentStats } from "@/lib/api";
 import { Avatar } from "@/components/avatar";
-import { getCurrentUser, getSessionToken } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const token = await getSessionToken();
   const user = await getCurrentUser();
-
-  if (user) return <Dashboard token={token!} />;
+  if (user) return <Dashboard />;
   return <Landing />;
 }
 
-async function Dashboard({ token }: { token: string }) {
+async function Dashboard() {
   const [user, statsResult, lessonsResult] = await Promise.all([
     getCurrentUser(),
-    fetchStudentStats(token).catch(() => null),
-    fetchLessons(token).catch(() => [] as LessonDto[]),
+    fetchStudentStats().catch(() => null),
+    fetchLessons().catch(() => [] as LessonDto[]),
   ]);
 
   const stats: StudentStatsDto = statsResult ?? {
@@ -163,50 +161,156 @@ function StatTile({ eyebrow, value }: { eyebrow: string; value: string }) {
 function Landing() {
   return (
     <main className="min-h-screen bg-gojo-paper">
-      <section className="relative overflow-hidden border-b-2 border-gojo-ink bg-gojo-ink py-20">
-        <div className="pointer-events-none absolute right-10 top-0 font-jp-serif text-[140px] font-bold leading-none text-white/[0.06]">
-          五条
+      {/* Hero — centered, big, premium */}
+      <section className="relative overflow-hidden border-b-2 border-gojo-ink bg-gojo-ink py-28">
+        <div className="pointer-events-none absolute -right-10 top-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.04]">
+          五
         </div>
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="inline-block -rotate-2 rounded-md border-2 border-gojo-orange bg-gojo-orange px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
+        <div className="pointer-events-none absolute -left-10 bottom-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.04]">
+          条
+        </div>
+
+        <div className="relative mx-auto max-w-3xl px-6 text-center">
+          <div className="inline-block -rotate-2 rounded-sm border-2 border-gojo-orange bg-gojo-orange px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
             Школа японского
           </div>
-          <h1 className="mt-5 font-serif text-[48px] font-bold leading-[1.05] tracking-tight text-white">
-            Учи японский
+
+          <h1 className="mt-8 font-serif text-[68px] font-bold leading-[1.02] tracking-tight text-white">
+            Японский,
             <br />
-            <span className="text-gojo-orange">как читаешь мангу.</span>
+            который <span className="text-gojo-orange">не бросают.</span>
           </h1>
-          <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-white/70">
-            Живые уроки в группах до 8 человек, AI-практика между занятиями.
-            От хираганы до JLPT N1. 初めまして。
+
+          <p className="mx-auto mt-7 max-w-xl text-[17px] leading-relaxed text-white/70">
+            Живые учителя, выверенная система, AI‑практика между уроками.
+            <br className="hidden sm:inline" />
+            Для тех, кто хочет дойти до конца.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+
+          <div className="mt-10 flex flex-col items-center gap-4">
             <Link
               href="/login"
-              className="btn-pop inline-flex items-center rounded-md border-2 border-gojo-ink bg-gojo-orange px-6 py-3 text-sm font-bold text-white"
+              className="btn-pop inline-flex items-center rounded-md border-2 border-gojo-ink bg-gojo-orange px-9 py-4 text-[15px] font-bold text-white"
             >
-              Начать бесплатно ▸
+              Записаться на пробный урок ▸
             </Link>
             <a
               href="#how"
-              className="btn-pop inline-flex items-center rounded-md border-2 border-white/30 bg-transparent px-6 py-3 text-sm font-bold text-white hover:border-white"
+              className="text-sm font-bold text-white/60 underline-offset-4 hover:text-white hover:underline"
             >
-              Как это работает
+              как это работает
             </a>
           </div>
         </div>
       </section>
 
-      <section id="how" className="py-16">
+      {/* Core value — living teachers first, methodology second, tech as support */}
+      <section id="how" className="py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center">
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gojo-orange">
+              Как это работает
+            </div>
+            <h2 className="mx-auto mt-3 max-w-2xl font-serif text-[34px] font-bold leading-tight">
+              Школа, которая доводит до результата. Не инфобизнес.
+            </h2>
+          </div>
+
+          {/* Primary: живые учителя — большой блок */}
+          <div className="card-pop mt-14 relative overflow-hidden rounded-xl border-2 border-gojo-ink bg-gojo-surface p-8 md:p-10">
+            <div className="pointer-events-none absolute -right-4 -top-8 font-jp-serif text-[200px] font-bold leading-none text-gojo-orange/10">
+              師
+            </div>
+            <div className="relative">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gojo-orange">
+                Ядро · 01
+              </div>
+              <h3 className="mt-2 font-serif text-[28px] font-bold leading-tight">
+                Живые преподаватели, а не видеокурс
+              </h3>
+              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-gojo-ink-muted">
+                Группы до 8 человек или индивидуально. Настоящие уроки с обратной связью,
+                разбором ошибок и разговорной практикой. Учителя — носители методики, не
+                фрилансеры с Авито.
+              </p>
+            </div>
+          </div>
+
+          {/* Secondary: методология системы */}
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <FeatureCard
+              kanji="系"
+              title="Японский как система"
+              body="Урок → разбор → повторение → прогресс. Структурность и унификация материала, которой нет больше нигде."
+            />
+            <FeatureCard
+              kanji="道"
+              title="Вымощенный путь"
+              body="Адаптируемся под цель — работа в Японии, аниме и манга, культура. Но методика — одна. Не даём свернуть."
+            />
+          </div>
+
+          {/* Tertiary: tech support */}
+          <div className="mt-5">
+            <FeatureCard
+              kanji="力"
+              title="Технологии и AI — в поддержку"
+              body="All‑in‑one платформа, AI‑тренер между уроками, прогресс и повторение в одном месте. Технологии служат учителю, не заменяют его."
+              wide
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 80% insight */}
+      <section className="border-y-2 border-gojo-ink bg-gojo-paper-2 py-20">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <div className="font-serif text-[120px] font-bold leading-[0.9] text-gojo-orange">
+            80%
+          </div>
+          <p className="mt-6 font-serif text-[26px] font-bold leading-tight">
+            учеников бросают японский до уровня, где язык начинает приносить реальную пользу.
+          </p>
+          <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-gojo-ink-muted">
+            Университеты скучны. Самообучение не удерживает. Мы — проводники ученика:
+            контролируем качество, строим вымощенный путь и делаем всё, чтобы вы не стали
+            частью этих 80%. До уровня <strong className="text-gojo-ink">N2</strong> — где
+            язык уже работает на вас.
+          </p>
+        </div>
+      </section>
+
+      {/* Target audience */}
+      <section className="py-16">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Почему Gojo Learn
+            Для кого мы
           </div>
-          <h2 className="mt-2 font-serif text-[28px] font-bold">Не приложение — школа.</h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <FeatureCard kanji="師" title="Живые учителя" body="Видео-уроки в группах до 8 человек с обратной связью." />
-            <FeatureCard kanji="力" title="AI между уроками" body="Персональный тренер: карточки, грамматика, практика." />
-            <FeatureCard kanji="道" title="Путь до N1" body="Структурированная программа. XP, streak'и, leaderboard." />
+          <h2 className="mt-2 font-serif text-[28px] font-bold">Начинающие. Любая цель.</h2>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <AudienceCard eyebrow="ZERO" label="С нуля" body="Никогда не учили — начнём с хираганы." />
+            <AudienceCard eyebrow="RESTART" label="Начал, но отвалился" body="Поможем вернуться и не сдаться снова." />
+            <AudienceCard eyebrow="JLPT" label="Сдать экзамен" body="N5 → N4 → N3 → N2 с проверяемым прогрессом." />
+            <AudienceCard eyebrow="CULTURE" label="Фанат Японии" body="Аниме, манга, жизнь в Японии — язык как ключ." />
+          </div>
+        </div>
+      </section>
+
+      {/* Mascot CTA */}
+      <section className="border-t-2 border-gojo-ink bg-gojo-ink py-12">
+        <div className="mx-auto flex max-w-5xl items-center gap-5 px-6">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-gojo-orange bg-gojo-orange font-jp-serif text-2xl font-bold text-white">
+            狐
+          </span>
+          <div className="card-pop relative rounded-lg border-2 border-gojo-surface bg-gojo-surface px-5 py-4">
+            <div className="absolute -left-2 top-5 h-0 w-0 border-y-8 border-y-transparent border-r-[10px] border-r-gojo-ink" />
+            <p className="text-sm text-gojo-ink">
+              <span className="font-bold">Кицунэ‑сэнсэй:</span>{" "}
+              «Давайте покорять высоты японского языка вместе. 頑張りましょう!» —{" "}
+              <Link href="/login" className="font-bold text-gojo-orange hover:underline">
+                начать путь →
+              </Link>
+            </p>
           </div>
         </div>
       </section>
@@ -214,14 +318,54 @@ function Landing() {
   );
 }
 
-function FeatureCard({ kanji, title, body }: { kanji: string; title: string; body: string }) {
+function AudienceCard({
+  eyebrow,
+  label,
+  body,
+}: {
+  eyebrow: string;
+  label: string;
+  body: string;
+}) {
   return (
-    <div className="card-pop relative overflow-hidden rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
-      <div className="pointer-events-none absolute -right-2 -top-2 font-jp-serif text-[64px] font-bold leading-none text-gojo-orange/10">
+    <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
+      <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+        {eyebrow}
+      </div>
+      <h3 className="mt-1 text-[16px] font-bold">{label}</h3>
+      <p className="mt-2 text-sm text-gojo-ink-muted">{body}</p>
+    </div>
+  );
+}
+
+function FeatureCard({
+  kanji,
+  title,
+  body,
+  wide,
+}: {
+  kanji: string;
+  title: string;
+  body: string;
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={`card-pop relative overflow-hidden rounded-lg border-2 border-gojo-ink bg-gojo-surface ${
+        wide ? "p-6" : "p-5"
+      }`}
+    >
+      <div
+        className={`pointer-events-none absolute font-jp-serif font-bold leading-none text-gojo-orange/10 ${
+          wide ? "-right-2 -top-4 text-[96px]" : "-right-2 -top-2 text-[64px]"
+        }`}
+      >
         {kanji}
       </div>
-      <h3 className="text-[18px] font-bold">{title}</h3>
-      <p className="mt-2 text-sm text-gojo-ink-muted">{body}</p>
+      <div className="relative">
+        <h3 className="text-[18px] font-bold">{title}</h3>
+        <p className="mt-2 text-sm text-gojo-ink-muted">{body}</p>
+      </div>
     </div>
   );
 }
