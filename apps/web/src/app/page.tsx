@@ -161,12 +161,38 @@ function StatTile({ eyebrow, value }: { eyebrow: string; value: string }) {
 function Landing() {
   return (
     <main className="min-h-screen bg-gojo-paper">
-      {/* Hero — centered, big, premium */}
+      {/* Hero — centered, big, premium, with video background */}
       <section className="relative overflow-hidden border-b-2 border-gojo-ink bg-gojo-ink py-28">
-        <div className="pointer-events-none absolute -right-10 top-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.04]">
+        {/* Background video — desktop only. Boomerang loop (forward+reversed)
+            so the last frame equals the first — no freeze on rewind.
+            Mobile falls back to poster (hero.webp = first frame). */}
+        <video
+          className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover opacity-60 md:block"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/hero/hero.webp"
+        >
+          <source src="/hero/hero.webm" type="video/webm" />
+          <source src="/hero/hero.mp4" type="video/mp4" />
+        </video>
+
+        {/* Mobile: poster as background image */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-50 md:hidden"
+          style={{ backgroundImage: "url(/hero/hero.webp)" }}
+        />
+
+        {/* Gradient overlay for text legibility */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-gojo-ink/70 via-gojo-ink/40 to-gojo-ink/80" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-gojo-ink/60 via-transparent to-gojo-ink/60" />
+
+        <div className="pointer-events-none absolute -right-10 top-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.08]">
           五
         </div>
-        <div className="pointer-events-none absolute -left-10 bottom-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.04]">
+        <div className="pointer-events-none absolute -left-10 bottom-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.08]">
           条
         </div>
 
