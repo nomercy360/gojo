@@ -1,0 +1,11 @@
+# LiveKit egress config. Runs headless chromium internally to render the room
+# composite into an mp4. Needs Redis to pull jobs from the LiveKit server and
+# the LK API creds to auth back.
+api_key: devkey
+api_secret: devsecret123456789012345678901234
+ws_url: ws://livekit:7880
+redis:
+  address: redis:6379
+log_level: info
+# The egress service auto-detects hardware. On ARM macs it falls back to
+# software encoding which is fine for dev.

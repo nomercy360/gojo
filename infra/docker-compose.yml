@@ -85,10 +85,38 @@ services:
     image: livekit/livekit-server:latest
     container_name: gojo-livekit
     restart: unless-stopped
-    command: --dev --bind 0.0.0.0
-    environment:
-      LIVEKIT_KEYS: "devkey: devsecret123456789012345678901234"
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./livekit-server.yaml:/etc/livekit.yaml:ro
     ports:
       - "7880:7880"
       - "7881:7881"
       - "7882:7882/udp"
+    # `host.docker.internal` resolves to the Docker host. Required for the
+    # webhook URL (api runs on host during dev). host-gateway injection works
+    # on linux too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  livekit-egress:
+    image: livekit/egress:latest
+    container_name: gojo-egress
+    restart: unless-stopped
+    environment:
+      EGRESS_CONFIG_FILE: /etc/egress.yaml
+    volumes:
+      - ./livekit-egress.yaml:/etc/egress.yaml:ro
+    # Egress runs a headless chromium to render the room composite → needs
+    # SYS_ADMIN. Image is ~2GB, first pull is slow.
+    cap_add:
+      - SYS_ADMIN
+    depends_on:
+      livekit:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy

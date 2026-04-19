@@ -1,0 +1,25 @@
+# LiveKit server config. Mounted read-only into the container.
+#
+# Redis is REQUIRED for the egress service to talk to LiveKit — egress watches
+# a Redis queue for egress jobs. Webhooks are how LiveKit notifies our API
+# about room/egress lifecycle events.
+port: 7880
+bind_addresses:
+  - "0.0.0.0"
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: false
+redis:
+  address: redis:6379
+keys:
+  devkey: devsecret123456789012345678901234
+webhook:
+  api_key: devkey
+  urls:
+    # `host.docker.internal` resolves to the host OS running Docker Desktop
+    # (mac/windows). On Linux we inject it via extra_hosts in compose.
+    - http://host.docker.internal:3001/livekit/webhook
+log_level: info
+development: true
