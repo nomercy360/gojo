@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { LessonDto, StudentStatsDto } from "@gojo/shared";
 import { fetchLessons, fetchStudentStats } from "@/lib/api";
 import { Avatar } from "@/components/avatar";
+import { CyclingText } from "@/components/cycling-text";
 import { getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -160,238 +161,273 @@ function StatTile({ eyebrow, value }: { eyebrow: string; value: string }) {
 
 function Landing() {
   return (
-    <main className="min-h-screen bg-gojo-paper">
-      {/* Hero — centered, big, premium, with video background */}
-      <section className="relative overflow-hidden border-b-2 border-gojo-ink bg-gojo-ink py-28">
-        {/* Background video — desktop only. Boomerang loop (forward+reversed)
-            so the last frame equals the first — no freeze on rewind.
-            Mobile falls back to poster (hero.webp = first frame). */}
+    <div className="landing-root">
+      <nav className="lp-nav">
+        <Link href="/" className="flex items-center gap-[10px] no-underline">
+          <div className="lp-logo-icon">五</div>
+          <div>
+            <span className="block font-heading text-[15px] font-bold uppercase leading-none tracking-[0.12em] text-white">
+              Gojo Learn
+            </span>
+            <span className="mt-[2px] block font-heading text-[9px] uppercase tracking-[0.2em] text-white/40">
+              五条塾 · Школа японского
+            </span>
+          </div>
+        </Link>
+        <div className="flex items-center gap-8">
+          <a
+            href="#why"
+            className="text-[13px] font-medium text-white/75 transition-colors hover:text-[var(--lp-orange)]"
+          >
+            Уроки
+          </a>
+          <a
+            href="#how"
+            className="text-[13px] font-medium text-white/75 transition-colors hover:text-[var(--lp-orange)]"
+          >
+            Как это работает
+          </a>
+          <Link href="/login" className="lp-nav-cta">
+            Войти ▸
+          </Link>
+        </div>
+      </nav>
+
+      <section className="lp-hero">
         <video
-          className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover opacity-60 md:block"
+          className="lp-hero-video"
           autoPlay
           muted
           loop
           playsInline
-          preload="auto"
           poster="/hero/hero.webp"
         >
           <source src="/hero/hero.webm" type="video/webm" />
           <source src="/hero/hero.mp4" type="video/mp4" />
         </video>
+        <div className="lp-hero-deco lp-hero-deco-1">語</div>
+        <div className="lp-hero-deco lp-hero-deco-2">道</div>
 
-        {/* Mobile: poster as background image */}
-        <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-50 md:hidden"
-          style={{ backgroundImage: "url(/hero/hero.webp)" }}
-        />
-
-        {/* Gradient overlay for text legibility */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-gojo-ink/70 via-gojo-ink/40 to-gojo-ink/80" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-gojo-ink/60 via-transparent to-gojo-ink/60" />
-
-        <div className="pointer-events-none absolute -right-10 top-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.08]">
-          五
-        </div>
-        <div className="pointer-events-none absolute -left-10 bottom-8 font-jp-serif text-[200px] font-bold leading-none text-white/[0.08]">
-          条
+        <div className="lp-hero-ribbon">
+          五条塾 · Школа японского нового поколения
         </div>
 
-        <div className="relative mx-auto max-w-3xl px-6 text-center">
-          <div className="inline-block -rotate-2 rounded-sm border-2 border-gojo-orange bg-gojo-orange px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
-            Школа японского
-          </div>
+        <h1 className="lp-hero-title">
+          Школа японского,
+          <br />
+          <span className="lp-orange">которая даёт результат.</span>
+        </h1>
+        <p className="lp-hero-subtitle">
+          Для тех, кто хочет
+          <br />
+          <CyclingText />
+        </p>
+        <div className="flex flex-wrap justify-center gap-4">
+          <Link href="/login" className="lp-btn-primary">
+            ▸ Начать бесплатно
+          </Link>
+          <a href="#how" className="lp-btn-secondary">
+            Как это работает
+          </a>
+        </div>
 
-          <h1 className="mt-8 font-serif text-[68px] font-bold leading-[1.02] tracking-tight text-white">
-            Японский,
-            <br />
-            который <span className="text-gojo-orange">не бросают.</span>
-          </h1>
-
-          <p className="mx-auto mt-7 max-w-xl text-[17px] leading-relaxed text-white/70">
-            Живые учителя, выверенная система, AI‑практика между уроками.
-            <br className="hidden sm:inline" />
-            Для тех, кто хочет дойти до конца.
-          </p>
-
-          <div className="mt-10 flex flex-col items-center gap-4">
-            <Link
-              href="/login"
-              className="btn-pop inline-flex items-center rounded-md border-2 border-gojo-ink bg-gojo-orange px-9 py-4 text-[15px] font-bold text-white"
-            >
-              Записаться на пробный урок ▸
-            </Link>
-            <a
-              href="#how"
-              className="text-sm font-bold text-white/60 underline-offset-4 hover:text-white hover:underline"
-            >
-              как это работает
-            </a>
-          </div>
+        <div className="lp-hero-sticker">
+          ЗАВТРА 19:00
+          <br />
+          明日から
+          <span className="jp">Следующий урок →</span>
         </div>
       </section>
 
-      {/* Core value — living teachers first, methodology second, tech as support */}
-      <section id="how" className="py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="text-center">
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gojo-orange">
-              Как это работает
+      <div className="lp-diag-cream-from-black" />
+
+      <section className="lp-why" id="why">
+        <div className="lp-section-label">Почему Gojo Learn?</div>
+        <h2 className="lp-section-title">Наш результат — это ваш успех.</h2>
+        <div className="lp-cards-grid">
+          <article className="lp-card">
+            <div className="lp-card-number">一</div>
+            <span className="lp-card-tag">Цель</span>
+            <div className="lp-card-title">Адаптируемся под цель</div>
+            <ul className="lp-card-list">
+              <li>Учёба и жизнь в Японии</li>
+              <li>Аниме и манга в оригинале</li>
+              <li>Саморазвитие</li>
+            </ul>
+          </article>
+
+          <article className="lp-card">
+            <div className="lp-card-number">二</div>
+            <span className="lp-card-tag">Метод</span>
+            <div className="lp-card-title">Инновационная подача</div>
+            <ul className="lp-card-list">
+              <li>Никакой зубрёжки ради зубрёжки</li>
+              <li>Никаких устаревших методов</li>
+            </ul>
+          </article>
+
+          <article className="lp-card">
+            <div className="lp-card-number">三</div>
+            <span className="lp-card-tag">Платформа</span>
+            <div className="lp-card-title">Максимальный комфорт</div>
+            <ul className="lp-card-list">
+              <li>Уроки, практика, прогресс — на одной платформе</li>
+              <li>Меньше стресса от вкладок и приложений</li>
+            </ul>
+          </article>
+
+          <article className="lp-card">
+            <div className="lp-card-number">四</div>
+            <span className="lp-card-tag">Система</span>
+            <div className="lp-card-title">Системность</div>
+            <p className="lp-card-text">
+              Структура обеспечивает стабильный прогресс без откатов.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <div className="lp-diag-white-from-cream" />
+
+      <section className="lp-how" id="how">
+        <div className="lp-section-label">Процесс</div>
+        <h2 className="lp-section-title">Как это работает</h2>
+        <div className="lp-cards-grid">
+          <article className="lp-card">
+            <div className="lp-card-number">一</div>
+            <span className="lp-card-tag">Шаг 1</span>
+            <div className="lp-card-title">Выбери уровень</div>
+            <p className="lp-card-text">
+              Пройди короткий тест — определим с чего начать: хирагана, базовый
+              или продвинутый.
+            </p>
+          </article>
+
+          <article className="lp-card">
+            <div className="lp-card-number">二</div>
+            <span className="lp-card-tag">Шаг 2</span>
+            <div className="lp-card-title">Живые уроки</div>
+            <p className="lp-card-text">
+              2–3 занятия в неделю с преподавателем в группе до 8 человек.
+              Разговорный формат.
+            </p>
+          </article>
+
+          <article className="lp-card">
+            <div className="lp-card-number">三</div>
+            <span className="lp-card-tag">Шаг 3</span>
+            <div className="lp-card-title">AI-практика каждый день</div>
+            <p className="lp-card-text">
+              Между уроками — тренировки с AI: карточки, диалоги, разбор ошибок.
+            </p>
+          </article>
+
+          <article className="lp-card">
+            <div className="lp-card-number">四</div>
+            <span className="lp-card-tag">Результат</span>
+            <div className="lp-card-title">Реальный результат</div>
+            <p className="lp-card-text">
+              Ты доходишь до уровня, где язык начинает работать на тебя — и
+              делаешь это без скуки.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <div className="lp-diag-dark-from-white" />
+
+      <section className="lp-mission" id="mission">
+        <div className="lp-section-label">Наша миссия</div>
+        <div className="lp-mission-inner">
+          <div className="lp-mission-founder">
+            <div className="lp-mission-photo-wrap">
+              {/* biome-ignore lint/performance/noImgElement: hero branded asset */}
+              <img
+                className="lp-mission-photo"
+                src="/founder.png"
+                alt="Основатель Gojo Learn"
+              />
+              <div className="lp-mission-photo-badge">五</div>
             </div>
-            <h2 className="mx-auto mt-3 max-w-2xl font-serif text-[34px] font-bold leading-tight">
-              Школа, которая доводит до результата. Не инфобизнес.
-            </h2>
-          </div>
-
-          {/* Primary: живые учителя — большой блок */}
-          <div className="card-pop mt-14 relative overflow-hidden rounded-xl border-2 border-gojo-ink bg-gojo-surface p-8 md:p-10">
-            <div className="pointer-events-none absolute -right-4 -top-8 font-jp-serif text-[200px] font-bold leading-none text-gojo-orange/10">
-              師
+            <div className="mt-1 font-heading text-[13px] font-bold leading-snug text-[var(--lp-black)]">
+              Основатель
             </div>
-            <div className="relative">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gojo-orange">
-                Ядро · 01
-              </div>
-              <h3 className="mt-2 font-serif text-[28px] font-bold leading-tight">
-                Живые преподаватели, а не видеокурс
-              </h3>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-gojo-ink-muted">
-                Группы до 8 человек или индивидуально. Настоящие уроки с обратной связью,
-                разбором ошибок и разговорной практикой. Учителя — носители методики, не
-                фрилансеры с Авито.
-              </p>
+            <div className="mt-[-6px] text-[11px] leading-snug text-[#777]">
+              五条塾
             </div>
           </div>
 
-          {/* Secondary: методология системы */}
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <FeatureCard
-              kanji="系"
-              title="Японский как система"
-              body="Урок → разбор → повторение → прогресс. Структурность и унификация материала, которой нет больше нигде."
-            />
-            <FeatureCard
-              kanji="道"
-              title="Вымощенный путь"
-              body="Адаптируемся под цель — работа в Японии, аниме и манга, культура. Но методика — одна. Не даём свернуть."
-            />
-          </div>
-
-          {/* Tertiary: tech support */}
-          <div className="mt-5">
-            <FeatureCard
-              kanji="力"
-              title="Технологии и AI — в поддержку"
-              body="All‑in‑one платформа, AI‑тренер между уроками, прогресс и повторение в одном месте. Технологии служат учителю, не заменяют его."
-              wide
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 80% insight */}
-      <section className="border-y-2 border-gojo-ink bg-gojo-paper-2 py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <div className="font-serif text-[120px] font-bold leading-[0.9] text-gojo-orange">
-            80%
-          </div>
-          <p className="mt-6 font-serif text-[26px] font-bold leading-tight">
-            учеников бросают японский до уровня, где язык начинает приносить реальную пользу.
-          </p>
-          <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-gojo-ink-muted">
-            Университеты скучны. Самообучение не удерживает. Мы — проводники ученика:
-            контролируем качество, строим вымощенный путь и делаем всё, чтобы вы не стали
-            частью этих 80%. До уровня <strong className="text-gojo-ink">N2</strong> — где
-            язык уже работает на вас.
-          </p>
-        </div>
-      </section>
-
-      {/* Target audience */}
-      <section className="py-16">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Для кого мы
-          </div>
-          <h2 className="mt-2 font-serif text-[28px] font-bold">Начинающие. Любая цель.</h2>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <AudienceCard eyebrow="ZERO" label="С нуля" body="Никогда не учили — начнём с хираганы." />
-            <AudienceCard eyebrow="RESTART" label="Начал, но отвалился" body="Поможем вернуться и не сдаться снова." />
-            <AudienceCard eyebrow="JLPT" label="Сдать экзамен" body="N5 → N4 → N3 → N2 с проверяемым прогрессом." />
-            <AudienceCard eyebrow="CULTURE" label="Фанат Японии" body="Аниме, манга, жизнь в Японии — язык как ключ." />
-          </div>
-        </div>
-      </section>
-
-      {/* Mascot CTA */}
-      <section className="border-t-2 border-gojo-ink bg-gojo-ink py-12">
-        <div className="mx-auto flex max-w-5xl items-center gap-5 px-6">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-gojo-orange bg-gojo-orange font-jp-serif text-2xl font-bold text-white">
-            狐
-          </span>
-          <div className="card-pop relative rounded-lg border-2 border-gojo-surface bg-gojo-surface px-5 py-4">
-            <div className="absolute -left-2 top-5 h-0 w-0 border-y-8 border-y-transparent border-r-[10px] border-r-gojo-ink" />
-            <p className="text-sm text-gojo-ink">
-              <span className="font-bold">Кицунэ‑сэнсэй:</span>{" "}
-              «Давайте покорять высоты японского языка вместе. 頑張りましょう!» —{" "}
-              <Link href="/login" className="font-bold text-gojo-orange hover:underline">
-                начать путь →
-              </Link>
+          <div>
+            <div className="lp-mission-quote">
+              Наша цель — сделать так, чтобы <span className="lp-orange">японский
+              перестал быть непреодолимым.</span> Чтобы ты не бросил на полпути,
+              а дошёл до уровня, где язык работает на тебя.
+            </div>
+            <p className="lp-mission-text">
+              Мы видим одну и ту же боль в рассказах сотен студентов: начали
+              самостоятельно — не хватило дисциплины. Пошли в универ — скучно
+              и медленно. Подписались на курс на YouTube — бросили через
+              неделю. 80% никогда не доходят до реального результата.
+            </p>
+            <p className="lp-mission-text">
+              Поэтому мы строим школу, где учитель — проводник, платформа —
+              опора, а технология — инструмент, не замена человеку. Мы не
+              продаём видеокурс. Мы ведём от нуля до уровня, где язык начинает
+              приносить жизнь.
             </p>
           </div>
         </div>
       </section>
-    </main>
-  );
-}
 
-function AudienceCard({
-  eyebrow,
-  label,
-  body,
-}: {
-  eyebrow: string;
-  label: string;
-  body: string;
-}) {
-  return (
-    <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
-      <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-        {eyebrow}
-      </div>
-      <h3 className="mt-1 text-[16px] font-bold">{label}</h3>
-      <p className="mt-2 text-sm text-gojo-ink-muted">{body}</p>
-    </div>
-  );
-}
+      <div className="lp-diag-black-from-dark" />
 
-function FeatureCard({
-  kanji,
-  title,
-  body,
-  wide,
-}: {
-  kanji: string;
-  title: string;
-  body: string;
-  wide?: boolean;
-}) {
-  return (
-    <div
-      className={`card-pop relative overflow-hidden rounded-lg border-2 border-gojo-ink bg-gojo-surface ${
-        wide ? "p-6" : "p-5"
-      }`}
-    >
-      <div
-        className={`pointer-events-none absolute font-jp-serif font-bold leading-none text-gojo-orange/10 ${
-          wide ? "-right-2 -top-4 text-[96px]" : "-right-2 -top-2 text-[64px]"
-        }`}
-      >
-        {kanji}
-      </div>
-      <div className="relative">
-        <h3 className="text-[18px] font-bold">{title}</h3>
-        <p className="mt-2 text-sm text-gojo-ink-muted">{body}</p>
-      </div>
+      <section className="lp-cta" id="cta">
+        <div className="lp-cta-tag">Свободные места есть</div>
+        <h2 className="lp-cta-title">
+          Начни свой путь
+          <br />к <span className="lp-orange">японскому сегодня.</span>
+        </h2>
+        <p className="lp-cta-sub">
+          Пробный урок бесплатный. Познакомимся, подберём уровень, покажем
+          платформу.
+        </p>
+        <Link href="/login" className="lp-btn-cta">
+          ▸ Начать бесплатно
+        </Link>
+      </section>
+
+      <footer className="lp-footer">
+        <div className="flex items-center gap-[10px]">
+          <div className="lp-logo-icon" style={{ width: 28, height: 28, fontSize: 12 }}>
+            五
+          </div>
+          <div>
+            <span className="block font-heading text-[11px] font-bold uppercase tracking-[0.12em] text-white/40">
+              Gojo Learn
+            </span>
+            <div className="font-heading text-[9px] uppercase tracking-[0.15em] text-white/20">
+              五条塾 · Школа японского
+            </div>
+          </div>
+        </div>
+        <span className="text-[12px] text-white/25">
+          © 2026 Gojo Learn. Школа японского языка.
+        </span>
+        <div className="flex gap-6">
+          <a
+            href="#"
+            className="text-[12px] text-white/30 transition-colors hover:text-[var(--lp-orange)]"
+          >
+            Политика конфиденциальности
+          </a>
+          <a
+            href="#"
+            className="text-[12px] text-white/30 transition-colors hover:text-[var(--lp-orange)]"
+          >
+            Контакты
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

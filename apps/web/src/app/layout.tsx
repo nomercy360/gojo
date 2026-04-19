@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_JP, Noto_Serif_JP, PT_Serif, JetBrains_Mono } from "next/font/google";
+import {
+  Inter,
+  JetBrains_Mono,
+  Noto_Sans_JP,
+  Noto_Serif_JP,
+  PT_Serif,
+  Unbounded,
+} from "next/font/google";
 import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import { SiteHeader } from "@/components/site-header";
@@ -8,6 +15,13 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const unbounded = Unbounded({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "700", "900"],
+  variable: "--font-unbounded",
   display: "swap",
 });
 
@@ -54,7 +68,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="ru"
-      className={`${inter.variable} ${ptSerif.variable} ${notoSansJp.variable} ${notoSerifJp.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${ptSerif.variable} ${unbounded.variable} ${notoSansJp.variable} ${notoSerifJp.variable} ${jetbrainsMono.variable}`}
     >
       <body>
         <SiteHeader />

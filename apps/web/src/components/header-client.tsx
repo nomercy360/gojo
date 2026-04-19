@@ -29,6 +29,10 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [overlayRoute]);
 
+  // Anonymous landing has its own nav built into the Landing component —
+  // suppress the shared SiteHeader on that route.
+  if (overlayRoute) return null;
+
   const overlay = overlayRoute && !scrolled;
   const frosted = overlayRoute && scrolled;
 

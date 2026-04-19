@@ -39,6 +39,7 @@
   /* Typography */
   --font-serif: "PT Serif", Georgia, serif;
   --font-sans: "Inter", -apple-system, system-ui, sans-serif;
+  --font-heading: "Unbounded", -apple-system, system-ui, sans-serif;
   --font-jp: "Noto Sans JP", sans-serif;
   --font-jp-serif: "Noto Serif JP", serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
@@ -130,4 +131,689 @@ h4 {
 .btn-pop:active {
   box-shadow: 0 0 0 var(--color-gojo-ink);
   transform: translate(3px, 3px);
+}
+
+/* ===================================================================== *
+ * Landing-page styles (v2 — team design).
+ *
+ * Scoped under `.landing-root`, only loaded on the anonymous home route.
+ * Uses its own token set (deliberately slightly different from the global
+ * manga system) so the logged-in app retains its own visual language.
+ * ===================================================================== */
+.landing-root {
+  --lp-black: #111111;
+  --lp-orange: #f76b00;
+  --lp-orange-light: #ff8c2a;
+  --lp-cream: #f5efe4;
+  --lp-cream-dark: #ede4d3;
+  --lp-white: #ffffff;
+  font-family: var(--font-sans);
+  color: var(--lp-black);
+  background: var(--lp-cream);
+}
+.landing-root .font-heading {
+  font-family: var(--font-heading);
+}
+
+.landing-root .lp-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--lp-black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 60px;
+  border-bottom: 2px solid var(--lp-orange);
+}
+.landing-root .lp-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--lp-orange);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--lp-white);
+  box-shadow: 3px 3px 0 rgba(255, 255, 255, 0.15);
+}
+.landing-root .lp-nav-cta {
+  background: var(--lp-orange);
+  color: var(--lp-white);
+  padding: 9px 22px;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0 rgba(255, 255, 255, 0.15);
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.landing-root .lp-nav-cta:hover {
+  background: var(--lp-orange-light);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.15);
+}
+
+.landing-root .lp-hero {
+  background: var(--lp-black);
+  padding: 120px 40px 90px;
+  min-height: 580px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.landing-root .lp-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+}
+.landing-root .lp-hero > *:not(.lp-hero-video):not(.lp-hero-deco) {
+  position: relative;
+  z-index: 2;
+}
+.landing-root .lp-hero-deco {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  font-family: serif;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(247, 107, 0, 0.07);
+}
+.landing-root .lp-hero-deco-1 {
+  font-size: 280px;
+  top: -40px;
+  left: -40px;
+  transform: rotate(-15deg);
+}
+.landing-root .lp-hero-deco-2 {
+  font-size: 220px;
+  bottom: -30px;
+  right: -20px;
+  transform: rotate(10deg);
+}
+.landing-root .lp-hero-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--lp-orange);
+  color: var(--lp-white);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 7px 20px;
+  margin-bottom: 32px;
+  clip-path: polygon(
+    8px 0%,
+    calc(100% - 8px) 0%,
+    100% 50%,
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0% 50%
+  );
+}
+.landing-root .lp-hero-title {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 4.5vw, 52px);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--lp-white);
+  max-width: 860px;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+.landing-root .lp-hero-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 18px;
+  font-weight: 500;
+  max-width: 520px;
+  line-height: 1.65;
+  margin-bottom: 40px;
+  min-height: 3.3em;
+}
+.landing-root .lp-cycle {
+  color: #fff;
+  font-weight: 600;
+  border-bottom: 2px solid var(--lp-orange);
+  padding-bottom: 2px;
+}
+.landing-root .lp-hero-sticker {
+  position: absolute;
+  z-index: 3;
+  background: #fff9c4;
+  color: var(--lp-black);
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 900;
+  padding: 12px 14px;
+  line-height: 1.4;
+  transform: rotate(-7deg);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  right: 10%;
+  bottom: 15%;
+  border-radius: 2px;
+}
+.landing-root .lp-hero-sticker .jp {
+  display: block;
+  font-size: 11px;
+  font-family: serif;
+  opacity: 0.45;
+  margin-top: 3px;
+}
+
+@keyframes lp-pulse-orange {
+  0%,
+  100% {
+    box-shadow:
+      3px 3px 0 rgba(0, 0, 0, 0.25),
+      0 0 0 0 rgba(247, 107, 0, 0.55);
+  }
+  50% {
+    box-shadow:
+      3px 3px 0 rgba(0, 0, 0, 0.25),
+      0 0 0 12px rgba(247, 107, 0, 0);
+  }
+}
+.landing-root .lp-btn-primary {
+  background: var(--lp-orange);
+  color: var(--lp-white);
+  padding: 16px 36px;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+  animation: lp-pulse-orange 2.2s ease-in-out infinite;
+  transition: transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.landing-root .lp-btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.25);
+}
+.landing-root .lp-btn-secondary {
+  background: transparent;
+  color: var(--lp-white);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  padding: 15px 36px;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.landing-root .lp-btn-secondary:hover {
+  border-color: var(--lp-orange);
+  color: var(--lp-orange);
+}
+
+.landing-root .lp-diag-cream-from-black,
+.landing-root .lp-diag-white-from-cream,
+.landing-root .lp-diag-dark-from-white,
+.landing-root .lp-diag-black-from-dark {
+  height: 50px;
+  overflow: hidden;
+}
+.landing-root .lp-diag-cream-from-black {
+  background: var(--lp-black);
+}
+.landing-root .lp-diag-cream-from-black::after {
+  content: "";
+  display: block;
+  height: 50px;
+  background: var(--lp-cream);
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+}
+.landing-root .lp-diag-white-from-cream {
+  background: var(--lp-cream);
+}
+.landing-root .lp-diag-white-from-cream::after {
+  content: "";
+  display: block;
+  height: 50px;
+  background: var(--lp-white);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+.landing-root .lp-diag-dark-from-white {
+  background: var(--lp-white);
+}
+.landing-root .lp-diag-dark-from-white::after {
+  content: "";
+  display: block;
+  height: 50px;
+  background: var(--lp-cream-dark);
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+}
+.landing-root .lp-diag-black-from-dark {
+  background: var(--lp-cream-dark);
+}
+.landing-root .lp-diag-black-from-dark::after {
+  content: "";
+  display: block;
+  height: 50px;
+  background: var(--lp-black);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+
+.landing-root .lp-section-label {
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lp-orange);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.landing-root .lp-section-label::before {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--lp-orange);
+}
+.landing-root .lp-section-title {
+  font-family: var(--font-heading);
+  font-size: clamp(22px, 3vw, 36px);
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--lp-black);
+  max-width: 580px;
+  margin-bottom: 48px;
+}
+
+.landing-root .lp-why,
+.landing-root .lp-how,
+.landing-root .lp-mission,
+.landing-root .lp-cta {
+  padding: 80px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.landing-root .lp-why {
+  background: var(--lp-cream);
+}
+.landing-root .lp-why::before {
+  content: "力";
+  position: absolute;
+  font-family: serif;
+  font-size: 380px;
+  font-weight: 900;
+  color: rgba(247, 107, 0, 0.05);
+  right: -50px;
+  bottom: -80px;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+  transform: rotate(5deg);
+}
+.landing-root .lp-how {
+  background: var(--lp-white);
+}
+.landing-root .lp-how::before {
+  content: "習";
+  position: absolute;
+  font-family: serif;
+  font-size: 360px;
+  font-weight: 900;
+  color: rgba(17, 17, 17, 0.04);
+  left: -40px;
+  top: -60px;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+  transform: rotate(-8deg);
+}
+.landing-root .lp-why > *,
+.landing-root .lp-how > *,
+.landing-root .lp-mission > *,
+.landing-root .lp-cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-root .lp-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+.landing-root .lp-card {
+  background: var(--lp-white);
+  border-top: 1.5px solid #1a1a1a;
+  border-left: 1.5px solid #1a1a1a;
+  border-right: 3.5px solid #1a1a1a;
+  border-bottom: 3.5px solid #1a1a1a;
+  border-radius: 12px;
+  padding: 28px 28px 32px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.22s;
+}
+.landing-root .lp-how .lp-card {
+  background: var(--lp-cream);
+}
+.landing-root .lp-card:hover {
+  transform: rotate(-2deg) translateY(-5px);
+  box-shadow: 6px 8px 0 rgba(247, 107, 0, 0.2);
+  border-color: var(--lp-orange);
+}
+.landing-root .lp-card-number {
+  font-family: serif;
+  font-size: 80px;
+  color: rgba(247, 107, 0, 0.09);
+  position: absolute;
+  right: 16px;
+  top: 8px;
+  line-height: 1;
+  user-select: none;
+}
+.landing-root .lp-card-tag {
+  display: inline-block;
+  background: var(--lp-orange);
+  color: var(--lp-white);
+  font-family: var(--font-heading);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  transform: rotate(-1.5deg);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+.landing-root .lp-card-title {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lp-black);
+  margin-bottom: 12px;
+  line-height: 1.35;
+}
+.landing-root .lp-card-text {
+  font-size: 15px;
+  color: #555;
+  line-height: 1.65;
+}
+.landing-root .lp-card-list {
+  font-size: 15px;
+  color: #555;
+  line-height: 1.65;
+  list-style: none;
+  margin-top: 6px;
+}
+.landing-root .lp-card-list li {
+  padding-left: 20px;
+  position: relative;
+  margin-bottom: 6px;
+}
+.landing-root .lp-card-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  color: var(--lp-orange);
+  font-size: 12px;
+}
+
+.landing-root .lp-mission {
+  background: var(--lp-cream-dark);
+}
+.landing-root .lp-mission::before {
+  content: "道";
+  position: absolute;
+  font-family: serif;
+  font-size: 420px;
+  font-weight: 900;
+  color: rgba(247, 107, 0, 0.05);
+  right: -60px;
+  bottom: -100px;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+.landing-root .lp-mission-inner {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 60px;
+  align-items: start;
+}
+.landing-root .lp-mission-founder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  position: sticky;
+  top: 80px;
+}
+.landing-root .lp-mission-photo {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  border-top: 1.5px solid #1a1a1a;
+  border-left: 1.5px solid #1a1a1a;
+  border-right: 3.5px solid #1a1a1a;
+  border-bottom: 3.5px solid #1a1a1a;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.landing-root .lp-mission-photo-wrap {
+  position: relative;
+}
+.landing-root .lp-mission-photo-badge {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  background: var(--lp-orange);
+  color: var(--lp-white);
+  font-family: serif;
+  font-size: 22px;
+  font-weight: 900;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--lp-white);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+.landing-root .lp-mission-quote {
+  font-family: var(--font-heading);
+  font-size: clamp(15px, 1.9vw, 21px);
+  font-weight: 900;
+  line-height: 1.3;
+  color: var(--lp-black);
+  margin-bottom: 28px;
+  padding: 20px 20px 20px 24px;
+  border-left: 4px solid var(--lp-orange);
+  background: rgba(247, 107, 0, 0.05);
+  border-radius: 0 8px 8px 0;
+  position: relative;
+}
+.landing-root .lp-mission-quote::before {
+  content: "❝";
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 40px;
+  color: rgba(247, 107, 0, 0.12);
+  line-height: 1;
+  font-family: serif;
+}
+.landing-root .lp-mission-text {
+  font-size: 15px;
+  color: #444;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.landing-root .lp-cta {
+  background: var(--lp-black);
+  text-align: center;
+}
+.landing-root .lp-cta::before {
+  content: "五";
+  position: absolute;
+  font-family: serif;
+  font-size: 460px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.025);
+  right: -80px;
+  top: -100px;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+.landing-root .lp-cta::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--lp-orange);
+}
+.landing-root .lp-cta-tag {
+  display: inline-block;
+  background: rgba(247, 107, 0, 0.15);
+  color: var(--lp-orange);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 3px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(247, 107, 0, 0.3);
+}
+.landing-root .lp-cta-title {
+  font-family: var(--font-heading);
+  font-size: clamp(26px, 4vw, 48px);
+  font-weight: 900;
+  color: var(--lp-white);
+  line-height: 1.1;
+  max-width: 640px;
+  margin: 0 auto 16px;
+  letter-spacing: -0.02em;
+}
+.landing-root .lp-cta-sub {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 15px;
+  max-width: 440px;
+  margin: 0 auto 40px;
+}
+.landing-root .lp-btn-cta {
+  background: var(--lp-orange);
+  color: var(--lp-white);
+  padding: 18px 48px;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 5px 5px 0 rgba(255, 255, 255, 0.1);
+  animation: lp-pulse-orange 2.2s ease-in-out infinite;
+  transition: transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.landing-root .lp-btn-cta:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 rgba(255, 255, 255, 0.1);
+}
+
+.landing-root .lp-footer {
+  background: #0a0a0a;
+  padding: 36px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.landing-root .lp-orange {
+  color: var(--lp-orange);
+}
+
+@media (max-width: 800px) {
+  .landing-root .lp-mission-inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .landing-root .lp-mission-founder {
+    flex-direction: row;
+    text-align: left;
+    position: static;
+  }
+  .landing-root .lp-mission-photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .landing-root .lp-mission-photo-badge {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .landing-root .lp-nav {
+    padding: 0 20px;
+  }
+  .landing-root .lp-hero,
+  .landing-root .lp-why,
+  .landing-root .lp-how,
+  .landing-root .lp-mission,
+  .landing-root .lp-cta {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .landing-root .lp-footer {
+    padding: 28px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .landing-root .lp-hero-sticker {
+    display: none;
+  }
 }
