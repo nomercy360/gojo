@@ -35,6 +35,7 @@ teacherRoute.use("*", requireAuth, requireTeacher);
 
 teacherRoute.get("/lessons", async (c) => {
   const u = c.get("user")!;
+  const now = new Date();
 
   const rows = await db
     .select({
@@ -50,7 +51,14 @@ teacherRoute.get("/lessons", async (c) => {
     .limit(100);
 
   return c.json(
-    rows.map((r) => toLessonDto(r.lesson, null, { studentCount: Number(r.studentCount) })),
+    rows.map((r) => {
+      const studentCount = Number(r.studentCount);
+      return toLessonDto(r.lesson, null, {
+        studentCount,
+        isParticipant: true,
+        now,
+      });
+    }),
   );
 });
 

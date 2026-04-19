@@ -1,5 +1,13 @@
 import type { Flashcard, Kanji, Lesson, LessonCard, User } from "@gojo/db";
-import type { FlashcardDto, KanjiDto, LessonCardDto, LessonDto, UserDto } from "@gojo/shared";
+import type {
+  FlashcardDto,
+  KanjiDto,
+  LessonCardDto,
+  LessonDto,
+  LessonJoinState,
+  UserDto,
+} from "@gojo/shared";
+import { computeJoinState, joinOpensAt } from "../lib/lesson-state.ts";
 
 export function toUserDto(u: User): UserDto {
   return {
@@ -63,8 +71,27 @@ export function toKanjiDto(k: Kanji): KanjiDto {
 export function toLessonDto(
   lesson: Lesson,
   teacherNickname: string | null,
-  opts?: { booked?: boolean; studentCount?: number },
+  opts?: {
+    booked?: boolean;
+    studentCount?: number;
+    isParticipant?: boolean;
+    now?: Date;
+  },
 ): LessonDto {
+  let joinState: LessonJoinState | undefined;
+  let joinOpensAtStr: string | undefined;
+  if (opts?.now && opts.studentCount !== undefined && opts.isParticipant !== undefined) {
+    joinState = computeJoinState({
+      now: opts.now,
+      lesson,
+      isParticipant: opts.isParticipant,
+      studentCount: opts.studentCount,
+    });
+    if (joinState === "waiting") {
+      joinOpensAtStr = joinOpensAt(lesson).toISOString();
+    }
+  }
+
   return {
     id: lesson.id,
     teacherId: lesson.teacherId,
@@ -78,5 +105,7 @@ export function toLessonDto(
     recordingUrl: lesson.recordingUrl,
     ...(opts?.booked !== undefined ? { booked: opts.booked } : {}),
     ...(opts?.studentCount !== undefined ? { studentCount: opts.studentCount } : {}),
+    ...(joinState ? { joinState } : {}),
+    ...(joinOpensAtStr ? { joinOpensAt: joinOpensAtStr } : {}),
   };
 }

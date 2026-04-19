@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import type { LessonDto } from "@gojo/shared";
+import { LessonCountdown } from "@/components/lesson-countdown";
 import { fetchLessons } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
 import { bookLessonAction } from "./actions";
@@ -127,36 +128,103 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
           </p>
         </div>
 
-        {!authenticated ? (
-          <Link
-            href="/login"
-            className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold"
-          >
-            Войти
-          </Link>
-        ) : lesson.booked ? (
-          <Link
-            href={`/lessons/${lesson.id}/room`}
-            className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white"
-          >
-            Войти ▸
-          </Link>
-        ) : isFull ? (
-          <span className="shrink-0 rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
-            Мест нет
-          </span>
-        ) : (
-          <form action={bookLessonAction}>
-            <input type="hidden" name="lessonId" value={lesson.id} />
-            <button
-              type="submit"
-              className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold hover:bg-gojo-surface-2"
-            >
-              Записаться
-            </button>
-          </form>
-        )}
+        <LessonAction
+          lesson={lesson}
+          authenticated={authenticated}
+          isFull={isFull}
+        />
       </div>
+      {lesson.joinState === "waiting" && lesson.joinOpensAt ? (
+        <div className="mt-3 flex justify-end">
+          <LessonCountdown target={lesson.joinOpensAt} label="Открытие за 15 мин · через" />
+        </div>
+      ) : null}
     </li>
+  );
+}
+
+function LessonAction({
+  lesson,
+  authenticated,
+  isFull,
+}: {
+  lesson: LessonDto;
+  authenticated: boolean;
+  isFull: boolean;
+}) {
+  if (!authenticated) {
+    return (
+      <Link
+        href="/login"
+        className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold"
+      >
+        Войти
+      </Link>
+    );
+  }
+
+  const state = lesson.joinState;
+
+  if (state === "cancelled") {
+    return (
+      <span className="shrink-0 rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
+        Отменён
+      </span>
+    );
+  }
+
+  if (state === "ended") {
+    return (
+      <Link
+        href={`/lessons/${lesson.id}`}
+        className="shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-muted hover:bg-gojo-surface"
+      >
+        Завершён
+      </Link>
+    );
+  }
+
+  if (state === "joinable") {
+    return (
+      <Link
+        href={`/lessons/${lesson.id}/room`}
+        className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white"
+      >
+        Войти ▸
+      </Link>
+    );
+  }
+
+  if (state === "waiting") {
+    return (
+      <span
+        aria-disabled
+        className="shrink-0 cursor-not-allowed rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost"
+        title="Вход откроется за 15 минут до начала"
+      >
+        Готовится
+      </span>
+    );
+  }
+
+  // state is "full" / "bookable" / undefined — fall back to booking controls.
+  if (state === "full" || (state === undefined && isFull)) {
+    return (
+      <span className="shrink-0 rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
+        Мест нет
+      </span>
+    );
+  }
+
+  return (
+    <form action={bookLessonAction}>
+      <input type="hidden" name="lessonId" value={lesson.id} />
+      <button
+        type="submit"
+        className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold hover:bg-gojo-surface-2"
+      >
+        Записаться
+      </button>
+    </form>
   );
 }

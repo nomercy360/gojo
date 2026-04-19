@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { LessonCardDto, LessonMaterialDto } from "@gojo/shared";
+import { LessonCountdown } from "@/components/lesson-countdown";
 import {
   ApiError,
   fetchLesson,
@@ -110,8 +111,8 @@ export default async function LessonDetailPage({ params }: Props) {
           </div>
         ) : null}
 
-        {/* Join room button */}
-        {lesson.status === "scheduled" && user ? (
+        {/* Join room — gated by joinState */}
+        {user && lesson.joinState === "joinable" ? (
           <div className="mt-8">
             <Link
               href={`/lessons/${id}/room`}
@@ -119,6 +120,28 @@ export default async function LessonDetailPage({ params }: Props) {
             >
               Войти в урок ▸
             </Link>
+          </div>
+        ) : user && lesson.joinState === "waiting" && lesson.joinOpensAt ? (
+          <div className="mt-8 rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-5 py-4">
+            <div className="text-[13px] font-bold text-gojo-ink">
+              Вход откроется за 15 минут до начала
+            </div>
+            <div className="mt-1">
+              <LessonCountdown
+                target={lesson.joinOpensAt}
+                label="Откроется через"
+              />
+            </div>
+          </div>
+        ) : user && lesson.joinState === "bookable" ? (
+          <div className="mt-8 text-sm text-gojo-ink-muted">
+            <Link
+              href="/lessons"
+              className="font-bold text-gojo-orange hover:underline"
+            >
+              Записаться
+            </Link>{" "}
+            на урок — он появится в «Мои уроки» и откроется по расписанию.
           </div>
         ) : null}
 
