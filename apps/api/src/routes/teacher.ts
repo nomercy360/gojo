@@ -1,13 +1,15 @@
-import { bookings, lessonMaterials, lessons, user as userTable } from "@gojo/db";
+import { bookings, lessonCards, lessonMaterials, lessons, user as userTable } from "@gojo/db";
+import { addLessonCardInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { type AuthContext, requireAuth, requireTeacher } from "../auth/middleware.ts";
 import { db } from "../db.ts";
+import { materializeNewCardForBookings } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
-import { toLessonDto } from "./mappers.ts";
+import { toLessonCardDto, toLessonDto } from "./mappers.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
 
@@ -177,4 +179,72 @@ teacherRoute.post("/lessons/:id/materials", async (c) => {
     },
     201,
   );
+});
+
+teacherRoute.get("/lessons/:id/cards", async (c) => {
+  const u = c.get("user")!;
+  const lessonId = c.req.param("id");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+
+  const rows = await db
+    .select()
+    .from(lessonCards)
+    .where(eq(lessonCards.lessonId, lessonId))
+    .orderBy(asc(lessonCards.position), asc(lessonCards.createdAt));
+  return c.json(rows.map(toLessonCardDto));
+});
+
+teacherRoute.post(
+  "/lessons/:id/cards",
+  zValidator("json", addLessonCardInput),
+  async (c) => {
+    const u = c.get("user")!;
+    const lessonId = c.req.param("id");
+    const body = c.req.valid("json");
+
+    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+    if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+
+    const [maxPos] = await db
+      .select({
+        value: sql<number>`COALESCE(MAX(${lessonCards.position}), -1) + 1`.as("value"),
+      })
+      .from(lessonCards)
+      .where(eq(lessonCards.lessonId, lessonId));
+
+    const [row] = await db
+      .insert(lessonCards)
+      .values({
+        lessonId,
+        word: body.word,
+        reading: body.reading,
+        meaning: body.meaning,
+        notes: body.notes,
+        position: Number(maxPos?.value ?? 0),
+      })
+      .returning();
+    if (!row) throw new HTTPException(500, { message: "insert failed" });
+
+    await materializeNewCardForBookings(row.id);
+    return c.json(toLessonCardDto(row), 201);
+  },
+);
+
+teacherRoute.delete("/lessons/:id/cards/:cardId", async (c) => {
+  const u = c.get("user")!;
+  const lessonId = c.req.param("id");
+  const cardId = c.req.param("cardId");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+
+  await db
+    .delete(lessonCards)
+    .where(and(eq(lessonCards.id, cardId), eq(lessonCards.lessonId, lessonId)));
+  return c.json({ ok: true });
 });

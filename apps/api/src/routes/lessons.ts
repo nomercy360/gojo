@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
+import { materializeCardsForBooking } from "../lib/materialize.ts";
 import { toLessonDto } from "./mappers.ts";
 
 export const lessonsRoute = new Hono<AuthContext>();
@@ -127,6 +128,8 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
     .values({ lessonId, studentId: user.id })
     .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
     .returning();
+
+  await materializeCardsForBooking(user.id, lessonId);
 
   if (booking) return c.json(booking, 201);
 

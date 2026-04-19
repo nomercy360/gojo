@@ -12,6 +12,7 @@ RUN bun install
 
 COPY packages/db/src packages/db/src
 COPY packages/db/drizzle packages/db/drizzle
+COPY packages/db/data packages/db/data
 COPY packages/db/package.json packages/db/package.json
 COPY packages/db/drizzle.config.ts packages/db/drizzle.config.ts
 COPY packages/shared packages/shared

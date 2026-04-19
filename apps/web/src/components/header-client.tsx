@@ -74,6 +74,14 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
               >
                 Уроки
               </Link>
+              {user.role === "student" ? (
+                <Link
+                  href="/review"
+                  className={`hover:text-gojo-orange ${mutedClass}`}
+                >
+                  Карточки
+                </Link>
+              ) : null}
               <Link
                 href="/profile"
                 className={`flex items-center gap-2 hover:${textClass} ${mutedClass}`}

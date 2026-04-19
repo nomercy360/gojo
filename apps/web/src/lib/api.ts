@@ -1,11 +1,18 @@
 import type {
+  AddLessonCardInput,
+  FlashcardDto,
+  KanjiBreakdownEntry,
+  KanjiDto,
+  LessonCardDto,
   LessonDto,
   LessonMaterialDto,
   LivekitTokenResponse,
   QuizQuestionDto,
   QuizResultDto,
   QuizSubmitInput,
+  ReviewQueueDto,
   StudentStatsDto,
+  SubmitReviewInput,
   UpdateProfileInput,
   UserDto,
 } from "@gojo/shared";
@@ -113,6 +120,48 @@ export function createLesson(body: { title: string; startsAt: string; endsAt: st
 
 export function cancelLesson(lessonId: string) {
   return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}`, { method: "DELETE" });
+}
+
+export function fetchReviewQueue() {
+  return apiFetch<ReviewQueueDto>("/review/queue");
+}
+
+export function submitCardReview(id: string, body: SubmitReviewInput) {
+  return apiFetch<FlashcardDto>(`/review/cards/${id}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function promoteCard(id: string) {
+  return apiFetch<FlashcardDto>(`/review/cards/${id}/promote`, { method: "POST" });
+}
+
+export function fetchKanjiBreakdown(word: string) {
+  return apiFetch<KanjiBreakdownEntry[]>(
+    `/kanji/breakdown?word=${encodeURIComponent(word)}`,
+  );
+}
+
+export function fetchKanji(char: string) {
+  return apiFetch<KanjiDto>(`/kanji/${encodeURIComponent(char)}`);
+}
+
+export function fetchLessonCards(lessonId: string) {
+  return apiFetch<LessonCardDto[]>(`/teacher/lessons/${lessonId}/cards`);
+}
+
+export function addLessonCard(lessonId: string, body: AddLessonCardInput) {
+  return apiFetch<LessonCardDto>(`/teacher/lessons/${lessonId}/cards`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteLessonCard(lessonId: string, cardId: string) {
+  return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}/cards/${cardId}`, {
+    method: "DELETE",
+  });
 }
 
 export function fetchQuizQuestions() {

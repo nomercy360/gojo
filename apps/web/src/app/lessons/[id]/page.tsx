@@ -1,7 +1,13 @@
 import Link from "next/link";
-import type { LessonMaterialDto } from "@gojo/shared";
-import { ApiError, fetchLesson, fetchLessonMaterials } from "@/lib/api";
+import type { LessonCardDto, LessonMaterialDto } from "@gojo/shared";
+import {
+  ApiError,
+  fetchLesson,
+  fetchLessonCards,
+  fetchLessonMaterials,
+} from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
+import { LessonCardsManager } from "./cards-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +45,16 @@ export default async function LessonDetailPage({ params }: Props) {
     materials = await fetchLessonMaterials(id);
   } catch {
     // no materials — fine
+  }
+
+  const isOwner = !!user && user.id === lesson.teacherId;
+  let cards: LessonCardDto[] = [];
+  if (isOwner) {
+    try {
+      cards = await fetchLessonCards(id);
+    } catch {
+      // none yet
+    }
   }
 
   const starts = new Date(lesson.startsAt);
@@ -105,6 +121,8 @@ export default async function LessonDetailPage({ params }: Props) {
             </Link>
           </div>
         ) : null}
+
+        {isOwner ? <LessonCardsManager lessonId={id} initialCards={cards} /> : null}
 
         {/* Materials (Task #7) */}
         <section className="mt-10">

@@ -6,9 +6,11 @@ import { auth } from "./auth.ts";
 import { type AuthContext, loadSession } from "./auth/middleware.ts";
 import { env } from "./env.ts";
 import { authRoute } from "./routes/auth.ts";
+import { kanjiRoute } from "./routes/kanji.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
 import { livekitRoute } from "./routes/livekit.ts";
 import { onboardingRoute } from "./routes/onboarding.ts";
+import { reviewRoute } from "./routes/review.ts";
 import { teacherRoute } from "./routes/teacher.ts";
 import { usersRoute } from "./routes/users.ts";
 
@@ -46,6 +48,8 @@ app.route("/lessons", lessonsRoute);
 app.route("/livekit", livekitRoute);
 app.route("/teacher", teacherRoute);
 app.route("/onboarding", onboardingRoute);
+app.route("/review", reviewRoute);
+app.route("/kanji", kanjiRoute);
 
 console.log(`api listening on :${env.API_PORT}`);
 
