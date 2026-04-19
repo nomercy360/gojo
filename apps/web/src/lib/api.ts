@@ -2,6 +2,9 @@ import type {
   LessonDto,
   LessonMaterialDto,
   LivekitTokenResponse,
+  QuizQuestionDto,
+  QuizResultDto,
+  QuizSubmitInput,
   StudentStatsDto,
   UpdateProfileInput,
   UserDto,
@@ -110,6 +113,17 @@ export function createLesson(body: { title: string; startsAt: string; endsAt: st
 
 export function cancelLesson(lessonId: string) {
   return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}`, { method: "DELETE" });
+}
+
+export function fetchQuizQuestions() {
+  return apiFetch<QuizQuestionDto[]>("/onboarding/quiz/questions");
+}
+
+export function submitQuiz(body: QuizSubmitInput) {
+  return apiFetch<QuizResultDto>("/onboarding/quiz", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function fetchLessonStudents(lessonId: string): Promise<

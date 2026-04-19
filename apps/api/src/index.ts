@@ -8,6 +8,7 @@ import { env } from "./env.ts";
 import { authRoute } from "./routes/auth.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
 import { livekitRoute } from "./routes/livekit.ts";
+import { onboardingRoute } from "./routes/onboarding.ts";
 import { teacherRoute } from "./routes/teacher.ts";
 import { usersRoute } from "./routes/users.ts";
 
@@ -44,6 +45,7 @@ app.route("/users", usersRoute);
 app.route("/lessons", lessonsRoute);
 app.route("/livekit", livekitRoute);
 app.route("/teacher", teacherRoute);
+app.route("/onboarding", onboardingRoute);
 
 console.log(`api listening on :${env.API_PORT}`);
 

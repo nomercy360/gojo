@@ -25,6 +25,8 @@ export default function LoginPage() {
     const role = (String(form.get("role") ?? "student") as "student" | "teacher") ?? "student";
 
     try {
+      let isNewStudent = false;
+      let jlptLevel: string | null = null;
       if (mode === "signup") {
         const res = await authClient.signUp.email({
           email,
@@ -35,12 +37,17 @@ export default function LoginPage() {
         });
         if (res.error) throw new Error(res.error.message ?? "Signup failed");
         toast.success("Аккаунт создан");
+        isNewStudent = role === "student";
       } else {
         const res = await authClient.signIn.email({ email, password });
         if (res.error) throw new Error(res.error.message ?? "Invalid credentials");
         toast.success("С возвращением!");
+        // biome-ignore lint/suspicious/noExplicitAny: additional fields
+        const u = (res.data as any)?.user;
+        jlptLevel = u?.jlptLevel ?? null;
+        isNewStudent = u?.role === "student" && !jlptLevel;
       }
-      router.push("/");
+      router.push(isNewStudent ? "/onboarding/quiz" : "/");
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Ошибка";
