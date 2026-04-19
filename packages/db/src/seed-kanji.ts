@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import * as schema from "./schema/index.ts";
 import { kanji, radicals } from "./schema/kanji.ts";
 
 /**
@@ -71,7 +72,7 @@ function str(v: string | undefined): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
-type Client = ReturnType<typeof drizzle>;
+type Client = ReturnType<typeof drizzle<typeof schema>>;
 
 async function seedKanji(db: Client, dataDir: string): Promise<number> {
   const existing = await db.select().from(kanji).limit(1);
@@ -190,7 +191,7 @@ async function seedRadicals(db: Client, dataDir: string): Promise<number> {
 export async function runSeed(dataDir: string): Promise<void> {
   const url = process.env.DATABASE_URL ?? "postgres://gojo:gojo@localhost:5432/gojo";
   const client = postgres(url, { max: 1 });
-  const db = drizzle(client);
+  const db = drizzle(client, { schema, casing: "snake_case" });
   try {
     await seedKanji(db, dataDir);
     await seedRadicals(db, dataDir);
