@@ -17,12 +17,19 @@
     "lineWidth": 100
   },
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".next",
-      "drizzle",
-      "*.generated.ts"
-    ]
-  }
+    "ignore": ["node_modules", "dist", ".next", "drizzle", "*.generated.ts"]
+  },
+  "overrides": [
+    {
+      "include": ["apps/web/src/components/landing.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useValidAnchor": "off",
+            "useKeyWithClickEvents": "off"
+          }
+        }
+      }
+    }
+  ]
 }

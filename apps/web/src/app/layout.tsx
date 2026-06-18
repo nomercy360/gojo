@@ -1,7 +1,10 @@
+import { SiteHeader } from "@/components/site-header";
 import type { Metadata, Viewport } from "next";
 import {
+  Fraunces,
   Inter,
   JetBrains_Mono,
+  Manrope,
   Noto_Sans_JP,
   Noto_Serif_JP,
   PT_Serif,
@@ -9,7 +12,6 @@ import {
 } from "next/font/google";
 import type { ReactNode } from "react";
 import { Toaster } from "sonner";
-import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 const inter = Inter({
@@ -53,6 +55,22 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Landing-page (v14) fonts: Fraunces is latin-only — Cyrillic headings fall back
+// to PT Serif via the --font-display stack in globals.css; Manrope covers Cyrillic.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["600", "900"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Gojo Learn — Школа японского нового поколения",
   description:
@@ -68,7 +86,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="ru"
-      className={`${inter.variable} ${ptSerif.variable} ${unbounded.variable} ${notoSansJp.variable} ${notoSerifJp.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${ptSerif.variable} ${unbounded.variable} ${notoSansJp.variable} ${notoSerifJp.variable} ${jetbrainsMono.variable} ${fraunces.variable} ${manrope.variable}`}
     >
       <body>
         <SiteHeader />
