@@ -460,22 +460,21 @@ html:has(.landing-root) {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  animation: pulse-orange 2.4s ease-in-out infinite;
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.01em;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 .landing-root .btn-primary:hover {
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.25);
 }
 .landing-root .btn-secondary-dark {
-  background: var(--ink);
-  color: var(--white);
-  border: none;
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid rgba(17, 17, 17, 0.18);
   padding: 16px 28px;
   border-radius: 6px;
   cursor: pointer;
@@ -487,12 +486,11 @@ html:has(.landing-root) {
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 3px 3px 0 var(--ink);
 }
 .landing-root .btn-secondary-dark:hover {
-  background: var(--ink);
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--orange);
+  border-color: var(--orange);
+  color: var(--orange);
+  background: rgba(247, 107, 0, 0.04);
 }
 /* HERO IMAGE */
 /* ───── HERO TRIPTYCH ───── */
@@ -1154,7 +1152,7 @@ html:has(.landing-root) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--ink);
+  background: rgba(247, 107, 0, 0.12);
   color: var(--orange);
   display: flex;
   align-items: center;
@@ -1163,7 +1161,7 @@ html:has(.landing-root) {
   font-size: 18px;
   font-weight: 900;
   flex-shrink: 0;
-  transition: transform 0.25s;
+  transition: transform 0.25s, background 0.25s;
 }
 .landing-root .faq-item[open] .faq-q-icon {
   transform: rotate(45deg);
@@ -1288,13 +1286,12 @@ html:has(.landing-root) {
   font-family: var(--font-body);
   font-size: 15px;
   letter-spacing: 0.01em;
-  box-shadow: 5px 5px 0 var(--ink);
-  animation: pulse-orange 2.4s ease-in-out infinite;
-  transition: transform 0.15s;
+  box-shadow: 5px 5px 0 rgba(255, 255, 255, 0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 .landing-root .btn-cta:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0 var(--ink);
+  box-shadow: 7px 7px 0 rgba(255, 255, 255, 0.15);
 }
 .landing-root .cta-note {
   margin-top: 22px;
@@ -1337,7 +1334,8 @@ html:has(.landing-root) {
 /* ───── HOW AIO BANNER ───── */
 .landing-root .how-aio {
   margin-top: 24px;
-  background: var(--ink);
+  background: var(--cream);
+  border: 1.5px solid rgba(247, 107, 0, 0.15);
   border-radius: 20px;
   padding: 40px 48px;
   display: flex;
@@ -1357,22 +1355,26 @@ html:has(.landing-root) {
   text-transform: uppercase;
   color: var(--orange);
   margin-bottom: 12px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
+  background: rgba(247, 107, 0, 0.10);
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
 }
 .landing-root .how-aio-label::before {
   content: "";
   display: block;
-  width: 20px;
-  height: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--orange);
 }
 .landing-root .how-aio-title {
   font-family: var(--font-display);
   font-size: clamp(22px, 2.6vw, 32px);
   font-weight: 900;
-  color: var(--white);
+  color: var(--ink);
   line-height: 1.1;
   letter-spacing: -0.025em;
   margin-bottom: 14px;
@@ -1382,7 +1384,7 @@ html:has(.landing-root) {
 }
 .landing-root .how-aio-body {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-2);
   line-height: 1.65;
   max-width: 480px;
 }
@@ -1393,18 +1395,18 @@ html:has(.landing-root) {
   align-items: center;
 }
 .landing-root .how-aio-chip {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--white);
   border-radius: 999px;
   padding: 9px 18px;
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--ink-2);
   white-space: nowrap;
   transition: background 0.15s;
 }
 .landing-root .how-aio-chip:hover {
-  background: rgba(247, 107, 0, 0.2);
+  background: var(--orange);
   color: var(--white);
 }
 @media (max-width: 980px) {
@@ -2205,7 +2207,9 @@ html:has(.landing-root) {
 }
 /* ───── STATS STRIP ───── */
 .landing-root .stats-strip {
-  background: var(--ink);
+  background: var(--cream);
+  border-top: 1px solid rgba(17, 17, 17, 0.07);
+  border-bottom: 1px solid rgba(17, 17, 17, 0.07);
   padding-top: 36px;
   padding-bottom: 36px;
   display: flex;
@@ -2231,22 +2235,22 @@ html:has(.landing-root) {
   top: 20%;
   bottom: 20%;
   width: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(17, 17, 17, 0.12);
 }
 .landing-root .stat-num {
   font-family: var(--font-display);
-  font-size: 48px;
-  font-weight: 900;
+  font-size: 52px;
+  font-weight: 600;
   color: var(--orange);
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   margin-bottom: 8px;
 }
 .landing-root .stat-label {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-2);
   line-height: 1.45;
 }
 .landing-root .stat-sub {
@@ -2277,24 +2281,36 @@ html:has(.landing-root) {
 .landing-root .pain-card {
   background: var(--white);
   border-radius: 14px;
-  padding: 26px 24px;
+  padding: 30px 28px;
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  box-sizing: border-box;
 }
 .landing-root .pain-icon {
   font-size: 28px;
   margin-bottom: 14px;
 }
+.landing-root .pain-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: block;
+}
 .landing-root .pain-title {
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--ink);
   margin-bottom: 8px;
   line-height: 1.3;
 }
 .landing-root .pain-body {
-  font-size: 14.5px;
-  color: var(--ink-2);
+  font-size: 15.5px;
+  color: var(--ink);
   line-height: 1.6;
 }
 .landing-root .pain-arrow {
@@ -2328,6 +2344,8 @@ html:has(.landing-root) {
   padding: 28px 24px;
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+  box-sizing: border-box;
 }
 .landing-root .teacher-card:hover {
   transform: translateY(-4px);
@@ -2372,14 +2390,14 @@ html:has(.landing-root) {
 }
 .landing-root .teacher-name {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   color: var(--ink);
   margin-bottom: 3px;
   line-height: 1.2;
 }
 .landing-root .teacher-role {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-3);
   margin-bottom: 14px;
 }
@@ -2390,7 +2408,7 @@ html:has(.landing-root) {
   margin-bottom: 16px;
 }
 .landing-root .teacher-cred {
-  font-size: 13.5px;
+  font-size: 15px;
   color: var(--ink-2);
   line-height: 1.4;
   display: flex;
@@ -2445,18 +2463,23 @@ html:has(.landing-root) {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  height: 100%;
+  box-sizing: border-box;
 }
 .landing-root .review-stars {
-  color: var(--orange);
-  font-size: 14px;
-  letter-spacing: 2px;
+  display: flex;
+  gap: 3px;
+}
+.landing-root .review-stars svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--orange);
 }
 .landing-root .review-text {
-  font-size: 15px;
-  color: var(--ink-2);
+  font-size: 15.5px;
+  color: var(--ink);
   line-height: 1.65;
   flex: 1;
-  font-style: italic;
 }
 .landing-root .review-text::before {
   content: "❝ ";

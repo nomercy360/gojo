@@ -423,7 +423,7 @@ export function Landing() {
 
         <div className="reviews-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
           <div className="review-card">
-            <div className="review-stars">★★★★★</div>
+            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
             <div className="review-text">
               Занимаюсь японским для себя, ранее никогда не сталкивалась со сложными языками. Мне
               очень нравится подход специалиста, буду обязательно совершенствовать свои знания с его
@@ -439,7 +439,7 @@ export function Landing() {
           </div>
 
           <div className="review-card">
-            <div className="review-stars">★★★★★</div>
+            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
             <div className="review-text">
               Прошло уже пять занятий, за это время мы освоили хирагану и катакану, учимся
               составлять простые японские предложения, учим связки. Я уже знаю, как
@@ -456,7 +456,7 @@ export function Landing() {
           </div>
 
           <div className="review-card">
-            <div className="review-stars">★★★★★</div>
+            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
             <div className="review-text">
               Спасибо за профессионализм, высокий уровень знания языка, открытость и
               доброжелательность! Очень понятные объяснения, позитив и прогресс в изучении языка :)
@@ -472,7 +472,7 @@ export function Landing() {
           </div>
 
           <div className="review-card">
-            <div className="review-stars">★★★★★</div>
+            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
             <div className="review-text">
               Прекрасный преподаватель и педагог. Видно, что человек не только прекрасно знает язык,
               но и умеет правильно его преподавать. Даже самые трудные моменты кажутся простыми и
@@ -488,7 +488,7 @@ export function Landing() {
           </div>
 
           <div className="review-card">
-            <div className="review-stars">★★★★★</div>
+            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
             <div className="review-text">
               Начала заниматься японским для себя, занятия проходят очень комфортно, интересно и
               легко. Каждое занятие получаю много новой информации и знаний.
@@ -503,7 +503,7 @@ export function Landing() {
           </div>
 
           <div className="review-card">
-            <div className="review-stars">★★★★★</div>
+            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
             <div className="review-text">
               Всем настоятельно рекомендую. Специалист очень высокого класса и профессионал своего
               дела.
@@ -529,7 +529,7 @@ export function Landing() {
         </h2>
         <div className="pain-grid">
           <div className="pain-card">
-            <div className="pain-icon">🌀</div>
+            <div className="pain-num">01 — Проблема</div>
             <div className="pain-title">Хаос без системы</div>
             <div className="pain-body">
               Начал с Duolingo, перешёл на YouTube, купил учебник. Полгода прошло — ни один диалог
@@ -537,7 +537,7 @@ export function Landing() {
             </div>
           </div>
           <div className="pain-card">
-            <div className="pain-icon">🔇</div>
+            <div className="pain-num">02 — Проблема</div>
             <div className="pain-title">Учишь, но не говоришь</div>
             <div className="pain-body">
               Слова знаешь, грамматику понимаешь — но в разговоре теряешься. Приложения не учат
@@ -545,7 +545,7 @@ export function Landing() {
             </div>
           </div>
           <div className="pain-card">
-            <div className="pain-icon">📉</div>
+            <div className="pain-num">03 — Проблема</div>
             <div className="pain-title">Прогресс незаметен</div>
             <div className="pain-body">
               Занимаешься несколько месяцев, но не понимаешь, на каком ты уровне и куда двигаться
