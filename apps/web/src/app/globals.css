@@ -6,23 +6,23 @@
  */
 
 @theme {
-  /* Paper & ink */
-  --color-gojo-paper: #fff8f0;
-  --color-gojo-paper-2: #fdf2e4;
-  --color-gojo-ink: #1a1a1a;
-  --color-gojo-ink-soft: #2a2a2a;
-  --color-gojo-ink-muted: #666666;
-  --color-gojo-ink-ghost: #999999;
+  /* Paper & ink — matches landing design policy */
+  --color-gojo-paper: #f8f4ec;
+  --color-gojo-paper-2: #efe7d8;
+  --color-gojo-ink: #252525;
+  --color-gojo-ink-soft: #363636;
+  --color-gojo-ink-muted: #6b6b6b;
+  --color-gojo-ink-ghost: #a0a0a0;
 
   /* Surfaces */
   --color-gojo-surface: #ffffff;
   --color-gojo-surface-2: #f7f3ed;
 
   /* Orange — CTA & active states only */
-  --color-gojo-orange: #ff6f00;
-  --color-gojo-orange-hover: #e66300;
-  --color-gojo-orange-soft: #ffe5cc;
-  --color-gojo-orange-ink: #8b3a00;
+  --color-gojo-orange: #e8420a;
+  --color-gojo-orange-hover: #cf3608;
+  --color-gojo-orange-soft: #fde8e0;
+  --color-gojo-orange-ink: #7a2005;
 
   /* Brand red — logo & brand moments, NOT for CTA */
   --color-gojo-red: #e30613;
@@ -62,7 +62,7 @@ html,
 body {
   background: var(--color-gojo-paper);
   color: var(--color-gojo-ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -71,15 +71,29 @@ body {
 h1,
 h2,
 .display {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-family: var(--font-fraunces), var(--font-pt-serif), Georgia, serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 h3,
 h4 {
-  font-family: var(--font-sans);
+  font-family: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
   font-weight: 700;
+}
+
+/* Utility classes matching landing design policy */
+.g-display {
+  font-family: var(--font-fraunces), var(--font-pt-serif), Georgia, serif;
+}
+.g-body {
+  font-family: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+}
+.g-mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+.g-jp {
+  font-family: var(--font-noto-serif-jp), serif;
 }
 
 ::selection {
@@ -148,16 +162,16 @@ h4 {
   padding: 0;
 }
 .landing-root {
-  --black: #111111;
-  --dark: #1a1a1a;
-  --orange: #f76b00;
-  --orange-light: #ff8c2a;
+  --black: #1a1a1a;
+  --dark: #2a2a2a;
+  --orange: #e8420a;
+  --orange-light: #f05a22;
   --orange-dim: rgba(247, 107, 0, 0.1);
   --cream: #f8f4ec; /* lighter, more white */
   --cream-soft: #fbf8f2; /* even lighter for big surfaces */
   --cream-dark: #efe7d8;
   --white: #ffffff;
-  --ink: #1a1a1a;
+  --ink: #252525;
   --ink-2: #4a4a4a;
   --ink-3: #6b6b6b;
   --muted: #8a8a8a;
@@ -189,15 +203,14 @@ html:has(.landing-root) {
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 max(40px, calc((100% - 1440px) / 2));
-  height: 76px;
-  border-bottom: 1px solid var(--hairline);
+  height: 68px;
 }
 .landing-root .nav-logo {
   display: flex;
@@ -206,7 +219,7 @@ html:has(.landing-root) {
   text-decoration: none;
 }
 .landing-root .nav-logo-img {
-  height: 38px;
+  height: 28px;
   width: auto;
   display: block;
 }
@@ -238,13 +251,15 @@ html:has(.landing-root) {
   color: var(--ink);
 }
 .landing-root .nav-logo-sub {
-  font-size: 13px;
-  color: var(--ink);
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-weight: 700;
-  display: block;
-  margin-top: 2px;
+  font-weight: 600;
+  padding-left: 14px;
+  border-left: 1px solid rgba(17,17,17,0.15);
+  margin-left: 2px;
+  line-height: 1;
 }
 .landing-root .nav-links {
   display: flex;
@@ -286,7 +301,7 @@ html:has(.landing-root) {
   position: relative;
   overflow: hidden;
   /* same horizontal rhythm as all other sections */
-  padding: 130px max(40px, calc((100% - 1440px) / 2)) 90px;
+  padding: 80px max(40px, calc((100% - 1440px) / 2)) 72px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   align-items: center;
@@ -334,7 +349,7 @@ html:has(.landing-root) {
   min-height: 72px;
 }
 .landing-root .hero-brand-logo {
-  height: 64px;
+  height: 44px;
   width: auto;
   display: block;
   flex-shrink: 0;
@@ -346,11 +361,12 @@ html:has(.landing-root) {
 }
 .landing-root .hero-brand-tag {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-2);
+  line-height: 1.65;
 }
 .landing-root .hero-ribbon {
   display: inline-flex;
@@ -464,12 +480,11 @@ html:has(.landing-root) {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, opacity 0.15s;
 }
 .landing-root .btn-primary:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+  opacity: 0.92;
 }
 .landing-root .btn-secondary-dark {
   background: transparent;
@@ -559,17 +574,17 @@ html:has(.landing-root) {
 /* ───── PHRASE MARQUEE (replaces proof strip) ───── */
 .landing-root .phrase-marquee {
   background: var(--cream);
-  border-top: 1px solid rgba(17, 17, 17, 0.06);
-  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+  border-top: none;
+  border-bottom: none;
   padding: 0;
   position: relative;
+  z-index: 1;
   overflow: hidden;
   display: flex;
   align-items: stretch;
 }
 .landing-root .phrase-marquee::before,
 .landing-root .phrase-marquee::after {
-  /* edge fade so phrases scroll out gracefully */
   content: "";
   position: absolute;
   top: 0;
@@ -734,7 +749,7 @@ html:has(.landing-root) {
 .landing-root .section-title {
   font-family: var(--font-display);
   font-size: clamp(30px, 3.6vw, 46px);
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1.1;
   color: var(--ink);
   max-width: 720px;
@@ -767,17 +782,17 @@ html:has(.landing-root) {
   gap: 18px;
 }
 .landing-root .how-card {
-  background: var(--cream);
-  border: none;
+  background: var(--cream-soft);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: 14px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  box-shadow: none;
   transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s;
 }
 .landing-root .how-card:hover {
-  transform: rotate(-1.5deg) translateY(-5px);
-  box-shadow: 0 12px 32px rgba(247, 107, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(247, 107, 0, 0.1);
 }
 .landing-root .how-card-head {
   background: transparent;
@@ -795,7 +810,7 @@ html:has(.landing-root) {
   right: 18px;
   bottom: 0;
   height: 1px;
-  background: rgba(17, 17, 17, 0.14);
+  background: rgba(17, 17, 17, 0.07);
   pointer-events: none;
 }
 .landing-root .how-card-head-left {
@@ -831,7 +846,7 @@ html:has(.landing-root) {
 .landing-root .how-card-title {
   font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 700;
   color: var(--ink);
   margin-bottom: 10px;
   line-height: 1.25;
@@ -906,7 +921,7 @@ html:has(.landing-root) {
 .landing-root .mini-ai-bubble strong {
   color: var(--orange);
 }
-/* ───── MISSION ───── */
+/* ───── MISSION + TEAM (merged) ───── */
 .landing-root .section-mission {
   background: var(--cream-soft);
   padding-top: 96px;
@@ -918,134 +933,157 @@ html:has(.landing-root) {
   position: relative;
   z-index: 1;
 }
-.landing-root .mission-inner {
+.landing-root .mission-merged {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 64px;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 72px;
   align-items: start;
+  margin-top: 32px;
 }
-.landing-root .mission-founder {
+.landing-root .mission-merged-left {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 14px;
-  position: sticky;
-  top: 100px;
+  gap: 20px;
 }
-.landing-root .mission-photo-wrap {
-  position: relative;
-}
-.landing-root .mission-photo {
-  width: 320px;
-  height: 320px;
-  border-radius: 16px;
-  border: none;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  background: var(--cream-soft);
-}
-.landing-root .mission-photo-badge {
-  position: absolute;
-  bottom: -10px;
-  right: -10px;
-  background: var(--orange);
-  color: var(--white);
+.landing-root .mission-merged-title {
   font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 900;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid var(--cream-dark);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
-}
-.landing-root .mission-founder-name {
-  font-family: var(--font-display);
-  font-size: 18px;
+  font-size: clamp(26px, 2.8vw, 38px);
   font-weight: 800;
+  line-height: 1.2;
   color: var(--ink);
-  line-height: 1.25;
-  margin-top: 6px;
+  letter-spacing: -0.02em;
 }
-.landing-root .mission-founder-role {
-  font-size: 12.5px;
-  color: var(--ink-3);
-  line-height: 1.5;
-  font-weight: 500;
+.landing-root .mission-merged-title em {
+  color: var(--orange);
+  font-style: normal;
 }
-.landing-root .mission-credentials {
-  margin-top: 8px;
+.landing-root .mission-body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+.landing-root .mission-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.landing-root .mission-body-strong {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 16px;
+}
+/* ───── TEAM CARDS ───── */
+.landing-root .mission-merged-team {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.landing-root .mteam-card {
+  background: var(--white);
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+.landing-root .mteam-card.mteam-featured {
+  display: flex;
+  gap: 0;
+}
+.landing-root .mteam-photo {
+  width: 120px;
+  flex-shrink: 0;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.landing-root .mteam-info {
+  padding: 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.landing-root .mission-cred {
+.landing-root .mteam-badge {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 2px;
+}
+.landing-root .mteam-badge-native {
+  color: var(--orange);
+}
+.landing-root .mteam-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
   color: var(--ink);
-  padding: 4px 10px;
-  background: rgba(17, 17, 17, 0.06);
+  line-height: 1.2;
+}
+.landing-root .mteam-role {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+.landing-root .mteam-creds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+.landing-root .mteam-creds span {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: rgba(0,0,0,0.04);
+  padding: 3px 8px;
   border-radius: 4px;
 }
-.landing-root .mission-quote {
+.landing-root .mteam-cred-highlight {
+  background: rgba(247,107,0,0.1) !important;
+  color: var(--orange) !important;
+}
+.landing-root .mteam-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.landing-root .mteam-card.mteam-compact {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+.landing-root .mteam-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-display);
-  font-size: clamp(20px, 2.4vw, 30px);
-  font-weight: 900;
-  line-height: 1.3;
-  color: var(--ink);
-  margin-bottom: 32px;
-  padding: 28px 28px 28px 32px;
-  border-left: 5px solid var(--orange);
-  background: var(--white);
-  border-radius: 0 12px 12px 0;
-  position: relative;
-  letter-spacing: -0.015em;
-}
-.landing-root .mission-quote-body {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-.landing-root .mission-quote .mission-body {
-  font-family: var(--font-body);
-  font-size: 19px;
-  font-weight: 500;
-  color: var(--ink-2);
-  line-height: 1.65;
-  letter-spacing: 0;
-  margin-bottom: 20px;
-}
-.landing-root .mission-quote .mission-body-strong {
-  font-weight: 700;
-  color: var(--ink);
   font-size: 18px;
+  font-weight: 900;
+  color: var(--orange);
+  flex-shrink: 0;
+}
+.landing-root .mteam-avatar-native {
+  background: var(--orange);
+  color: var(--white);
+}
+.landing-root .mteam-card.mteam-compact .mteam-info {
+  padding: 0;
+  gap: 2px;
 }
 .landing-root .mission-cred-highlight {
   background: rgba(247, 107, 0, 0.1) !important;
   border: 1px solid rgba(247, 107, 0, 0.3) !important;
   color: var(--orange) !important;
-}
-.landing-root .mission-quote .orange {
-  color: var(--orange);
-  font-style: normal;
-}
-.landing-root .mission-quote::before {
-  content: "❝";
-  position: absolute;
-  top: 14px;
-  right: 22px;
-  font-size: 56px;
-  color: rgba(247, 107, 0, 0.12);
-  line-height: 1;
-  font-family: var(--font-display);
 }
 /* ───── FAQ ───── */
 .landing-root .section-faq {
@@ -1286,12 +1324,11 @@ html:has(.landing-root) {
   font-family: var(--font-body);
   font-size: 15px;
   letter-spacing: 0.01em;
-  box-shadow: 5px 5px 0 rgba(255, 255, 255, 0.15);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, opacity 0.15s;
 }
 .landing-root .btn-cta:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  opacity: 0.9;
 }
 .landing-root .cta-note {
   margin-top: 22px;
@@ -1447,21 +1484,19 @@ html:has(.landing-root) {
 }
 .landing-root .pricing-card {
   background: var(--cream);
-  border: none;
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: 16px;
   padding: 32px 28px;
   position: relative;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .landing-root .pricing-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.11);
+  transform: translateY(-4px);
 }
 .landing-root .pricing-card.featured {
-  background: var(--ink);
+  background: #2a2a2a;
   border: none;
-  box-shadow: 0 8px 40px rgba(247, 107, 0, 0.3);
+  box-shadow: 0 6px 32px rgba(247, 107, 0, 0.2);
 }
 .landing-root .pricing-badge {
   display: inline-flex;
@@ -2099,8 +2134,8 @@ html:has(.landing-root) {
 /* ───── PHRASE MARQUEE (restored) ───── */
 .landing-root .phrase-marquee {
   background: var(--cream);
-  border-top: 1px solid rgba(17, 17, 17, 0.06);
-  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+  border-top: none;
+  border-bottom: none;
   padding: 0;
   position: relative;
   overflow: hidden;
@@ -2208,60 +2243,184 @@ html:has(.landing-root) {
 /* ───── STATS STRIP ───── */
 .landing-root .stats-strip {
   background: var(--cream);
-  border-top: 1px solid rgba(17, 17, 17, 0.07);
-  border-bottom: 1px solid rgba(17, 17, 17, 0.07);
-  padding-top: 36px;
-  padding-bottom: 36px;
+  border-top: none;
+  border-bottom: none;
+  padding: 48px max(40px, calc((100% - 1440px) / 2));
+  position: relative;
+  z-index: 2;
+}
+.landing-root .stats-strip-inner {
+  max-width: 860px;
+  margin: 0 auto;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: 0;
 }
 .landing-root .stat-item {
   flex: 1;
-  min-width: 160px;
-  max-width: 260px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 24px;
   text-align: center;
-  position: relative;
-}
-.landing-root .stat-item + .stat-item::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 20%;
-  bottom: 20%;
-  width: 1px;
-  background: rgba(17, 17, 17, 0.12);
+  padding: 0 32px;
+  gap: 6px;
 }
 .landing-root .stat-num {
   font-family: var(--font-display);
-  font-size: 52px;
-  font-weight: 600;
+  font-size: 48px;
+  font-weight: 800;
   color: var(--orange);
   line-height: 1;
-  letter-spacing: -0.04em;
-  margin-bottom: 8px;
+  letter-spacing: -0.03em;
+  display: inline-block;
 }
 .landing-root .stat-label {
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--ink-2);
-  line-height: 1.45;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin-top: 2px;
 }
-.landing-root .stat-sub {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 4px;
+.landing-root .stat-sub-note {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 400;
 }
+.landing-root .stat-badge {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.landing-root .stat-divider {
+  width: 1px;
+  height: 52px;
+  background: rgba(17, 17, 17, 0.1);
+  flex-shrink: 0;
+}
+.landing-root .stat-num-done {
+  animation: stat-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes stat-pop {
+  0%   { transform: scale(1);    }
+  45%  { transform: scale(1.22); }
+  75%  { transform: scale(0.96); }
+  100% { transform: scale(1);    }
+}
+@media (max-width: 640px) {
+  .landing-root .stats-strip-inner {
+    flex-direction: column;
+    gap: 28px;
+  }
+  .landing-root .stat-divider {
+    width: 48px;
+    height: 1px;
+  }
+}
+/* ───── FORMULA INFOGRAPHIC ───── */
+.landing-root .section-formula {
+  background: var(--white);
+  padding-top: 64px;
+  padding-bottom: 72px;
+  padding-left: max(40px, calc((100% - 1440px) / 2));
+  padding-right: max(40px, calc((100% - 1440px) / 2));
+}
+.landing-root .formula-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.landing-root .formula-item {
+  flex: 1;
+  min-width: 180px;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px;
+  gap: 10px;
+}
+.landing-root .formula-icon {
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.landing-root .formula-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.landing-root .formula-desc {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+.landing-root .formula-op {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--orange);
+  padding: 0 8px;
+  flex-shrink: 0;
+  align-self: center;
+  padding-bottom: 30px;
+}
+.landing-root .formula-eq {
+  font-size: 40px;
+}
+.landing-root .formula-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 24px;
+  min-width: 140px;
+}
+.landing-root .formula-logo {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+.landing-root .formula-result-label {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+@media (max-width: 900px) {
+  .landing-root .formula-inner {
+    gap: 0;
+  }
+  .landing-root .formula-op {
+    font-size: 24px;
+    padding: 0 4px;
+  }
+}
+@media (max-width: 600px) {
+  .landing-root .formula-inner {
+    flex-direction: column;
+    gap: 0;
+  }
+  .landing-root .formula-op {
+    transform: rotate(90deg);
+    padding: 4px 0;
+  }
+  .landing-root .formula-item {
+    max-width: 100%;
+  }
+}
+
 /* ───── PAIN BLOCK ───── */
 .landing-root .section-pain {
   background: var(--cream-soft);
@@ -2281,8 +2440,8 @@ html:has(.landing-root) {
 .landing-root .pain-card {
   background: var(--white);
   border-radius: 14px;
-  padding: 30px 28px;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+  padding: 28px 24px;
+  border: 1px solid rgba(0,0,0,0.05);
   height: 100%;
   box-sizing: border-box;
 }
@@ -2290,37 +2449,24 @@ html:has(.landing-root) {
   font-size: 28px;
   margin-bottom: 14px;
 }
-.landing-root .pain-num {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--orange);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  display: block;
-}
 .landing-root .pain-title {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--ink);
-  margin-bottom: 8px;
-  line-height: 1.3;
+  margin-bottom: 12px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 .landing-root .pain-body {
   font-size: 15.5px;
-  color: var(--ink);
+  color: var(--ink-2);
   line-height: 1.6;
 }
-.landing-root .pain-arrow {
-  text-align: center;
-  margin-top: 40px;
-  font-size: 15px;
-  color: var(--ink-2);
-}
-.landing-root .pain-arrow strong {
-  color: var(--ink);
+.landing-root .pain-cta-wrap {
+  margin-top: 44px;
+  display: flex;
+  justify-content: center;
 }
 /* ───── TEACHERS ───── */
 .landing-root .section-teachers {
@@ -2342,14 +2488,13 @@ html:has(.landing-root) {
   background: var(--cream);
   border-radius: 16px;
   padding: 28px 24px;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(0,0,0,0.04);
+  transition: transform 0.2s;
   height: 100%;
   box-sizing: border-box;
 }
 .landing-root .teacher-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.09);
+  transform: translateY(-3px);
 }
 .landing-root .teacher-avatar {
   width: 64px;
@@ -2444,27 +2589,64 @@ html:has(.landing-root) {
   background: var(--cream-soft);
   padding-top: 80px;
   padding-bottom: 90px;
+  overflow: hidden;
 }
 .landing-root .section-reviews > * {
   position: relative;
   z-index: 1;
 }
-.landing-root .reviews-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+.landing-root .reviews-marquee {
+  position: relative;
+  overflow: hidden;
   margin-top: 40px;
+  margin-left: calc(-1 * max(40px, calc((100% - 1440px) / 2)));
+  margin-right: calc(-1 * max(40px, calc((100% - 1440px) / 2)));
+}
+.landing-root .reviews-marquee::before,
+.landing-root .reviews-marquee::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  z-index: 2;
+  pointer-events: none;
+}
+.landing-root .reviews-marquee::before {
+  left: 0;
+  background: linear-gradient(to right, var(--cream-soft), rgba(251,248,242,0));
+}
+.landing-root .reviews-marquee::after {
+  right: 0;
+  background: linear-gradient(to left, var(--cream-soft), rgba(251,248,242,0));
+}
+.landing-root .reviews-marquee-track {
+  display: flex;
+  gap: 16px;
+  padding: 8px max(40px, calc((100vw - 1440px) / 2));
+  animation: reviews-scroll 40s linear infinite;
+  animation-play-state: running !important;
+  min-width: max-content;
+}
+.landing-root .reviews-marquee:hover .reviews-marquee-track,
+.landing-root .reviews-marquee-track:hover {
+  animation-play-state: running !important;
+}
+@keyframes reviews-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 .landing-root .review-card {
   background: var(--white);
   border-radius: 14px;
-  padding: 26px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 22px 22px;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  height: 100%;
-  box-sizing: border-box;
+  gap: 12px;
+  flex-shrink: 0;
+  width: 300px;
 }
 .landing-root .review-stars {
   display: flex;
@@ -2490,30 +2672,14 @@ html:has(.landing-root) {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-.landing-root .review-initials {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--orange);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 900;
-  flex-shrink: 0;
+  padding-top: 4px;
+  border-top: 1px solid rgba(0,0,0,0.06);
 }
 .landing-root .review-name {
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;
-  color: var(--ink);
-}
-.landing-root .review-meta {
-  font-size: 12px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .landing-root .reviews-note {
   margin-top: 24px;
@@ -2686,7 +2852,6 @@ html:has(.landing-root) {
     padding: 0 28px;
   }
   .landing-root .teachers-grid,
-  .landing-root .reviews-grid,
   .landing-root .pain-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -2715,25 +2880,19 @@ html:has(.landing-root) {
   .landing-root .how-grid {
     grid-template-columns: 1fr 1fr;
   }
-  .landing-root .mission-inner,
+  .landing-root .mission-merged {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
   .landing-root .faq-inner {
     grid-template-columns: 1fr;
     gap: 36px;
   }
-  .landing-root .mission-founder,
   .landing-root .faq-aside {
     position: static;
-    flex-direction: row;
-    align-items: center;
-    text-align: left;
   }
-  .landing-root .mission-photo {
-    width: 140px;
-    height: 140px;
-    flex-shrink: 0;
-  }
-  .landing-root .mission-photo-badge {
-    display: none;
+  .landing-root .mteam-photo {
+    width: 90px;
   }
   .landing-root .proof-strip {
     gap: 32px;
@@ -2764,7 +2923,6 @@ html:has(.landing-root) {
     font-size: clamp(30px, 8vw, 40px);
   }
   .landing-root .teachers-grid,
-  .landing-root .reviews-grid,
   .landing-root .pain-grid {
     grid-template-columns: 1fr;
   }
@@ -2783,7 +2941,7 @@ html:has(.landing-root) {
   .landing-root .pricing-grid {
     grid-template-columns: 1fr;
   }
-  .landing-root .mission-stats {
+  .landing-root .mteam-row {
     grid-template-columns: 1fr;
   }
   .landing-root .proof-divider {

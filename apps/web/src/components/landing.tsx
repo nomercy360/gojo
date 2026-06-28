@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const PHRASES = [
-  "приобщиться к культуре Японии.",
   "смотреть мангу и аниме в оригинале.",
+  "приобщиться к культуре Японии.",
   "учиться и жить в Японии.",
-  "путешествовать по Японии самостоятельно.",
 ];
 
 /**
@@ -69,6 +68,44 @@ export function Landing() {
   const [intercomOpen, setIntercomOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
+  const [studentsCount, setStudentsCount] = useState(0);
+  const [yearsCount, setYearsCount] = useState(0);
+  const [statsDone, setStatsDone] = useState(false);
+  const statsRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+    let raf: number;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) {
+          cancelAnimationFrame(raf);
+          setStudentsCount(0);
+          setYearsCount(0);
+          setStatsDone(false);
+          return;
+        }
+        setStatsDone(false);
+        const duration = 1600;
+        const start = Date.now();
+        const tick = () => {
+          const t = Math.min((Date.now() - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          setStudentsCount(Math.round(ease * 112));
+          if (t < 1) {
+            raf = requestAnimationFrame(tick);
+          } else {
+            setStatsDone(true);
+          }
+        };
+        raf = requestAnimationFrame(tick);
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(el);
+    return () => { observer.disconnect(); cancelAnimationFrame(raf); };
+  }, []);
 
   const openModal = () => setBookingOpen(true);
   const closeModal = () => setBookingOpen(false);
@@ -125,12 +162,12 @@ export function Landing() {
     <div className="landing-root">
       <nav>
         <a href="#" className="nav-logo">
-          <img className="nav-logo-img" src="/landing/logo.webp" alt="Gojo Learn" />
-          <span className="nav-logo-sub">Школа японского</span>
+          <img className="nav-logo-img" src="/landing/logo.png" alt="Gojo Learn" />
+          <span className="nav-logo-sub">Школа японского языка</span>
         </a>
         <div className="nav-links">
           <a href="#mission" className="nav-link">
-            Миссия
+            Команда
           </a>
           <a href="#how" className="nav-link">
             Как работает
@@ -138,11 +175,11 @@ export function Landing() {
           <a href="#pricing" className="nav-link">
             Цены
           </a>
-          <a href="#teachers" className="nav-link">
-            Преподаватели
-          </a>
           <a href="#faq" className="nav-link">
             Вопросы
+          </a>
+          <a href="/dashboard" className="nav-link">
+            Личный кабинет
           </a>
           <a
             href="#"
@@ -164,27 +201,19 @@ export function Landing() {
           </button>
         </div>
         <div className={`nav-mobile ${navOpen ? "open" : ""}`}>
-          <a href="#mission" onClick={() => setNavOpen(false)}>
-            Наша миссия
-          </a>
-          <a href="#how" onClick={() => setNavOpen(false)}>
-            Как это работает
-          </a>
-          <a href="#pricing" onClick={() => setNavOpen(false)}>
-            Цены
-          </a>
-          <a href="#faq" onClick={() => setNavOpen(false)}>
-            Вопросы
-          </a>
+          <a href="#mission" onClick={() => setNavOpen(false)}>Команда</a>
+          <a href="#how" onClick={() => setNavOpen(false)}>Как работает</a>
+          <a href="#pricing" onClick={() => setNavOpen(false)}>Цены</a>
+          <a href="#faq" onClick={() => setNavOpen(false)}>Вопросы</a>
         </div>
       </nav>
 
       <section className="hero">
         <div className="hero-content">
           <div className="hero-brand">
-            <img className="hero-brand-logo" src="/landing/logo.webp" alt="Gojo Learn" />
+            <img className="hero-brand-logo" src="/landing/logo.png" alt="Gojo Learn" />
             <span className="hero-brand-divider" />
-            <span className="hero-brand-tag">Школа японского языка</span>
+            <span className="hero-brand-tag">Школа японского языка<br />нового поколения</span>
           </div>
           <h1 className="hero-title">
             Японский,
@@ -349,177 +378,7 @@ export function Landing() {
         </div>
       </div>
 
-      <section className="stats-strip">
-        <div className="stat-item">
-          <div className="stat-num">15</div>
-          <div className="stat-label">
-            лет суммарного
-            <br />
-            опыта преподавания
-          </div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-num">241</div>
-          <div className="stat-label">
-            ученик
-            <br />
-            прошли обучение
-          </div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-num">72%</div>
-          <div className="stat-label">
-            успешно переходят
-            <br />
-            на следующий уровень
-          </div>
-        </div>
-      </section>
-
-      <section className="section-mission" id="mission">
-        <div className="section-label">Наша миссия</div>
-        <div className="mission-inner">
-          <div className="mission-founder">
-            <img className="mission-photo" src="/founder.png" alt="Руслан Рустаев" />
-            <div>
-              <div className="mission-founder-name">Руслан Рустаев</div>
-              <div className="mission-founder-role">Со-основатель Gojo Learn</div>
-            </div>
-            <div className="mission-credentials">
-              <div className="mission-cred">МГУ · фак. Японии</div>
-              <div className="mission-cred">Переводчик «Газпром»</div>
-              <div className="mission-cred">Автор изд. «Бомбора»</div>
-              <div className="mission-cred mission-cred-highlight">
-                ⭐ Топ-преподаватель на Profi.ru
-              </div>
-            </div>
-          </div>
-
-          <div className="mission-content">
-            <div className="mission-quote">
-              Японский — сложный. Но путь до результата может быть понятным.
-              <div className="mission-quote-body">
-                <p className="mission-body">
-                  Gojo — школа для тех, кто хочет не просто «учить японский», а{" "}
-                  <strong>реально им пользоваться</strong>: переехать, работать, смотреть аниме без
-                  субтитров.
-                </p>
-                <p className="mission-body mission-body-strong">
-                  Потому что нам важен ваш результат, а не просто оплата.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-reviews">
-        <div className="section-label">Отзывы</div>
-        <h2 className="section-title">
-          Что говорят
-          <br />
-          наши <em>ученики</em>
-        </h2>
-
-        <div className="reviews-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-          <div className="review-card">
-            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
-            <div className="review-text">
-              Занимаюсь японским для себя, ранее никогда не сталкивалась со сложными языками. Мне
-              очень нравится подход специалиста, буду обязательно совершенствовать свои знания с его
-              помощью!!!
-            </div>
-            <div className="review-author">
-              <div className="review-initials">О</div>
-              <div>
-                <div className="review-name">Ольга</div>
-                <div className="review-meta">Японский язык</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="review-card">
-            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
-            <div className="review-text">
-              Прошло уже пять занятий, за это время мы освоили хирагану и катакану, учимся
-              составлять простые японские предложения, учим связки. Я уже знаю, как
-              здороваться-прощаться, смогу просить «как дела» и «как твоё здоровье?», сказать, что
-              «я из России» и даже первые иероглифы изучила!
-            </div>
-            <div className="review-author">
-              <div className="review-initials">П</div>
-              <div>
-                <div className="review-name">Полина</div>
-                <div className="review-meta">Японский язык</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="review-card">
-            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
-            <div className="review-text">
-              Спасибо за профессионализм, высокий уровень знания языка, открытость и
-              доброжелательность! Очень понятные объяснения, позитив и прогресс в изучении языка :)
-              Рекомендую!
-            </div>
-            <div className="review-author">
-              <div className="review-initials">D</div>
-              <div>
-                <div className="review-name">Dmitry</div>
-                <div className="review-meta">Японский язык</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="review-card">
-            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
-            <div className="review-text">
-              Прекрасный преподаватель и педагог. Видно, что человек не только прекрасно знает язык,
-              но и умеет правильно его преподавать. Даже самые трудные моменты кажутся простыми и
-              интересными.
-            </div>
-            <div className="review-author">
-              <div className="review-initials">А</div>
-              <div>
-                <div className="review-name">Артём</div>
-                <div className="review-meta">Японский язык</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="review-card">
-            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
-            <div className="review-text">
-              Начала заниматься японским для себя, занятия проходят очень комфортно, интересно и
-              легко. Каждое занятие получаю много новой информации и знаний.
-            </div>
-            <div className="review-author">
-              <div className="review-initials">А</div>
-              <div>
-                <div className="review-name">Алина</div>
-                <div className="review-meta">Японский язык</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="review-card">
-            <div className="review-stars">{[...Array(5)].map((_, i) => (<svg key={i} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
-            <div className="review-text">
-              Всем настоятельно рекомендую. Специалист очень высокого класса и профессионал своего
-              дела.
-            </div>
-            <div className="review-author">
-              <div className="review-initials">С</div>
-              <div>
-                <div className="review-name">Степан</div>
-                <div className="review-meta">Японский язык</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="reviews-note">Отзывы учеников Руслана Рустаева</div>
-      </section>
-
+      {/* ① PAIN — второй экран, сразу после hero */}
       <section className="section-pain">
         <div className="section-label">Узнаёшь себя?</div>
         <h2 className="section-title">
@@ -529,7 +388,6 @@ export function Landing() {
         </h2>
         <div className="pain-grid">
           <div className="pain-card">
-            <div className="pain-num">01 — Проблема</div>
             <div className="pain-title">Хаос без системы</div>
             <div className="pain-body">
               Начал с Duolingo, перешёл на YouTube, купил учебник. Полгода прошло — ни один диалог
@@ -537,7 +395,6 @@ export function Landing() {
             </div>
           </div>
           <div className="pain-card">
-            <div className="pain-num">02 — Проблема</div>
             <div className="pain-title">Учишь, но не говоришь</div>
             <div className="pain-body">
               Слова знаешь, грамматику понимаешь — но в разговоре теряешься. Приложения не учат
@@ -545,7 +402,6 @@ export function Landing() {
             </div>
           </div>
           <div className="pain-card">
-            <div className="pain-num">03 — Проблема</div>
             <div className="pain-title">Прогресс незаметен</div>
             <div className="pain-body">
               Занимаешься несколько месяцев, но не понимаешь, на каком ты уровне и куда двигаться
@@ -553,12 +409,18 @@ export function Landing() {
             </div>
           </div>
         </div>
-        <div className="pain-arrow">
-          Gojo решает всё это сразу —{" "}
-          <strong>живые уроки + система + AI-практика каждый день.</strong>
+        <div className="pain-cta-wrap">
+          <a
+            href="#"
+            className="btn-primary"
+            onClick={(e) => { e.preventDefault(); openModal(); }}
+          >
+            Начать по-другому →
+          </a>
         </div>
       </section>
 
+      {/* ② HOW IT WORKS — решение сразу после боли */}
       <section className="section-how" id="how">
         <div className="section-label">Процесс</div>
         <h2 className="section-title">Как это работает</h2>
@@ -568,153 +430,12 @@ export function Landing() {
             <div className="how-card-head">
               <div className="how-card-head-left">
                 <span className="how-card-step">Шаг 01</span>
-                <span className="how-card-head-label">
-                  <span className="accent">Старт</span>
-                </span>
+                <span className="how-card-head-label"><span className="accent">Старт</span></span>
               </div>
-              <span className="how-card-kanji">始</span>
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Определи свой уровень</div>
-              <div className="how-card-text">
-                Короткий тест — 10 минут, и мы знаем с чего начать.
-              </div>
-
-              <div
-                className="how-card-visual"
-                style={{
-                  padding: "0",
-                  overflow: "hidden",
-                  background: "var(--white)",
-                  borderRadius: "12px",
-                  border: "1px solid rgba(0,0,0,0.07)",
-                }}
-              >
-                <div
-                  style={{
-                    background: "var(--ink)",
-                    borderBottom: "1px solid rgba(255,255,255,0.06)",
-                    padding: "10px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "600",
-                      letterSpacing: "0.02em",
-                      textTransform: "uppercase",
-                      color: "rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    Результат теста
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "700",
-                      color: "var(--orange)",
-                    }}
-                  >
-                    ✓ Завершён
-                  </span>
-                </div>
-                <div
-                  style={{
-                    padding: "12px 14px 8px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    borderBottom: "1px solid rgba(0,0,0,0.06)",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "10px",
-                      background: "var(--orange)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: "0",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontSize: "18px",
-                        fontWeight: "900",
-                        color: "var(--white)",
-                      }}
-                    >
-                      N5
-                    </span>
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "13px",
-                        fontWeight: "800",
-                        color: "var(--ink)",
-                      }}
-                    >
-                      Начальный уровень
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "10px",
-                        color: "var(--ink-3)",
-                        fontWeight: "500",
-                        marginTop: "2px",
-                      }}
-                    >
-                      Хирагана · базовая лексика
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    margin: "0 14px 12px",
-                    padding: "8px 10px",
-                    background: "rgba(247,107,0,0.08)",
-                    borderLeft: "3px solid var(--orange)",
-                    borderRadius: "0 6px 6px 0",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "700",
-                      color: "var(--orange)",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      marginBottom: "3px",
-                    }}
-                  >
-                    Рекомендация
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "11px",
-                      color: "var(--ink-2)",
-                      lineHeight: "1.45",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Группа N5 · старт с катаканы и базовых глаголов
-                  </div>
-                </div>
-              </div>
+              <div className="how-card-text">Короткий тест — 10 минут, и мы знаем с чего начать.</div>
             </div>
           </div>
 
@@ -724,133 +445,10 @@ export function Landing() {
                 <span className="how-card-step">Шаг 02</span>
                 <span className="how-card-head-label">Уроки</span>
               </div>
-              <span className="how-card-kanji">話</span>
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Живые занятия от 2×/нед</div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "5px",
-                  marginBottom: "14px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "14px", flexShrink: "0" }}>👤</span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "14.5px",
-                      color: "var(--ink-2)",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Индивидуально —{" "}
-                    <span style={{ color: "var(--orange)", fontWeight: "700" }}>
-                      для быстрого прогресса
-                    </span>
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "14px", flexShrink: "0" }}>👥</span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "14.5px",
-                      color: "var(--ink-2)",
-                      fontWeight: "500",
-                    }}
-                  >
-                    В группе — до 8 человек
-                  </span>
-                </div>
-              </div>
-
-              <div
-                className="how-card-visual"
-                style={{
-                  padding: "12px 14px",
-                  background: "var(--white)",
-                  borderRadius: "12px",
-                  border: "1px solid rgba(0,0,0,0.07)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: "6px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "11px",
-                      color: "var(--ink-3)",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Занятость группы
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "11px",
-                      color: "var(--orange)",
-                      fontWeight: "700",
-                    }}
-                  >
-                    5/8 мест
-                  </div>
-                </div>
-                <div className="mini-bar-wrap">
-                  <div className="mini-bar" style={{ width: "62.5%" }} />
-                </div>
-                <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
-                  <button
-                    type="button"
-                    style={{
-                      flex: "1",
-                      padding: "7px 6px",
-                      background: "var(--cream)",
-                      border: "1.5px solid var(--ink)",
-                      borderRadius: "6px",
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "700",
-                      color: "var(--ink)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <span>📅</span> В календарь
-                  </button>
-                  <button
-                    type="button"
-                    style={{
-                      flex: "1",
-                      padding: "7px 6px",
-                      background: "var(--orange)",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "700",
-                      color: "var(--white)",
-                      cursor: "pointer",
-                      boxShadow: "2px 2px 0 rgba(0,0,0,0.2)",
-                    }}
-                  >
-                    Присоединиться →
-                  </button>
-                </div>
-              </div>
+              <div className="how-card-text">Индивидуально или в группе до 8 человек — с живым преподавателем.</div>
             </div>
           </div>
 
@@ -860,137 +458,10 @@ export function Landing() {
                 <span className="how-card-step">Шаг 03</span>
                 <span className="how-card-head-label">AI‑практика</span>
               </div>
-              <span className="how-card-kanji">練</span>
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Тренировки каждый день</div>
-              <div className="how-card-text">
-                Карточки, диалоги и разбор ошибок — между уроками.
-              </div>
-              <div
-                className="how-card-visual"
-                style={{
-                  background: "var(--white)",
-                  borderRadius: "12px",
-                  border: "1px solid rgba(0,0,0,0.07)",
-                  padding: "14px",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <div
-                      style={{
-                        background: "var(--orange)",
-                        color: "var(--white)",
-                        padding: "8px 13px",
-                        borderRadius: "14px 14px 4px 14px",
-                        fontFamily: "var(--font-body)",
-                        fontSize: "12.5px",
-                        fontWeight: "500",
-                        maxWidth: "80%",
-                      }}
-                    >
-                      Как сказать «Я устал»?
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: "7px" }}>
-                    <div
-                      style={{
-                        background: "var(--cream-dark)",
-                        padding: "8px 13px",
-                        borderRadius: "14px 14px 14px 4px",
-                        fontFamily: "var(--font-body)",
-                        fontSize: "12.5px",
-                        color: "var(--ink)",
-                        maxWidth: "80%",
-                      }}
-                    >
-                      <span style={{ fontSize: "15px", fontWeight: "700" }}>疲れました</span>
-                      <br />
-                      <span style={{ fontSize: "11px", color: "var(--ink-3)", fontWeight: "500" }}>
-                        tsuka-re-ma-shi-ta · устал(а)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: "12px",
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    background: "var(--white)",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    padding: "10px 12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "22px",
-                      fontWeight: "900",
-                      color: "var(--ink)",
-                      lineHeight: "1",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    247 <span style={{ color: "var(--orange)", fontSize: "14px" }}>слов</span>
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "600",
-                      color: "var(--ink-3)",
-                      textTransform: "uppercase",
-                      marginTop: "4px",
-                    }}
-                  >
-                    Выучено
-                  </div>
-                </div>
-                <div
-                  style={{
-                    background: "var(--white)",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    padding: "10px 12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "22px",
-                      fontWeight: "900",
-                      color: "var(--ink)",
-                      lineHeight: "1",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    12 <span style={{ color: "var(--orange)", fontSize: "14px" }}>дней</span>
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "600",
-                      color: "var(--ink-3)",
-                      textTransform: "uppercase",
-                      marginTop: "4px",
-                    }}
-                  >
-                    Подряд 🔥
-                  </div>
-                </div>
-              </div>
+              <div className="how-card-text">Карточки, диалоги и разбор ошибок — между уроками, каждый день.</div>
             </div>
           </div>
 
@@ -998,245 +469,118 @@ export function Landing() {
             <div className="how-card-head">
               <div className="how-card-head-left">
                 <span className="how-card-step">Шаг 04</span>
-                <span className="how-card-head-label">
-                  <span className="accent">Результат</span>
-                </span>
+                <span className="how-card-head-label"><span className="accent">Результат</span></span>
               </div>
-              <span className="how-card-kanji">達</span>
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Реальный уровень языка</div>
-              <div className="how-card-text">
-                Ты доходишь до точки, где язык работает на тебя — без скуки.
-              </div>
-              <div
-                className="how-card-visual"
-                style={{
-                  padding: "0",
-                  overflow: "hidden",
-                  background: "var(--white)",
-                  borderRadius: "12px",
-                  border: "1px solid rgba(0,0,0,0.07)",
-                }}
-              >
-                <div
-                  style={{
-                    background: "linear-gradient(120deg,#1a1a1a 60%,#2d1a00 100%)",
-                    padding: "16px 16px 14px",
-                    position: "relative",
-                    overflow: "hidden",
-                    borderRadius: "12px 12px 0 0",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "10px",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      color: "rgba(255,255,255,0.5)",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Через 8 месяцев
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "22px",
-                      fontWeight: "900",
-                      color: "var(--white)",
-                      lineHeight: "1.15",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    Средний
-                    <br />
-                    <span style={{ color: "var(--orange)" }}>уровень</span>
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "11px",
-                      fontWeight: "500",
-                      color: "rgba(255,255,255,0.55)",
-                      marginTop: "6px",
-                    }}
-                  >
-                    соответствует JLPT{" "}
-                    <span style={{ color: "var(--orange)", fontSize: "12px" }}>N3</span>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    padding: "12px 14px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "7px",
-                    borderBottom: "1px solid rgba(0,0,0,0.06)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "5px",
-                        background: "rgba(247,107,0,0.12)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "11px",
-                        flexShrink: "0",
-                      }}
-                    >
-                      🗣
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "11.5px",
-                        color: "var(--ink-2)",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Может говорить на бытовые темы
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "5px",
-                        background: "rgba(247,107,0,0.12)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "11px",
-                        flexShrink: "0",
-                      }}
-                    >
-                      📖
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "11.5px",
-                        color: "var(--ink-2)",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Переводит новости и простые тексты
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "5px",
-                        background: "rgba(247,107,0,0.12)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "11px",
-                        flexShrink: "0",
-                      }}
-                    >
-                      🎌
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "11.5px",
-                        color: "var(--ink-2)",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Смотрит аниме без субтитров
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <div className="how-card-text">Ты доходишь до точки, где язык работает на тебя — без скуки.</div>
             </div>
-          </div>
-        </div>
-
-        <div className="video-placeholder">
-          <div className="video-placeholder-bg" />
-          <div className="video-placeholder-content">
-            <div className="video-play-btn">▶</div>
-            <div className="video-placeholder-title">Как выглядит урок в Gojo</div>
-            <div className="video-placeholder-sub">
-              Демо-видео скоро появится здесь · 2–3 минуты
-            </div>
-          </div>
-        </div>
-
-        <div className="how-aio">
-          <div className="how-aio-left">
-            <div className="how-aio-label">Платформа</div>
-            <div className="how-aio-title">
-              Один кабинет — <span>всё внутри</span>
-            </div>
-            <div className="how-aio-body">
-              Не нужно скакать между Zoom, Telegram, Google Drive и Anki. Уроки, записи, ДЗ,
-              AI-практика и чат с преподавателем — в одном окне.
-            </div>
-          </div>
-          <div className="how-aio-chips">
-            <span className="how-aio-chip">🎥 Живые уроки</span>
-            <span className="how-aio-chip">📂 Записи уроков</span>
-            <span className="how-aio-chip">📚 Материалы</span>
-            <span className="how-aio-chip">📤 Загрузка ДЗ</span>
-            <span className="how-aio-chip">🤖 AI-практика</span>
-            <span className="how-aio-chip">📈 Прогресс</span>
-            <span className="how-aio-chip">💬 Чат с сенсеем</span>
           </div>
         </div>
       </section>
 
-      <section
-        className="section-how"
-        style={{ paddingTop: "0", paddingBottom: "64px", background: "var(--white)" }}
-      >
-        <div className="guide-banner">
-          <div className="guide-cover">
-            <div className="guide-cover-jp">日本語</div>
-            <div className="guide-cover-text">
-              Gojo Learn
-              <br />
-              Free Guide
+      {/* ③ STATS — первое доказательство после объяснения */}
+      <section className="stats-strip" ref={statsRef}>
+        <div className="stats-strip-inner">
+          <div className="stat-item">
+            <div className={`stat-num${statsDone ? " stat-num-done" : ""}`}>
+              {studentsCount > 0 ? studentsCount : "112"}
             </div>
+            <div className="stat-label">довольных учеников</div>
           </div>
-          <div className="guide-body">
-            <div className="guide-title">
-              Бесплатный гайд:
-              <br />
-              <em>система японского от N5 до N3</em>
+          <div className="stat-divider" />
+          <div className="stat-item">
+            <div className="stat-badge">Используем ИИ</div>
+            <div className="stat-label">вас тренируют несколько моделей и агентов между уроками</div>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat-item">
+            <div className="stat-badge">Инновационная подача</div>
+            <div className="stat-label">аниме, манга и живые уроки</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ④ REVIEWS — подтверждение после доказательств */}
+      <section className="section-reviews">
+        <div className="section-label">Отзывы</div>
+        <h2 className="section-title">
+          Что говорят
+          <br />
+          наши <em>ученики</em>
+        </h2>
+        <div className="reviews-marquee">
+          <div className="reviews-marquee-track">
+            {[
+              { name: "Александр", text: "Руслан очень систематизировано и методично даёт материал, который хорошо укладывается в памяти. Владение языком «живое» — мы изучаем не просто учебник, а то, как говорят в реальной жизни. ありがとう, Руслан!" },
+              { name: "Полина", text: "Прошло пять занятий — освоили хирагану, катакану, первые иероглифы. Руслан всегда может рассказать про японскую культуру и историю, это для меня было очень важно при выборе сенсея. どうもありがとう!" },
+              { name: "Зоя", text: "Искала репетитора для сына — он любит аниме. Провели 2 занятия, и я уже уверена, что продолжим. Настолько заинтересованным своего ребёнка я давно не видела. Удивительно, как молодой человек умеет увлечь и замотивировать." },
+              { name: "Сергей", text: "Умеет заинтересовать в предмете. Сразу был составлен план занятий и программа. Руслан прекрасно понимает особенности мышления нашего поколения и знает к нему подход." },
+              { name: "Анастасия", text: "На вводном уроке обсудили цели, подготовили план работы. Атмосфера приятная и дружелюбная, материал подаётся доступно и структурировано. Сразу видно — профессионал. Точно рекомендую!" },
+              { name: "Надежда", text: "Понял запрос, подстроился под меня. Доступно объясняет, держит нужный темп. Видно, что преподаёт с удовольствием и работает именно на результат." },
+            ].concat([
+              { name: "Александр", text: "Руслан очень систематизировано и методично даёт материал, который хорошо укладывается в памяти. Владение языком «живое» — мы изучаем не просто учебник, а то, как говорят в реальной жизни. ありがとう, Руслан!" },
+              { name: "Полина", text: "Прошло пять занятий — освоили хирагану, катакану, первые иероглифы. Руслан всегда может рассказать про японскую культуру и историю, это для меня было очень важно при выборе сенсея. どうもありがとう!" },
+              { name: "Зоя", text: "Искала репетитора для сына — он любит аниме. Провели 2 занятия, и я уже уверена, что продолжим. Настолько заинтересованным своего ребёнка я давно не видела. Удивительно, как молодой человек умеет увлечь и замотивировать." },
+              { name: "Сергей", text: "Умеет заинтересовать в предмете. Сразу был составлен план занятий и программа. Руслан прекрасно понимает особенности мышления нашего поколения и знает к нему подход." },
+              { name: "Анастасия", text: "На вводном уроке обсудили цели, подготовили план работы. Атмосфера приятная и дружелюбная, материал подаётся доступно и структурировано. Сразу видно — профессионал. Точно рекомендую!" },
+              { name: "Надежда", text: "Понял запрос, подстроился под меня. Доступно объясняет, держит нужный темп. Видно, что преподаёт с удовольствием и работает именно на результат." },
+            ]).map((r, i) => (
+              <div className="review-card" key={i}>
+                <div className="review-stars">
+                  {[...Array(5)].map((_, j) => (
+                    <svg key={j} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  ))}
+                </div>
+                <div className="review-text">{r.text}</div>
+                <div className="review-author">
+                  <div className="review-name">{r.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ⑤ TEAM — доверие перед ценами */}
+      <section className="section-mission" id="mission">
+        <div className="section-label">Команда</div>
+        <div className="mission-merged">
+          {/* Left: quote */}
+          <div className="mission-merged-left">
+            <h2 className="mission-merged-title">
+              Японский — сложный.<br />
+              Но путь до результата<br />
+              <em>может быть понятным.</em>
+            </h2>
+            <p className="mission-body">
+              Gojo — школа для тех, кто хочет не просто «учить японский», а{" "}
+              <strong>реально им пользоваться</strong>: переехать, работать, смотреть аниме без субтитров.
+            </p>
+            <p className="mission-body mission-body-strong">
+              Потому что нам важен ваш результат, а не просто оплата.
+            </p>
+          </div>
+
+          {/* Right: team */}
+          <div className="mission-merged-team">
+            {/* Ruslan — founder, featured */}
+            <div className="mteam-card mteam-featured">
+              <img className="mteam-photo" src="/founder.png" alt="Руслан Рустаев" />
+              <div className="mteam-info">
+                <div className="mteam-badge">Со-основатель</div>
+                <div className="mteam-name">Руслан Рустаев</div>
+                <div className="mteam-role">Москва · Школа Gojo</div>
+                <div className="mteam-creds">
+                  <span>МГУ · фак. Японии</span>
+                  <span>Переводчик «Газпром»</span>
+                  <span>Автор изд. «Бомбора»</span>
+                  <span className="mteam-cred-highlight">⭐ Топ-преподаватель Profi.ru</span>
+                </div>
+              </div>
             </div>
-            <div className="guide-desc">
-              Программа Genki + манга + AI-практика + карточки кандзи. Описание уровней, схема по
-              неделям, примеры диалогов с Claude, команда преподавателей.
-            </div>
-            <div className="guide-tags">
-              <span className="guide-tag">N5 → N4 → N3</span>
-              <span className="guide-tag">Genki + Tobira</span>
-              <span className="guide-tag">AI Claude 4</span>
-              <span className="guide-tag">Карточки кандзи</span>
-              <span className="guide-tag">Манга и аниме</span>
-            </div>
-            <a
-              href="#"
-              className="guide-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                openGuideModal();
-              }}
-            >
-              📄 Получить бесплатно →
-            </a>
+
           </div>
         </div>
       </section>
@@ -1397,71 +741,6 @@ export function Landing() {
         </p>
       </section>
 
-      <section className="section-teachers" id="teachers">
-        <div className="section-label">Преподаватели</div>
-        <h2 className="section-title">
-          Люди, которые
-          <br />
-          будут тебя <em>учить</em>
-        </h2>
-        <p
-          style={{ fontSize: "16px", color: "var(--ink-2)", maxWidth: "560px", lineHeight: "1.6" }}
-        >
-          Gojo — школа новая, но опыт команды реальный. Носитель языка + русскоязычные преподаватели
-          с японским образованием.
-        </p>
-
-        <div className="teachers-grid">
-          <div className="teacher-card">
-            <div className="teacher-avatar native">田</div>
-            <div className="teacher-badge native">🇯🇵 Носитель языка</div>
-            <div className="teacher-name">Танака-сэнсэй</div>
-            <div className="teacher-role">Токио · Диалект: стандартный</div>
-            <div className="teacher-creds">
-              <div className="teacher-cred">Университет Васэда, факультет педагогики</div>
-              <div className="teacher-cred">Специализация: разговорный японский и аудирование</div>
-              <div className="teacher-cred">6 лет преподавания иностранцам</div>
-            </div>
-            <a href="mailto:tanaka@gojolearn.ru" className="teacher-email">
-              tanaka@gojolearn.ru
-            </a>
-            <div className="teacher-placeholder">* Фото и полное имя с согласия преподавателя</div>
-          </div>
-
-          <div className="teacher-card">
-            <div className="teacher-avatar">Р</div>
-            <div className="teacher-badge">Со-основатель</div>
-            <div className="teacher-name">Руслан Рустаев</div>
-            <div className="teacher-role">Москва · Японский язык</div>
-            <div className="teacher-creds">
-              <div className="teacher-cred">МГУ · ИСАА, факультет Японии</div>
-              <div className="teacher-cred">Переводчик «Газпром» (японский)</div>
-              <div className="teacher-cred">Автор изд. «Бомбора»</div>
-              <div className="teacher-cred">⭐ Топ-преподаватель Profi.ru</div>
-              <div className="teacher-cred">241 ученик в личной практике</div>
-            </div>
-            <a href="mailto:ruslan@gojolearn.ru" className="teacher-email">
-              ruslan@gojolearn.ru
-            </a>
-          </div>
-
-          <div className="teacher-card">
-            <div className="teacher-avatar">Т</div>
-            <div className="teacher-badge">Преподаватель</div>
-            <div className="teacher-name">Тамара</div>
-            <div className="teacher-role">Онлайн · Уровни N5–N3</div>
-            <div className="teacher-creds">
-              <div className="teacher-cred">Специализация: аниме, манга, молодёжный японский</div>
-              <div className="teacher-cred">4 года преподавания</div>
-              <div className="teacher-cred">Разговорные клубы и AI-практика</div>
-            </div>
-            <a href="mailto:tam@gojolearn.ru" className="teacher-email">
-              tam@gojolearn.ru
-            </a>
-            <div className="teacher-placeholder">* Фото и полное имя с согласия преподавателя</div>
-          </div>
-        </div>
-      </section>
 
       <section className="section-faq" id="faq">
         <div className="faq-inner">
@@ -1632,7 +911,9 @@ export function Landing() {
           }}
         >
           <a
-            href="#"
+            href="https://t.me/gojoedu"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -1701,7 +982,7 @@ export function Landing() {
       <footer>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <img
-            src="/landing/logo.webp"
+            src="/landing/logo.png"
             alt="Gojo Learn"
             style={{ height: "26px", width: "auto", filter: "invert(1)", opacity: 0.75 }}
           />
@@ -1904,7 +1185,6 @@ export function Landing() {
                   <option>Смотреть аниме / читать мангу в оригинале</option>
                   <option>Переехать или учиться в Японии</option>
                   <option>Работать с японскими партнёрами</option>
-                  <option>Путешествовать по Японии</option>
                   <option>Просто интересно / хочу попробовать</option>
                 </select>
               </div>
@@ -1932,7 +1212,9 @@ export function Landing() {
               <br />А пока — присоединяйся к нашему Telegram-сообществу 👇
             </p>
             <a
-              href="#"
+              href="https://t.me/gojoedu"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1946,7 +1228,6 @@ export function Landing() {
                 fontFamily: "var(--font-body)",
                 fontSize: "14px",
                 fontWeight: "700",
-                boxShadow: "3px 3px 0 rgba(0,0,0,0.15)",
               }}
             >
               ✈️ Telegram-сообщество Gojo
@@ -1968,7 +1249,7 @@ export function Landing() {
           >
             <span className="ico">📝</span> Записаться на урок
           </a>
-          <a href="#" className="intercom-menu-item">
+          <a href="https://t.me/gojoedu" target="_blank" rel="noopener noreferrer" className="intercom-menu-item">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06-.01.24-.02.27z"

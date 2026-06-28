@@ -49,67 +49,43 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
 
   return (
     <header className={wrapperClass}>
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className={`flex items-center gap-2 ${textClass}`}>
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-3">
+          <img
+            src="/landing/logo.png"
+            alt="Gojo"
+            className="h-7 w-auto"
+            style={{ mixBlendMode: overlayRoute ? "normal" : "multiply" }}
+          />
           <span
-            className={`font-jp-serif text-lg font-bold ${
-              overlayRoute ? "text-gojo-orange" : "text-gojo-orange"
-            }`}
+            className="g-mono text-[10px] font-bold uppercase tracking-[0.12em]"
+            style={{ color: overlayRoute ? "rgba(255,255,255,0.7)" : "#6b6b6b" }}
           >
-            五
+            Школа японского
           </span>
-          <span className="font-serif text-[17px] font-bold tracking-tight">GOJO LEARN</span>
         </Link>
 
-        <nav className="flex items-center gap-5 text-sm font-bold">
+        <nav className="g-body flex items-center gap-5 text-[13px] font-semibold">
           {user ? (
             <>
+              <Link href="/dashboard" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>Кабинет</Link>
+              <Link href="/lessons" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>Уроки</Link>
+              <Link href="/kana" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>Кана</Link>
+              <Link href="/review" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>Карточки</Link>
               {user.role === "teacher" || user.role === "admin" ? (
-                <Link
-                  href="/teacher"
-                  className={`hover:text-gojo-orange ${mutedClass}`}
-                >
-                  Мои уроки
-                </Link>
+                <Link href="/teacher" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>Учитель</Link>
               ) : null}
-              <Link
-                href="/lessons"
-                className={`hover:text-gojo-orange ${mutedClass}`}
-              >
-                Уроки
-              </Link>
-              {user.role === "student" ? (
-                <Link
-                  href="/review"
-                  className={`hover:text-gojo-orange ${mutedClass}`}
-                >
-                  Карточки
-                </Link>
-              ) : null}
-              <Link
-                href="/profile"
-                className={`flex items-center gap-2 hover:${textClass} ${mutedClass}`}
-              >
-                <Avatar value={user.avatarUrl} size={28} fallback={user.nickname ?? user.email} />
-                <span className={textClass}>{user.nickname ?? user.email}</span>
+              <Link href="/profile" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>
+                <Avatar value={user.avatarUrl} size={26} fallback={user.nickname ?? user.email} />
               </Link>
               <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className={`${mutedClass} hover:text-gojo-error`}
-                >
-                  Выйти
-                </button>
+                <button type="submit" className={`transition-colors hover:text-gojo-error ${mutedClass}`}>Выйти</button>
               </form>
             </>
           ) : (
             <Link
               href="/login"
-              className={
-                overlayRoute
-                  ? "rounded-md border-2 border-white/40 bg-transparent px-4 py-1.5 text-white hover:border-white"
-                  : "rounded-md border-2 border-gojo-ink bg-transparent px-4 py-1.5 text-gojo-ink hover:bg-gojo-surface-2"
-              }
+              className="rounded-md border border-gojo-ink/20 px-4 py-1.5 text-gojo-ink transition-colors hover:border-gojo-orange hover:text-gojo-orange"
             >
               Войти
             </Link>

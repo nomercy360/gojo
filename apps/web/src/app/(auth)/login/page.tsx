@@ -47,7 +47,7 @@ export default function LoginPage() {
         jlptLevel = u?.jlptLevel ?? null;
         isNewStudent = u?.role === "student" && !jlptLevel;
       }
-      router.push(isNewStudent ? "/onboarding/quiz" : "/");
+      router.push(isNewStudent ? "/onboarding/quiz" : "/dashboard");
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Ошибка";
