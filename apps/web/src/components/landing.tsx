@@ -571,7 +571,7 @@ export function Landing() {
               <div className="mteam-info">
                 <div className="mteam-badge">Со-основатель</div>
                 <div className="mteam-name">Руслан Рустаев</div>
-                <div className="mteam-role">Москва · Школа Gojo</div>
+                <div className="mteam-role">Токио, Япония</div>
                 <div className="mteam-creds">
                   <span>МГУ · фак. Японии</span>
                   <span>Переводчик «Газпром»</span>
@@ -581,6 +581,44 @@ export function Landing() {
               </div>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* ⑤b TEAM — Максим, технический директор */}
+      <section className="section-mission section-mission-alt">
+        <div className="mission-merged">
+          {/* Left: Maksim card */}
+          <div className="mission-merged-team">
+            <div className="mteam-card mteam-featured">
+              <img className="mteam-photo" src="/maksim.jpg" alt="Максим Кадочников" />
+              <div className="mteam-info">
+                <div className="mteam-badge">Со-основатель и технический директор</div>
+                <div className="mteam-name">Максим Кадочников</div>
+                <div className="mteam-role">Токио, Япония</div>
+                <div className="mteam-creds">
+                  <span>Менеджер по автоматизации в Ракутен</span>
+                  <span>3 года в Aviatrix</span>
+                  <span className="mteam-cred-highlight">⭐ 6 лет в разработке платформ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: message */}
+          <div className="mission-merged-left">
+            <h2 className="mission-merged-title">
+              Технологии не<br />
+              заменяют учителя —<br />
+              <em>они делают его точнее.</em>
+            </h2>
+            <p className="mission-body">
+              Мы строим платформу, где прогресс <strong>измерим</strong>,
+              практика адаптивна к вашему темпу, а расписание встраивается в вашу жизнь — а не наоборот.
+            </p>
+            <p className="mission-body mission-body-strong">
+              Хорошая технология незаметна. Вы просто учитесь быстрее.
+            </p>
           </div>
         </div>
       </section>

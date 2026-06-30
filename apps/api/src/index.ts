@@ -6,6 +6,7 @@ import { auth } from "./auth.ts";
 import { type AuthContext, loadSession } from "./auth/middleware.ts";
 import { env } from "./env.ts";
 import { authRoute } from "./routes/auth.ts";
+import { calendarRoute } from "./routes/calendar.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
 import { livekitRoute } from "./routes/livekit.ts";
@@ -50,6 +51,7 @@ app.route("/teacher", teacherRoute);
 app.route("/onboarding", onboardingRoute);
 app.route("/review", reviewRoute);
 app.route("/kanji", kanjiRoute);
+app.route("/calendar", calendarRoute);
 
 console.log(`api listening on :${env.API_PORT}`);
 

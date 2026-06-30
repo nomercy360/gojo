@@ -544,6 +544,7 @@ html:has(.landing-root) {
 /* per-image framing tweaks */
 .landing-root .triptych-card .img-manga {
   object-position: center 18%;
+  transform: scaleX(-1);
 }
 .landing-root .triptych-card .img-culture {
   object-position: center top;
@@ -929,6 +930,11 @@ html:has(.landing-root) {
   position: relative;
   overflow: hidden;
 }
+.landing-root .section-mission-alt {
+  padding-top: 0;
+  padding-bottom: 110px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
 .landing-root .section-mission > * {
   position: relative;
   z-index: 1;
@@ -990,11 +996,24 @@ html:has(.landing-root) {
   gap: 0;
 }
 .landing-root .mteam-photo {
-  width: 120px;
+  width: 90px;
   flex-shrink: 0;
   object-fit: cover;
   object-position: center top;
   display: block;
+}
+.landing-root .section-mission:not(.section-mission-alt) .mteam-photo {
+  margin-left: 10px;
+  object-position: center top;
+}
+.landing-root .section-mission-alt .mteam-photo {
+  width: 86px;
+  height: 110px;
+  object-fit: contain;
+  object-position: center top;
+  align-self: center;
+  margin: 6px 8px;
+  border-radius: 4px;
 }
 .landing-root .mteam-info {
   padding: 20px 20px;
