@@ -1,11 +1,14 @@
 name: Build & Deploy
+
 on:
   push:
     branches: [main]
   workflow_dispatch: {}
+
 env:
   REGISTRY: ghcr.io
   IMAGE_OWNER: ${{ github.repository_owner }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,16 +21,20 @@ jobs:
         app: [api, web]
     steps:
       - uses: actions/checkout@v4
+
       - uses: docker/setup-buildx-action@v3
+
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Compute image tag
         id: tag
         run: |
           echo "sha=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
       - name: Build & push ${{ matrix.app }}
         uses: docker/build-push-action@v6
         with:
@@ -40,18 +47,39 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
           platforms: linux/amd64
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to VM
+
+      - name: Rsync infra files to VM
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -avz --exclude=.env.prod --exclude=data
+          path: infra/
+          remote_path: /root/gojo/infra/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Sync migrations to VM
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -avz --exclude=.env.prod --exclude=data
+          path: packages/db/drizzle/
+          remote_path: /root/gojo/packages/db/drizzle/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Pull & restart on VM
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/gojo
             set -a && source infra/.env.prod && set +a
@@ -60,4 +88,5 @@ jobs:
             export GOJO_IMAGE_WEB=ghcr.io/${{ github.repository_owner }}/gojo-web:latest
             docker compose -f infra/docker-compose.prod.yml pull api web
             docker compose -f infra/docker-compose.prod.yml up -d
+            # Apply migrations
             docker exec gojo-api bun run /app/packages/db/src/migrate.ts || true
