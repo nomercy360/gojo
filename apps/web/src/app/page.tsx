@@ -24,6 +24,9 @@ async function Dashboard() {
     completedLessons: 0,
     upcomingLessons: 0,
     totalBookings: 0,
+    homeworkDone: 0,
+    homeworkTotal: 0,
+    trainingSeconds: 0,
   };
   const lessons = Array.isArray(lessonsResult) ? lessonsResult : [];
   const booked = lessons.filter((l) => l.booked);

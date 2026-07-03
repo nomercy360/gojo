@@ -1,14 +1,17 @@
-import Link from "next/link";
-import type { LessonCardDto, LessonMaterialDto } from "@gojo/shared";
 import { LessonCountdown } from "@/components/lesson-countdown";
 import {
   ApiError,
+  type LessonStudentDto,
   fetchLesson,
   fetchLessonCards,
   fetchLessonMaterials,
+  fetchLessonStudents,
 } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
+import type { LessonCardDto, LessonMaterialDto } from "@gojo/shared";
+import Link from "next/link";
 import { LessonCardsManager } from "./cards-manager";
+import { HomeworkManager } from "./homework-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -50,9 +53,15 @@ export default async function LessonDetailPage({ params }: Props) {
 
   const isOwner = !!user && user.id === lesson.teacherId;
   let cards: LessonCardDto[] = [];
+  let students: LessonStudentDto[] = [];
   if (isOwner) {
     try {
       cards = await fetchLessonCards(id);
+    } catch {
+      // none yet
+    }
+    try {
+      students = await fetchLessonStudents(id);
     } catch {
       // none yet
     }
@@ -65,10 +74,7 @@ export default async function LessonDetailPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-gojo-paper">
       <div className="mx-auto max-w-3xl px-6 py-16">
-        <Link
-          href="/lessons"
-          className="text-sm font-bold text-gojo-orange hover:underline"
-        >
+        <Link href="/lessons" className="text-sm font-bold text-gojo-orange hover:underline">
           ← К урокам
         </Link>
 
@@ -127,18 +133,12 @@ export default async function LessonDetailPage({ params }: Props) {
               Вход откроется за 15 минут до начала
             </div>
             <div className="mt-1">
-              <LessonCountdown
-                target={lesson.joinOpensAt}
-                label="Откроется через"
-              />
+              <LessonCountdown target={lesson.joinOpensAt} label="Откроется через" />
             </div>
           </div>
         ) : user && lesson.joinState === "bookable" ? (
           <div className="mt-8 text-sm text-gojo-ink-muted">
-            <Link
-              href="/lessons"
-              className="font-bold text-gojo-orange hover:underline"
-            >
+            <Link href="/lessons" className="font-bold text-gojo-orange hover:underline">
               Записаться
             </Link>{" "}
             на урок — он появится в «Мои уроки» и откроется по расписанию.
@@ -146,14 +146,13 @@ export default async function LessonDetailPage({ params }: Props) {
         ) : null}
 
         {isOwner ? <LessonCardsManager lessonId={id} initialCards={cards} /> : null}
+        {isOwner ? <HomeworkManager lessonId={id} initialStudents={students} /> : null}
 
         {/* Materials (Task #7) */}
         <section className="mt-10">
           <h2 className="font-serif text-[22px] font-bold">Материалы</h2>
           {materials.length === 0 ? (
-            <p className="mt-3 text-sm text-gojo-ink-muted">
-              Материалы пока не добавлены.
-            </p>
+            <p className="mt-3 text-sm text-gojo-ink-muted">Материалы пока не добавлены.</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {materials.map((m) => (
@@ -164,8 +163,7 @@ export default async function LessonDetailPage({ params }: Props) {
                   <div className="min-w-0">
                     <p className="truncate font-bold">{m.title}</p>
                     <p className="text-[11px] text-gojo-ink-muted">
-                      {m.fileType} ·{" "}
-                      {new Date(m.createdAt).toLocaleDateString("ru-RU")}
+                      {m.fileType} · {new Date(m.createdAt).toLocaleDateString("ru-RU")}
                     </p>
                   </div>
                   <a

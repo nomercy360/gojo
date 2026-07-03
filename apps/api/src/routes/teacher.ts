@@ -1,5 +1,12 @@
-import { bookings, lessonCards, lessonMaterials, lessons, user as userTable } from "@gojo/db";
-import { addLessonCardInput } from "@gojo/shared";
+import {
+  bookings,
+  homework,
+  lessonCards,
+  lessonMaterials,
+  lessons,
+  user as userTable,
+} from "@gojo/db";
+import { addLessonCardInput, setHomeworkStatusInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -132,13 +139,69 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
       email: userTable.email,
       avatarUrl: userTable.image,
       bookedAt: bookings.createdAt,
+      homeworkStatus: homework.status,
+      homeworkMarkedAt: homework.markedAt,
     })
     .from(bookings)
     .innerJoin(userTable, eq(userTable.id, bookings.studentId))
+    .leftJoin(
+      homework,
+      and(eq(homework.lessonId, bookings.lessonId), eq(homework.studentId, bookings.studentId)),
+    )
     .where(eq(bookings.lessonId, id));
 
-  return c.json(rows);
+  return c.json(
+    rows.map((r) => ({
+      bookingId: r.bookingId,
+      studentId: r.studentId,
+      nickname: r.nickname,
+      email: r.email,
+      avatarUrl: r.avatarUrl,
+      bookedAt: r.bookedAt,
+      homeworkStatus: r.homeworkStatus ?? "pending",
+      homeworkMarkedAt: r.homeworkMarkedAt ? r.homeworkMarkedAt.toISOString() : null,
+    })),
+  );
 });
+
+teacherRoute.patch(
+  "/lessons/:id/homework/:studentId",
+  zValidator("json", setHomeworkStatusInput),
+  async (c) => {
+    const u = c.get("user")!;
+    const lessonId = c.req.param("id");
+    const studentId = c.req.param("studentId");
+    const { status } = c.req.valid("json");
+
+    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+    if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, studentId)))
+      .limit(1);
+    if (!booking) throw new HTTPException(404, { message: "student not booked on this lesson" });
+
+    const now = new Date();
+    const [row] = await db
+      .insert(homework)
+      .values({ lessonId, studentId, status, markedBy: u.id, markedAt: now })
+      .onConflictDoUpdate({
+        target: [homework.lessonId, homework.studentId],
+        set: { status, markedBy: u.id, markedAt: now, updatedAt: now },
+      })
+      .returning();
+    if (!row) throw new HTTPException(500, { message: "update failed" });
+
+    return c.json({
+      studentId: row.studentId,
+      status: row.status,
+      markedAt: row.markedAt ? row.markedAt.toISOString() : null,
+    });
+  },
+);
 
 const MAX_MATERIAL_SIZE = 10 * 1024 * 1024;
 
@@ -205,42 +268,38 @@ teacherRoute.get("/lessons/:id/cards", async (c) => {
   return c.json(rows.map(toLessonCardDto));
 });
 
-teacherRoute.post(
-  "/lessons/:id/cards",
-  zValidator("json", addLessonCardInput),
-  async (c) => {
-    const u = c.get("user")!;
-    const lessonId = c.req.param("id");
-    const body = c.req.valid("json");
+teacherRoute.post("/lessons/:id/cards", zValidator("json", addLessonCardInput), async (c) => {
+  const u = c.get("user")!;
+  const lessonId = c.req.param("id");
+  const body = c.req.valid("json");
 
-    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
-    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-    if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
 
-    const [maxPos] = await db
-      .select({
-        value: sql<number>`COALESCE(MAX(${lessonCards.position}), -1) + 1`.as("value"),
-      })
-      .from(lessonCards)
-      .where(eq(lessonCards.lessonId, lessonId));
+  const [maxPos] = await db
+    .select({
+      value: sql<number>`COALESCE(MAX(${lessonCards.position}), -1) + 1`.as("value"),
+    })
+    .from(lessonCards)
+    .where(eq(lessonCards.lessonId, lessonId));
 
-    const [row] = await db
-      .insert(lessonCards)
-      .values({
-        lessonId,
-        word: body.word,
-        reading: body.reading,
-        meaning: body.meaning,
-        notes: body.notes,
-        position: Number(maxPos?.value ?? 0),
-      })
-      .returning();
-    if (!row) throw new HTTPException(500, { message: "insert failed" });
+  const [row] = await db
+    .insert(lessonCards)
+    .values({
+      lessonId,
+      word: body.word,
+      reading: body.reading,
+      meaning: body.meaning,
+      notes: body.notes,
+      position: Number(maxPos?.value ?? 0),
+    })
+    .returning();
+  if (!row) throw new HTTPException(500, { message: "insert failed" });
 
-    await materializeNewCardForBookings(row.id);
-    return c.json(toLessonCardDto(row), 201);
-  },
-);
+  await materializeNewCardForBookings(row.id);
+  return c.json(toLessonCardDto(row), 201);
+});
 
 teacherRoute.delete("/lessons/:id/cards/:cardId", async (c) => {
   const u = c.get("user")!;

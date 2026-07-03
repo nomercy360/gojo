@@ -1,6 +1,7 @@
 import type {
   AddLessonCardInput,
   FlashcardDto,
+  HomeworkStatus,
   KanjiBreakdownEntry,
   KanjiDto,
   LessonCardDto,
@@ -13,6 +14,8 @@ import type {
   ReviewQueueDto,
   StudentStatsDto,
   SubmitReviewInput,
+  TrackTrainingInput,
+  TrainingTotalsDto,
   UpdateProfileInput,
   UserDto,
 } from "@gojo/shared";
@@ -138,9 +141,7 @@ export function promoteCard(id: string) {
 }
 
 export function fetchKanjiBreakdown(word: string) {
-  return apiFetch<KanjiBreakdownEntry[]>(
-    `/kanji/breakdown?word=${encodeURIComponent(word)}`,
-  );
+  return apiFetch<KanjiBreakdownEntry[]>(`/kanji/breakdown?word=${encodeURIComponent(word)}`);
 }
 
 export function fetchKanji(char: string) {
@@ -175,15 +176,35 @@ export function submitQuiz(body: QuizSubmitInput) {
   });
 }
 
-export function fetchLessonStudents(lessonId: string): Promise<
-  {
-    bookingId: string;
-    studentId: string;
-    nickname: string | null;
-    email: string;
-    avatarUrl: string | null;
-    bookedAt: string;
-  }[]
-> {
+export type LessonStudentDto = {
+  bookingId: string;
+  studentId: string;
+  nickname: string | null;
+  email: string;
+  avatarUrl: string | null;
+  bookedAt: string;
+  homeworkStatus: HomeworkStatus;
+  homeworkMarkedAt: string | null;
+};
+
+export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {
   return apiFetch(`/teacher/lessons/${lessonId}/students`);
+}
+
+export function setHomeworkStatus(lessonId: string, studentId: string, status: HomeworkStatus) {
+  return apiFetch<{ studentId: string; status: HomeworkStatus; markedAt: string | null }>(
+    `/teacher/lessons/${lessonId}/homework/${studentId}`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
+
+export function trackTraining(body: TrackTrainingInput) {
+  return apiFetch<{ ok: boolean }>("/training/track", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchTrainingTotals() {
+  return apiFetch<TrainingTotalsDto>("/training/me");
 }

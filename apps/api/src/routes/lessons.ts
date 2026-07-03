@@ -1,4 +1,11 @@
-import { bookings, lessonMaterials, lessons, user as userTable } from "@gojo/db";
+import {
+  bookings,
+  homework,
+  lessonMaterials,
+  lessons,
+  trainingTotals,
+  user as userTable,
+} from "@gojo/db";
 import { and, asc, count, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -95,10 +102,30 @@ lessonsRoute.get("/my-stats", requireAuth, async (c) => {
     .from(bookings)
     .where(eq(bookings.studentId, user.id));
 
+  const [homeworkCounts] = await db
+    .select({
+      done: sql<number>`SUM(CASE WHEN ${homework.status} = 'done' THEN 1 ELSE 0 END)`.as("done"),
+      marked:
+        sql<number>`SUM(CASE WHEN ${homework.status} IN ('done', 'missed') THEN 1 ELSE 0 END)`.as(
+          "marked",
+        ),
+    })
+    .from(homework)
+    .where(eq(homework.studentId, user.id));
+
+  const [training] = await db
+    .select()
+    .from(trainingTotals)
+    .where(eq(trainingTotals.userId, user.id))
+    .limit(1);
+
   return c.json({
     completedLessons: completed?.value ?? 0,
     upcomingLessons: upcoming?.value ?? 0,
     totalBookings: total?.value ?? 0,
+    homeworkDone: Number(homeworkCounts?.done ?? 0),
+    homeworkTotal: Number(homeworkCounts?.marked ?? 0),
+    trainingSeconds: (training?.reviewSeconds ?? 0) + (training?.kanaSeconds ?? 0),
   });
 });
 
