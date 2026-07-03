@@ -1,4 +1,6 @@
 # Gojo Learn
+<!-- test: verifying push access -->
+
 
 Школа японского языка нового поколения. Монорепо: Next.js + Hono + Drizzle + Postgres + LiveKit + better-auth.
 
