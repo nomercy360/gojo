@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-export const lessonStatusSchema = z.enum([
-  "scheduled",
-  "in_progress",
-  "completed",
-  "cancelled",
-]);
+export const lessonStatusSchema = z.enum(["scheduled", "in_progress", "completed", "cancelled"]);
 export type LessonStatus = z.infer<typeof lessonStatusSchema>;
 
 /**
@@ -63,6 +58,9 @@ export const studentStatsDto = z.object({
   completedLessons: z.number(),
   upcomingLessons: z.number(),
   totalBookings: z.number(),
+  homeworkDone: z.number(),
+  homeworkTotal: z.number(),
+  trainingSeconds: z.number(),
 });
 export type StudentStatsDto = z.infer<typeof studentStatsDto>;
 

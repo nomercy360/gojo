@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { StudentStatsDto } from "@gojo/shared";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { CalendarSection } from "@/components/calendar-section";
+import { fetchStudentStats } from "@/lib/api";
+import { getCurrentUser } from "@/lib/session";
 
 const RANKS = [
   { name: "見習い",  sub: "Minarai",    min: 0,  max: 24,  color: "#7B9BAD", stars: 1 },
@@ -71,14 +75,34 @@ function calcScore(stats: { lessonsCompleted: number; homeworkSubmitted: number;
   return { lessons, homework, training, total: lessons + homework + training };
 }
 
-export default function DashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
   const greeting = getGreeting();
 
+  const apiStats = await fetchStudentStats().catch(
+    (): StudentStatsDto => ({
+      completedLessons: 0,
+      upcomingLessons: 0,
+      totalBookings: 0,
+      homeworkDone: 0,
+      homeworkTotal: 0,
+      trainingSeconds: 0,
+    }),
+  );
+
+  const trainingHoursWhole = Math.floor(apiStats.trainingSeconds / 3600);
+  const trainingMinutes = Math.floor((apiStats.trainingSeconds % 3600) / 60);
+
   const stats = {
-    lessonsCompleted: 12,
-    trainingHours: 4,
-    trainingMinutes: 30,
-    homeworkSubmitted: 8,
+    lessonsCompleted: apiStats.completedLessons,
+    homeworkSubmitted: apiStats.homeworkDone,
+    trainingHours: apiStats.trainingSeconds / 3600,
+    trainingHoursWhole,
+    trainingMinutes,
   };
 
   const score = calcScore(stats);
@@ -88,22 +112,6 @@ export default function DashboardPage() {
   const progressInRank = rank
     ? Math.round(((score.total - rank.min) / (rank.max - rank.min)) * 100)
     : 100;
-
-  const sessions = [
-    { day: "Пн", date: "30", time: "18:00", duration: "60 мин", topic: "Хирагана · Урок 3" },
-    { day: "Ср", date: "2",  time: "18:00", duration: "60 мин", topic: "Числа и счёт" },
-    { day: "Пт", date: "4",  time: "19:00", duration: "60 мин", topic: "Приветствия на японском" },
-  ];
-
-  const weekDays = [
-    { label: "Пн", date: 28, hasSession: false, isToday: true },
-    { label: "Вт", date: 29, hasSession: false, isToday: false },
-    { label: "Ср", date: 30, hasSession: true,  isToday: false },
-    { label: "Чт", date: 1,  hasSession: false, isToday: false },
-    { label: "Пт", date: 2,  hasSession: true,  isToday: false },
-    { label: "Сб", date: 3,  hasSession: false, isToday: false },
-    { label: "Вс", date: 4,  hasSession: false, isToday: false },
-  ];
 
   return (
     <main className="min-h-screen" style={{ background: "#f8f4ec" }}>
@@ -157,7 +165,7 @@ export default function DashboardPage() {
             </div>
             <div className="rounded-2xl bg-white p-5" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
               <div className="g-display text-[40px] font-extrabold leading-none" style={{ color: "#252525" }}>
-                {stats.trainingHours}
+                {stats.trainingHoursWhole}
                 <span className="text-[20px] font-bold">ч</span>
                 {" "}
                 {stats.trainingMinutes}
@@ -271,7 +279,7 @@ export default function DashboardPage() {
             <div className="flex-1 rounded-xl px-4 py-3" style={{ background: "#f8f4ec" }}>
               <div className="g-mono text-[10px] uppercase tracking-wider" style={{ color: "#a0a0a0" }}>Тренировки</div>
               <div className="g-display mt-1 text-[20px] font-extrabold" style={{ color: "#252525" }}>
-                {stats.trainingHours}
+                {stats.trainingHoursWhole}
                 <span className="text-[14px] font-bold">ч</span>
                 {" "}
                 {stats.trainingMinutes}

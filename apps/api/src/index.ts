@@ -13,6 +13,7 @@ import { livekitRoute } from "./routes/livekit.ts";
 import { onboardingRoute } from "./routes/onboarding.ts";
 import { reviewRoute } from "./routes/review.ts";
 import { teacherRoute } from "./routes/teacher.ts";
+import { trainingRoute } from "./routes/training.ts";
 import { usersRoute } from "./routes/users.ts";
 
 const app = new Hono<AuthContext>();
@@ -52,6 +53,7 @@ app.route("/onboarding", onboardingRoute);
 app.route("/review", reviewRoute);
 app.route("/kanji", kanjiRoute);
 app.route("/calendar", calendarRoute);
+app.route("/training", trainingRoute);
 
 console.log(`api listening on :${env.API_PORT}`);
 

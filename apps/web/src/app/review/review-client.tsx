@@ -1,25 +1,18 @@
 "use client";
 
+import { KanjiModal } from "@/components/kanji-modal";
+import { useTrainingHeartbeat } from "@/lib/use-training-heartbeat";
 import type { FlashcardDto, ReviewQueueDto } from "@gojo/shared";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { KanjiModal } from "@/components/kanji-modal";
 import { promoteAction, submitReviewAction } from "./actions";
 
-const STAGE_NAMES = [
-  "Seed",
-  "Sprout",
-  "Sapling",
-  "Tree",
-  "Gate",
-  "Temple",
-  "Summit",
-  "Burned",
-];
+const STAGE_NAMES = ["Seed", "Sprout", "Sapling", "Tree", "Gate", "Temple", "Summit", "Burned"];
 
 type Mode = "unlearned" | "review" | "done";
 
 export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto }) {
+  useTrainingHeartbeat("review");
   const [due, setDue] = useState<FlashcardDto[]>(initialQueue.due);
   const [unlearned, setUnlearned] = useState<FlashcardDto[]>(initialQueue.unlearned);
   const [stats] = useState(initialQueue.stats);
@@ -27,8 +20,7 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
   const [pending, startTransition] = useTransition();
   const [kanjiOpen, setKanjiOpen] = useState(false);
 
-  const mode: Mode =
-    unlearned.length > 0 ? "unlearned" : due.length > 0 ? "review" : "done";
+  const mode: Mode = unlearned.length > 0 ? "unlearned" : due.length > 0 ? "review" : "done";
   const current = mode === "unlearned" ? unlearned[0] : due[0];
 
   function next() {
@@ -116,9 +108,7 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
                 <div className="font-jp-serif text-[24px] font-bold text-gojo-orange-ink">
                   {current.reading}
                 </div>
-                <div className="mt-2 text-[18px] font-bold text-gojo-ink">
-                  {current.meaning}
-                </div>
+                <div className="mt-2 text-[18px] font-bold text-gojo-ink">{current.meaning}</div>
               </div>
             ) : null}
           </div>
@@ -169,11 +159,7 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
         </div>
       </main>
 
-      <KanjiModal
-        word={current.word}
-        open={kanjiOpen}
-        onClose={() => setKanjiOpen(false)}
-      />
+      <KanjiModal word={current.word} open={kanjiOpen} onClose={() => setKanjiOpen(false)} />
     </>
   );
 }
