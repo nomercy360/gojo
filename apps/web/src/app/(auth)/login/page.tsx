@@ -22,7 +22,8 @@ export default function LoginPage() {
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const nickname = String(form.get("nickname") ?? "").trim() || undefined;
-    const role = (String(form.get("role") ?? "student") as "student" | "teacher") ?? "student";
+    // Public sign-up always creates a student; teachers are provisioned separately.
+    const role = "student" as const;
 
     try {
       let isNewStudent = false;
@@ -114,26 +115,7 @@ export default function LoginPage() {
             required
           />
           {mode === "signup" ? (
-            <>
-              <Field label="Никнейм" name="nickname" placeholder="Maksim" />
-              <div>
-                <label
-                  className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-                  htmlFor="role"
-                >
-                  Роль
-                </label>
-                <select
-                  id="role"
-                  name="role"
-                  defaultValue="student"
-                  className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-                >
-                  <option value="student">Студент</option>
-                  <option value="teacher">Учитель</option>
-                </select>
-              </div>
-            </>
+            <Field label="Никнейм" name="nickname" placeholder="Maksim" />
           ) : null}
 
           {error ? (
