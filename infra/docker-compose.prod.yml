@@ -85,6 +85,11 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
+      # better-auth baseURL (used for absolute URLs + origin validation) and
+      # the trusted-origins allowlist. Without these, prod requests are
+      # rejected with 403 INVALID_ORIGIN. API_ORIGIN == the public API base.
+      API_ORIGIN: ${PUBLIC_API_URL:?set PUBLIC_API_URL}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-https://gojolearn.ru}
       DATABASE_URL: postgres://${POSTGRES_USER:-gojo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gojo}
       REDIS_URL: redis://redis:6379
       API_PORT: "3001"
