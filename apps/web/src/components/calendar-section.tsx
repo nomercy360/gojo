@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { LessonDto } from "@gojo/shared";
 import { authClient } from "@/lib/auth-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -18,14 +19,48 @@ interface Session {
   time: string;
   duration: string;
   topic: string;
-  source: "google" | "static";
+  source: "google" | "internal";
 }
 
-const STATIC_SESSIONS: Session[] = [
-  { day: "Пн", date: "30", time: "18:00", duration: "60 мин", topic: "Хирагана · Урок 3", source: "static" },
-  { day: "Ср", date: "2",  time: "18:00", duration: "60 мин", topic: "Числа и счёт",       source: "static" },
-  { day: "Пт", date: "4",  time: "19:00", duration: "60 мин", topic: "Приветствия на японском", source: "static" },
-];
+function formatLesson(l: LessonDto): Session {
+  const start = new Date(l.startsAt);
+  const end = new Date(l.endsAt);
+  const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  const mins = Math.round((end.getTime() - start.getTime()) / 60_000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return {
+    day: days[start.getDay()],
+    date: start.getDate().toString(),
+    time: start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+    duration: h > 0 ? `${h}ч${m ? ` ${m}м` : ""}` : `${mins} мин`,
+    topic: l.title,
+    source: "internal",
+  };
+}
+
+function buildWeekFromLessons(lessons: LessonDto[]) {
+  const today = new Date();
+  const lessonKeys = new Set(
+    lessons.map((l) => {
+      const d = new Date(l.startsAt);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }),
+  );
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return {
+      label: labels[i],
+      date: d.getDate(),
+      hasSession: lessonKeys.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
+      isToday: d.toDateString() === today.toDateString(),
+    };
+  });
+}
 
 function formatEvent(e: GCalEvent): Session {
   const start = new Date(e.start.dateTime ?? e.start.date ?? "");
@@ -66,19 +101,10 @@ function buildWeek(events: GCalEvent[]) {
   });
 }
 
-const STATIC_WEEK = [
-  { label: "Пн", date: 28, hasSession: false, isToday: true  },
-  { label: "Вт", date: 29, hasSession: false, isToday: false },
-  { label: "Ср", date: 30, hasSession: true,  isToday: false },
-  { label: "Чт", date: 1,  hasSession: false, isToday: false },
-  { label: "Пт", date: 2,  hasSession: true,  isToday: false },
-  { label: "Сб", date: 3,  hasSession: false, isToday: false },
-  { label: "Вс", date: 4,  hasSession: false, isToday: false },
-];
-
 export function CalendarSection() {
   const [status, setStatus]       = useState<"loading" | "connected" | "disconnected">("loading");
   const [events, setEvents]       = useState<GCalEvent[]>([]);
+  const [bookedLessons, setBookedLessons] = useState<LessonDto[]>([]);
   const [connecting, setConnecting] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(true);
   const [hidden, setHidden] = useState(false);
@@ -112,6 +138,15 @@ export function CalendarSection() {
       .catch(() => setStatus("disconnected"));
   }, []);
 
+  // Real booked lessons — shown when Google isn't connected, replacing what
+  // used to be hardcoded placeholder sessions.
+  useEffect(() => {
+    fetch(`${API_URL}/lessons`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((all: LessonDto[]) => setBookedLessons(all.filter((l) => l.booked)))
+      .catch(() => setBookedLessons([]));
+  }, []);
+
   const handleConnect = async () => {
     setConnecting(true);
     await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
@@ -123,8 +158,9 @@ export function CalendarSection() {
     setEvents([]);
   };
 
-  const sessions: Session[] = status === "connected" ? events.slice(0, 5).map(formatEvent) : STATIC_SESSIONS;
-  const week = status === "connected" ? buildWeek(events) : STATIC_WEEK;
+  const sessions: Session[] =
+    status === "connected" ? events.slice(0, 5).map(formatEvent) : bookedLessons.slice(0, 5).map(formatLesson);
+  const week = status === "connected" ? buildWeek(events) : buildWeekFromLessons(bookedLessons);
 
   if (hidden) {
     return (
@@ -188,10 +224,10 @@ export function CalendarSection() {
       {status === "disconnected" && (
         <div className="mb-5 rounded-xl p-4" style={{ background: "#f8f4ec", border: "1px dashed rgba(232,66,10,0.25)" }}>
           <div className="g-display mb-1 text-[13px] font-bold" style={{ color: "#252525" }}>
-            Подключи свой календарь
+            Подключи Google Calendar (необязательно)
           </div>
           <p className="g-body mb-3 text-[12px]" style={{ color: "#6b6b6b" }}>
-            Видь все занятия и события прямо здесь
+            Твои записанные занятия уже видно ниже. Подключи Google, чтобы видеть тут же и свои личные события.
           </p>
           <div className="flex flex-wrap gap-2">
             {googleEnabled && (
