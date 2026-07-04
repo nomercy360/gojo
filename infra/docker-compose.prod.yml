@@ -78,6 +78,11 @@ services:
     pull_policy: always
     container_name: gojo-api
     restart: unless-stopped
+    # api.telegram.org publishes an AAAA record, but the docker network has no
+    # IPv6 route — Bun's fetch tries IPv6 and hangs until timeout (lead pings
+    # silently failed). Force the container IPv4-only so it resolves/uses IPv4.
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
     depends_on:
       postgres:
         condition: service_healthy
