@@ -56,6 +56,8 @@ function CyclingWord({ onAdvance }: { onAdvance: (index: number) => void }) {
   return <>{text}</>;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
 const readValue = (id: string) =>
   (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
 
@@ -116,19 +118,51 @@ export function Landing() {
     setShowTooltip(false);
   };
 
-  const submitForm = () => {
+  const submitForm = async () => {
     if (!readValue("f-name") || !readValue("f-email")) {
       toast.error("Пожалуйста, заполни имя и email");
       return;
     }
-    setBookingSubmitted(true);
+    try {
+      const res = await fetch(`${API_URL}/leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "booking",
+          name: readValue("f-name"),
+          email: readValue("f-email"),
+          contact: readValue("f-contact") || undefined,
+          level: readValue("f-level") || undefined,
+          goal: readValue("f-goal") || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setBookingSubmitted(true);
+    } catch {
+      toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
+    }
   };
-  const submitGuideForm = () => {
+  const submitGuideForm = async () => {
     if (!readValue("g-name") || !readValue("g-email")) {
       toast.error("Пожалуйста, заполни имя и email");
       return;
     }
-    setGuideSubmitted(true);
+    try {
+      const res = await fetch(`${API_URL}/leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "guide",
+          name: readValue("g-name"),
+          email: readValue("g-email"),
+          contact: readValue("g-tg") || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setGuideSubmitted(true);
+    } catch {
+      toast.error("Не удалось отправить. Попробуй ещё раз.");
+    }
   };
 
   // lock body scroll while a modal is open

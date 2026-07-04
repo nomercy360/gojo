@@ -14,6 +14,9 @@ const schema = z.object({
     .transform((v) => v === "true" || v === "1"),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_BOT_USERNAME: z.string().optional(),
+  // Optional: chat id to ping on new landing leads. If unset, leads are still
+  // saved to the DB — the Telegram notification is just skipped.
+  TELEGRAM_LEAD_CHAT_ID: z.string().optional(),
   LIVEKIT_URL: z.string().default("ws://localhost:7880"),
   LIVEKIT_API_KEY: z.string().default("devkey"),
   LIVEKIT_API_SECRET: z.string().default("devsecret123456789012345678901234"),

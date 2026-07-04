@@ -8,6 +8,7 @@ import { env } from "./env.ts";
 import { authRoute } from "./routes/auth.ts";
 import { calendarRoute } from "./routes/calendar.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
+import { leadsRoute } from "./routes/leads.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
 import { livekitRoute } from "./routes/livekit.ts";
 import { onboardingRoute } from "./routes/onboarding.ts";
@@ -42,6 +43,9 @@ app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
 app.use("*", loadSession);
 
 app.get("/health", (c) => c.json({ ok: true, service: "gojo-api" }));
+
+// Public landing lead forms (book-a-lesson / get-the-guide) — no auth.
+app.route("/leads", leadsRoute);
 
 // Custom dev-login lives under /dev-auth to avoid conflicting with better-auth
 app.route("/dev-auth", authRoute);
