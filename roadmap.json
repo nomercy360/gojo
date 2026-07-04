@@ -163,17 +163,17 @@
       "category": "landing",
       "description": "Формы «записаться на урок» и «получить гайд» раньше рисовали успех, но никуда не слали данные — все лиды терялись. Добавлена таблица leads + POST /leads + дублирование заявки в Telegram.",
       "priority": "now",
-      "status": "in_progress",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
         "Таблица leads в БД + миграция",
         "Публичный POST /leads сохраняет заявку",
         "Обе формы лендинга реально отправляют данные",
-        "Новая заявка дублируется в Telegram"
+        "Новая заявка дублируется в Telegram (фикс IPv4-пина для api-контейнера)"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R10",
@@ -181,15 +181,15 @@
       "category": "lk",
       "description": "Публичная регистрация всегда создаёт student; учителей заводим отдельно. Дропдаун роли убран.",
       "priority": "now",
-      "status": "in_progress",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
         "Дропдаун роли убран из формы регистрации",
         "Новые аккаунты создаются с role=student"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R11",
