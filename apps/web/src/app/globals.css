@@ -507,6 +507,24 @@ html:has(.landing-root) {
   color: var(--orange);
   background: rgba(247, 107, 0, 0.04);
 }
+.landing-root .hero-trainer-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 18px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(247, 107, 0, 0.35);
+  padding-bottom: 2px;
+  transition: color 0.15s, border-color 0.15s, transform 0.15s;
+}
+.landing-root .hero-trainer-link:hover {
+  color: var(--orange);
+  border-color: var(--orange);
+  transform: translateX(3px);
+}
 /* HERO IMAGE */
 /* ───── HERO TRIPTYCH ───── */
 .landing-root .hero-image-col {

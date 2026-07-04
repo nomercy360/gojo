@@ -81,6 +81,20 @@ export function CalendarSection() {
   const [events, setEvents]       = useState<GCalEvent[]>([]);
   const [connecting, setConnecting] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(true);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    setHidden(localStorage.getItem("gojo:calendar-hidden") === "1");
+  }, []);
+
+  const hideCalendar = () => {
+    setHidden(true);
+    localStorage.setItem("gojo:calendar-hidden", "1");
+  };
+  const showCalendar = () => {
+    setHidden(false);
+    localStorage.removeItem("gojo:calendar-hidden");
+  };
 
   useEffect(() => {
     fetch(`${API_URL}/calendar/status`, { credentials: "include" })
@@ -112,6 +126,27 @@ export function CalendarSection() {
   const sessions: Session[] = status === "connected" ? events.slice(0, 5).map(formatEvent) : STATIC_SESSIONS;
   const week = status === "connected" ? buildWeek(events) : STATIC_WEEK;
 
+  if (hidden) {
+    return (
+      <div
+        className="lg:col-span-2 flex items-center justify-between rounded-2xl bg-white p-4"
+        style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+      >
+        <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "#a0a0a0" }}>
+          Расписание скрыто
+        </div>
+        <button
+          type="button"
+          onClick={showCalendar}
+          className="g-body rounded-lg px-4 py-1.5 text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+          style={{ background: "#e8420a" }}
+        >
+          Показать расписание
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="lg:col-span-2 rounded-2xl bg-white p-7" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
       {/* Header */}
@@ -120,6 +155,14 @@ export function CalendarSection() {
           Расписание занятий
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={hideCalendar}
+            className="g-mono text-[10px] uppercase tracking-wider transition-colors hover:opacity-60"
+            style={{ color: "#a0a0a0" }}
+          >
+            Скрыть
+          </button>
           {status === "connected" && (
             <button
               onClick={handleDisconnect}

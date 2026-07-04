@@ -178,6 +178,9 @@ export function Landing() {
           <a href="#faq" className="nav-link">
             Вопросы
           </a>
+          <a href="/kana" className="nav-link">
+            Тренажёр
+          </a>
           <a href="/dashboard" className="nav-link">
             Личный кабинет
           </a>
@@ -205,6 +208,7 @@ export function Landing() {
           <a href="#how" onClick={() => setNavOpen(false)}>Как работает</a>
           <a href="#pricing" onClick={() => setNavOpen(false)}>Цены</a>
           <a href="#faq" onClick={() => setNavOpen(false)}>Вопросы</a>
+          <a href="/kana" onClick={() => setNavOpen(false)}>Тренажёр</a>
         </div>
       </nav>
 
@@ -246,6 +250,9 @@ export function Landing() {
               Как это работает
             </a>
           </div>
+          <a href="/kana" className="hero-trainer-link">
+            🎮 Или попробуй тренажёр каны прямо сейчас — без регистрации →
+          </a>
         </div>
 
         <div className="hero-image-col" id="hero-images">
