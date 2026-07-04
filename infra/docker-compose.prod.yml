@@ -79,10 +79,12 @@ services:
     container_name: gojo-api
     restart: unless-stopped
     # api.telegram.org publishes an AAAA record, but the docker network has no
-    # IPv6 route — Bun's fetch tries IPv6 and hangs until timeout (lead pings
-    # silently failed). Force the container IPv4-only so it resolves/uses IPv4.
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=1
+    # IPv6 route, so Bun's fetch stalls on IPv6 and lead pings silently failed.
+    # Pin it to Telegram's (stable) IPv4 so resolution stays IPv4 and SNI/cert
+    # remain valid. If Telegram ever moves this IP, leads still save — only the
+    # ping breaks. Verified: container reaches getMe in ~135ms with this.
+    extra_hosts:
+      - "api.telegram.org:149.154.167.220"
     depends_on:
       postgres:
         condition: service_healthy
