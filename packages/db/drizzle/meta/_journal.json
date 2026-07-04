@@ -43,6 +43,13 @@
       "when": 1783184952451,
       "tag": "0005_loud_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783189301645,
+      "tag": "0006_vengeful_manta",
+      "breakpoints": true
     }
   ]
 }

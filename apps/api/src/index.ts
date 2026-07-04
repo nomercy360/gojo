@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import { auth } from "./auth.ts";
 import { type AuthContext, loadSession } from "./auth/middleware.ts";
 import { env } from "./env.ts";
+import { startReminderLoop } from "./reminders.ts";
 import { authRoute } from "./routes/auth.ts";
 import { calendarRoute } from "./routes/calendar.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
@@ -60,6 +61,8 @@ app.route("/review", reviewRoute);
 app.route("/kanji", kanjiRoute);
 app.route("/calendar", calendarRoute);
 app.route("/training", trainingRoute);
+
+startReminderLoop();
 
 console.log(`api listening on :${env.API_PORT}`);
 

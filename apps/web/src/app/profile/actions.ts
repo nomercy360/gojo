@@ -1,9 +1,9 @@
 "use server";
 
+import { ApiError, updateProfile, uploadAvatar } from "@/lib/api";
+import { updateProfileInput } from "@gojo/shared";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { updateProfileInput } from "@gojo/shared";
-import { ApiError, updateProfile, uploadAvatar } from "@/lib/api";
 
 export type ProfileState = { error?: string; ok?: boolean };
 
@@ -11,9 +11,11 @@ export async function updateProfileAction(
   _prev: ProfileState,
   formData: FormData,
 ): Promise<ProfileState> {
+  const telegramIdRaw = String(formData.get("telegramId") ?? "").trim();
   const parsed = updateProfileInput.safeParse({
     nickname: String(formData.get("nickname") ?? "").trim() || undefined,
     avatarUrl: formData.get("avatarUrl") ? String(formData.get("avatarUrl")) : undefined,
+    telegramId: telegramIdRaw === "" ? null : Number(telegramIdRaw),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -24,6 +26,9 @@ export async function updateProfileAction(
   } catch (e) {
     if (e instanceof ApiError) {
       if (e.status === 401) redirect("/login");
+      if (e.status === 409 && e.message.includes("telegram_id_taken")) {
+        return { error: "Этот Telegram ID уже привязан к другому аккаунту" };
+      }
       return { error: `API ${e.status}: ${e.message}` };
     }
     return { error: "Не удалось сохранить" };

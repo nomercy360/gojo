@@ -1,5 +1,5 @@
-import { cookies, headers } from "next/headers";
 import type { UserDto } from "@gojo/shared";
+import { cookies, headers } from "next/headers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -59,6 +59,7 @@ type RawUser = {
   role?: string;
   jlptLevel?: string | null;
   quizLevel?: string | null;
+  telegramId?: number | null;
   createdAt?: string | Date;
 };
 
@@ -71,9 +72,8 @@ function toUserDto(u: RawUser): UserDto {
     role: (u.role as UserDto["role"]) ?? "student",
     jlptLevel: u.jlptLevel ?? null,
     quizLevel: u.quizLevel ?? null,
+    telegramId: u.telegramId ?? null,
     createdAt:
-      typeof u.createdAt === "string"
-        ? u.createdAt
-        : (u.createdAt ?? new Date()).toString(),
+      typeof u.createdAt === "string" ? u.createdAt : (u.createdAt ?? new Date()).toString(),
   };
 }

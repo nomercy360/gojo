@@ -18,6 +18,7 @@ export function toUserDto(u: User): UserDto {
     role: u.role,
     jlptLevel: u.jlptLevel ?? null,
     quizLevel: u.quizLevel ?? null,
+    telegramId: u.telegramId ?? null,
     createdAt: u.createdAt.toISOString(),
   };
 }

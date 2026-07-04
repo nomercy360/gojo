@@ -12,12 +12,7 @@ import { toUserDto } from "./mappers.ts";
 export const usersRoute = new Hono<AuthContext>();
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
+const ALLOWED_AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 
 usersRoute.patch("/me", requireAuth, zValidator("json", updateProfileInput), async (c) => {
   const u = c.get("user")!;
@@ -26,8 +21,18 @@ usersRoute.patch("/me", requireAuth, zValidator("json", updateProfileInput), asy
   const patch: Partial<typeof userTable.$inferInsert> = { updatedAt: new Date() };
   if (body.nickname !== undefined) patch.nickname = body.nickname;
   if (body.avatarUrl !== undefined) patch.image = body.avatarUrl || null;
+  if (body.telegramId !== undefined) patch.telegramId = body.telegramId;
 
-  const [row] = await db.update(userTable).set(patch).where(eq(userTable.id, u.id)).returning();
+  let row: typeof userTable.$inferSelect | undefined;
+  try {
+    [row] = await db.update(userTable).set(patch).where(eq(userTable.id, u.id)).returning();
+  } catch (err) {
+    // Unique violation — this Telegram ID is already linked to another account.
+    if (err instanceof Error && "code" in err && (err as { code?: string }).code === "23505") {
+      throw new HTTPException(409, { message: "telegram_id_taken" });
+    }
+    throw err;
+  }
   if (!row) throw new HTTPException(404, { message: "user not found" });
   return c.json(toUserDto(row));
 });

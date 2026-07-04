@@ -13,6 +13,9 @@ export const personalEvents = pgTable("personal_events", {
   title: text().notNull(),
   startsAt: timestamp({ withTimezone: true }).notNull(),
   durationMinutes: integer().notNull().default(30),
+  // Set once a Telegram reminder has been sent, so the reminder loop never
+  // double-sends. Stays null if the user has no telegramId linked.
+  remindedAt: timestamp({ withTimezone: true }),
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 

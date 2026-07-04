@@ -1,10 +1,10 @@
 "use client";
 
+import { Avatar, PRESET_CONFIGS } from "@/components/avatar";
 import { AVATAR_PRESET_PREFIX, PRESET_AVATARS, type UserDto } from "@gojo/shared";
 import { useActionState, useEffect, useState } from "react";
-import { Avatar, PRESET_CONFIGS } from "@/components/avatar";
-import { type ProfileState, updateProfileAction, uploadAvatarAction } from "./actions";
 import { toast } from "sonner";
+import { type ProfileState, updateProfileAction, uploadAvatarAction } from "./actions";
 
 const initial: ProfileState = {};
 
@@ -12,14 +12,12 @@ export function ProfileForm({ user }: { user: UserDto }) {
   const [selected, setSelected] = useState<string | null>(user.avatarUrl);
   const [avatarTab, setAvatarTab] = useState<"preset" | "upload">("preset");
   const [nickname, setNickname] = useState(user.nickname ?? "");
+  const [telegramId, setTelegramId] = useState(user.telegramId?.toString() ?? "");
   const [profileState, profileAction, profilePending] = useActionState(
     updateProfileAction,
     initial,
   );
-  const [uploadState, uploadAction, uploadPending] = useActionState(
-    uploadAvatarAction,
-    initial,
-  );
+  const [uploadState, uploadAction, uploadPending] = useActionState(uploadAvatarAction, initial);
 
   useEffect(() => {
     setSelected(user.avatarUrl);
@@ -58,7 +56,10 @@ export function ProfileForm({ user }: { user: UserDto }) {
       <form action={profileAction} className="mt-6 space-y-6">
         {/* Nickname */}
         <div>
-          <label className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft" htmlFor="nickname">
+          <label
+            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
+            htmlFor="nickname"
+          >
             Никнейм
           </label>
           <input
@@ -71,6 +72,39 @@ export function ProfileForm({ user }: { user: UserDto }) {
             maxLength={40}
             className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
+        </div>
+
+        {/* Telegram ID — enables Telegram reminders for personal trainings */}
+        <div>
+          <label
+            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
+            htmlFor="telegramId"
+          >
+            Telegram ID (для напоминаний)
+          </label>
+          <input
+            id="telegramId"
+            name="telegramId"
+            type="text"
+            inputMode="numeric"
+            value={telegramId}
+            onChange={(e) => setTelegramId(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="Например, 412587349"
+            className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+          />
+          <p className="mt-1.5 text-[11px] text-gojo-ink-muted">
+            Узнать свой ID — напиши{" "}
+            <a
+              href="https://t.me/userinfobot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-gojo-orange hover:underline"
+            >
+              @userinfobot
+            </a>{" "}
+            в Telegram, он ответит числом. Вставь его сюда, чтобы получать напоминания о своих
+            тренировках.
+          </p>
         </div>
 
         {/* Avatar section */}
