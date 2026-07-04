@@ -86,9 +86,11 @@ services:
     environment:
       NODE_ENV: production
       # better-auth baseURL (used for absolute URLs + origin validation) and
-      # the trusted-origins allowlist. Without these, prod requests are
-      # rejected with 403 INVALID_ORIGIN. API_ORIGIN == the public API base.
-      API_ORIGIN: ${PUBLIC_API_URL:?set PUBLIC_API_URL}
+      # the trusted-origins allowlist. API_ORIGIN must be the ORIGIN only
+      # (no /api path) — Caddy strips /api before the container, so auth
+      # routes are matched at /auth/*. A baseURL with /api → 404; empty
+      # trustedOrigins → 403 INVALID_ORIGIN.
+      API_ORIGIN: ${API_ORIGIN:-https://gojolearn.ru}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-https://gojolearn.ru}
       DATABASE_URL: postgres://${POSTGRES_USER:-gojo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gojo}
       REDIS_URL: redis://redis:6379
