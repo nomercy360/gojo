@@ -58,6 +58,7 @@ type RawUser = {
   image?: string | null;
   role?: string;
   jlptLevel?: string | null;
+  quizLevel?: string | null;
   createdAt?: string | Date;
 };
 
@@ -69,6 +70,7 @@ function toUserDto(u: RawUser): UserDto {
     avatarUrl: u.image ?? null,
     role: (u.role as UserDto["role"]) ?? "student",
     jlptLevel: u.jlptLevel ?? null,
+    quizLevel: u.quizLevel ?? null,
     createdAt:
       typeof u.createdAt === "string"
         ? u.createdAt

@@ -40,6 +40,11 @@ export const auth = betterAuth({
         required: false,
         input: false,
       },
+      quizLevel: {
+        type: "string",
+        required: false,
+        input: false,
+      },
       telegramId: {
         type: "number",
         required: false,

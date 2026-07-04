@@ -1,10 +1,10 @@
 "use client";
 
-import type { HomeworkStatus } from "@gojo/shared";
+import type { HomeworkStatus, JlptLevel } from "@gojo/shared";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { LessonStudentDto } from "@/lib/api";
-import { setHomeworkStatusAction } from "./homework-actions";
+import { setHomeworkStatusAction, setStudentLevelAction } from "./homework-actions";
 
 const STATUS_LABEL: Record<HomeworkStatus, string> = {
   pending: "Не отмечено",
@@ -17,6 +17,8 @@ const STATUS_CLASS: Record<HomeworkStatus, string> = {
   done: "border-gojo-ink bg-gojo-orange text-white",
   missed: "border-gojo-error bg-gojo-error-soft text-gojo-error",
 };
+
+const JLPT_LEVELS: JlptLevel[] = ["N5", "N4", "N3", "N2"];
 
 export function HomeworkManager({
   lessonId,
@@ -45,13 +47,29 @@ export function HomeworkManager({
     });
   }
 
+  function setLevel(studentId: string, jlptLevel: JlptLevel) {
+    startTransition(async () => {
+      try {
+        const updated = await setStudentLevelAction(lessonId, studentId, jlptLevel);
+        setStudents((list) =>
+          list.map((s) =>
+            s.studentId === studentId ? { ...s, jlptLevel: updated.jlptLevel } : s,
+          ),
+        );
+        toast.success("Уровень обновлён");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Не получилось");
+      }
+    });
+  }
+
   if (students.length === 0) return null;
 
   return (
     <section className="mt-10">
-      <h2 className="font-serif text-[22px] font-bold">Домашнее задание</h2>
+      <h2 className="font-serif text-[22px] font-bold">Домашнее задание и уровень</h2>
       <p className="mt-1 text-[13px] text-gojo-ink-muted">
-        Отметь, кто сдал домашку по этому уроку.
+        Отметь, кто сдал домашку, и выставь официальный уровень после консультации.
       </p>
 
       <ul className="mt-4 space-y-2">
@@ -62,11 +80,27 @@ export function HomeworkManager({
           >
             <div className="min-w-0">
               <div className="truncate font-bold">{s.nickname ?? s.email}</div>
-              <div className="text-[11px] text-gojo-ink-muted">
-                {STATUS_LABEL[s.homeworkStatus]}
+              <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-gojo-ink-muted">
+                <span>{STATUS_LABEL[s.homeworkStatus]}</span>
+                {s.quizLevel ? <span>· ориентир по квизу: {s.quizLevel}</span> : null}
               </div>
             </div>
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <select
+                value={s.jlptLevel ?? ""}
+                disabled={pending}
+                onChange={(e) => setLevel(s.studentId, e.target.value as JlptLevel)}
+                className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-2 py-1.5 text-[11px] font-bold disabled:opacity-50"
+              >
+                <option value="" disabled>
+                  Уровень
+                </option>
+                {JLPT_LEVELS.map((lvl) => (
+                  <option key={lvl} value={lvl}>
+                    {lvl}
+                  </option>
+                ))}
+              </select>
               {(["missed", "done"] as const).map((status) => (
                 <button
                   key={status}

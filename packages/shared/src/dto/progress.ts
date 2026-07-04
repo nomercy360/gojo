@@ -19,7 +19,7 @@ export const setHomeworkStatusInput = z.object({
 });
 export type SetHomeworkStatusInput = z.infer<typeof setHomeworkStatusInput>;
 
-export const trainingActivitySchema = z.enum(["review", "kana"]);
+export const trainingActivitySchema = z.enum(["review", "kana", "kanji"]);
 export type TrainingActivity = z.infer<typeof trainingActivitySchema>;
 
 export const trackTrainingInput = z.object({
@@ -31,6 +31,7 @@ export type TrackTrainingInput = z.infer<typeof trackTrainingInput>;
 export const trainingTotalsDto = z.object({
   reviewSeconds: z.number(),
   kanaSeconds: z.number(),
+  kanjiSeconds: z.number(),
   totalSeconds: z.number(),
 });
 export type TrainingTotalsDto = z.infer<typeof trainingTotalsDto>;

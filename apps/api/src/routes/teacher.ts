@@ -6,7 +6,7 @@ import {
   lessons,
   user as userTable,
 } from "@gojo/db";
-import { addLessonCardInput, setHomeworkStatusInput } from "@gojo/shared";
+import { addLessonCardInput, setHomeworkStatusInput, setStudentLevelInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -141,6 +141,8 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
       bookedAt: bookings.createdAt,
       homeworkStatus: homework.status,
       homeworkMarkedAt: homework.markedAt,
+      jlptLevel: userTable.jlptLevel,
+      quizLevel: userTable.quizLevel,
     })
     .from(bookings)
     .innerJoin(userTable, eq(userTable.id, bookings.studentId))
@@ -160,9 +162,42 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
       bookedAt: r.bookedAt,
       homeworkStatus: r.homeworkStatus ?? "pending",
       homeworkMarkedAt: r.homeworkMarkedAt ? r.homeworkMarkedAt.toISOString() : null,
+      jlptLevel: r.jlptLevel ?? null,
+      quizLevel: r.quizLevel ?? null,
     })),
   );
 });
+
+teacherRoute.patch(
+  "/lessons/:id/students/:studentId/level",
+  zValidator("json", setStudentLevelInput),
+  async (c) => {
+    const u = c.get("user")!;
+    const lessonId = c.req.param("id");
+    const studentId = c.req.param("studentId");
+    const { jlptLevel } = c.req.valid("json");
+
+    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+    if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, studentId)))
+      .limit(1);
+    if (!booking) throw new HTTPException(404, { message: "student not booked on this lesson" });
+
+    const [row] = await db
+      .update(userTable)
+      .set({ jlptLevel, updatedAt: new Date() })
+      .where(eq(userTable.id, studentId))
+      .returning();
+    if (!row) throw new HTTPException(404, { message: "student not found" });
+
+    return c.json({ studentId: row.id, jlptLevel: row.jlptLevel ?? null });
+  },
+);
 
 teacherRoute.patch(
   "/lessons/:id/homework/:studentId",

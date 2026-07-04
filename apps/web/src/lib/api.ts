@@ -2,6 +2,7 @@ import type {
   AddLessonCardInput,
   FlashcardDto,
   HomeworkStatus,
+  JlptLevel,
   KanjiBreakdownEntry,
   KanjiDto,
   LessonCardDto,
@@ -148,6 +149,10 @@ export function fetchKanji(char: string) {
   return apiFetch<KanjiDto>(`/kanji/${encodeURIComponent(char)}`);
 }
 
+export function fetchKanjiList(difficulty: "easy" | "medium" | "hard" | "all", limit: number) {
+  return apiFetch<KanjiDto[]>(`/kanji/list?difficulty=${difficulty}&limit=${limit}`);
+}
+
 export function fetchLessonCards(lessonId: string) {
   return apiFetch<LessonCardDto[]>(`/teacher/lessons/${lessonId}/cards`);
 }
@@ -185,6 +190,8 @@ export type LessonStudentDto = {
   bookedAt: string;
   homeworkStatus: HomeworkStatus;
   homeworkMarkedAt: string | null;
+  jlptLevel: string | null;
+  quizLevel: string | null;
 };
 
 export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {
@@ -195,6 +202,13 @@ export function setHomeworkStatus(lessonId: string, studentId: string, status: H
   return apiFetch<{ studentId: string; status: HomeworkStatus; markedAt: string | null }>(
     `/teacher/lessons/${lessonId}/homework/${studentId}`,
     { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
+
+export function setStudentLevel(lessonId: string, studentId: string, jlptLevel: JlptLevel) {
+  return apiFetch<{ studentId: string; jlptLevel: string | null }>(
+    `/teacher/lessons/${lessonId}/students/${studentId}/level`,
+    { method: "PATCH", body: JSON.stringify({ jlptLevel }) },
   );
 }
 

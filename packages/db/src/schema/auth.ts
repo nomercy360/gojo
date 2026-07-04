@@ -16,7 +16,10 @@ export const user = pgTable("user", {
 
   role: userRole().notNull().default("student"),
   nickname: text(),
+  /** Official level, set by a teacher after the free consultation lesson. */
   jlptLevel: text(),
+  /** Indicative self-assessment from the onboarding quiz — shown to the student, never authoritative. */
+  quizLevel: text(),
   telegramId: bigint({ mode: "number" }).unique(),
 
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

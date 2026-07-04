@@ -1,6 +1,6 @@
 import { kanji } from "@gojo/db";
 import type { KanjiBreakdownEntry } from "@gojo/shared";
-import { inArray } from "drizzle-orm";
+import { inArray, isNull, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AuthContext } from "../auth/middleware.ts";
@@ -8,6 +8,39 @@ import { db } from "../db.ts";
 import { toKanjiDto } from "./mappers.ts";
 
 export const kanjiRoute = new Hono<AuthContext>();
+
+const DIFFICULTY_GRADES: Record<string, number[]> = {
+  easy: [1, 2],
+  medium: [3, 4],
+  hard: [5, 6],
+};
+
+/**
+ * Random batch of kanji for the practice game. Grade is the Kanji Alive
+ * elementary-school grade (1-6, or null for jouyou kanji taught later) —
+ * used only as a rough difficulty knob, not a JLPT mapping.
+ */
+kanjiRoute.get("/list", async (c) => {
+  const difficulty = c.req.query("difficulty") ?? "all";
+  const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 10), 1), 40);
+
+  const grades = DIFFICULTY_GRADES[difficulty];
+  const where =
+    difficulty === "hard"
+      ? or(inArray(kanji.grade, grades!), isNull(kanji.grade))
+      : grades
+        ? inArray(kanji.grade, grades)
+        : undefined;
+
+  const rows = await db
+    .select()
+    .from(kanji)
+    .where(where)
+    .orderBy(sql`random()`)
+    .limit(limit);
+
+  return c.json(rows.map(toKanjiDto));
+});
 
 /**
  * Extract CJK unified ideographs from a word string. Reused from spfn —

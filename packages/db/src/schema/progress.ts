@@ -40,6 +40,7 @@ export const trainingTotals = pgTable("training_totals", {
     .references(() => user.id, { onDelete: "cascade" }),
   reviewSeconds: integer().notNull().default(0),
   kanaSeconds: integer().notNull().default(0),
+  kanjiSeconds: integer().notNull().default(0),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 

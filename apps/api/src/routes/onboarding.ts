@@ -36,9 +36,11 @@ onboardingRoute.post(
 
     const level = scoreToLevel(correct);
 
+    // Indicative only — the official jlptLevel is set by a teacher after the
+    // free consultation lesson (see PATCH /teacher/lessons/:id/students/:studentId/level).
     const [row] = await db
       .update(userTable)
-      .set({ jlptLevel: level, updatedAt: new Date() })
+      .set({ quizLevel: level, updatedAt: new Date() })
       .where(eq(userTable.id, u.id))
       .returning();
     if (!row) throw new HTTPException(404, { message: "user not found" });

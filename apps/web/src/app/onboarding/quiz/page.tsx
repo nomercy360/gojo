@@ -12,7 +12,7 @@ export default async function OnboardingQuizPage({
   if (!user) redirect("/login");
 
   const { retake } = await searchParams;
-  if (user.jlptLevel && retake !== "1") redirect("/lessons");
+  if (user.quizLevel && retake !== "1") redirect("/lessons");
 
   const questions = await fetchQuizQuestions();
   return <QuizClient questions={questions} />;

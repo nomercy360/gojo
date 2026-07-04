@@ -9,6 +9,8 @@ export type SessionUser = {
   role: "student" | "teacher" | "admin";
   nickname?: string | null;
   image?: string | null;
+  jlptLevel?: string | null;
+  quizLevel?: string | null;
 };
 
 export type AuthContext = {

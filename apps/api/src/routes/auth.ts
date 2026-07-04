@@ -60,6 +60,7 @@ authRoute.post("/dev-login", zValidator("json", devLoginInput), async (c) => {
       avatarUrl: result.response.user.image ?? null,
       role: (result.response.user as { role?: string }).role ?? "student",
       jlptLevel: (result.response.user as { jlptLevel?: string }).jlptLevel ?? null,
+      quizLevel: (result.response.user as { quizLevel?: string }).quizLevel ?? null,
       createdAt:
         typeof result.response.user.createdAt === "string"
           ? result.response.user.createdAt
@@ -77,7 +78,8 @@ authRoute.get("/me", async (c) => {
     nickname: u.nickname ?? null,
     avatarUrl: u.image ?? null,
     role: u.role,
-    jlptLevel: null,
+    jlptLevel: u.jlptLevel ?? null,
+    quizLevel: u.quizLevel ?? null,
     createdAt: new Date().toISOString(),
   });
 });

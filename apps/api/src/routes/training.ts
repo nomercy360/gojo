@@ -14,10 +14,11 @@ trainingRoute.post("/track", zValidator("json", trackTrainingInput), async (c) =
   const u = c.get("user")!;
   const { activity, seconds } = c.req.valid("json");
 
+  const zero = { reviewSeconds: 0, kanaSeconds: 0, kanjiSeconds: 0 };
   if (activity === "review") {
     await db
       .insert(trainingTotals)
-      .values({ userId: u.id, reviewSeconds: seconds, kanaSeconds: 0 })
+      .values({ userId: u.id, ...zero, reviewSeconds: seconds })
       .onConflictDoUpdate({
         target: trainingTotals.userId,
         set: {
@@ -25,14 +26,25 @@ trainingRoute.post("/track", zValidator("json", trackTrainingInput), async (c) =
           updatedAt: new Date(),
         },
       });
-  } else {
+  } else if (activity === "kana") {
     await db
       .insert(trainingTotals)
-      .values({ userId: u.id, reviewSeconds: 0, kanaSeconds: seconds })
+      .values({ userId: u.id, ...zero, kanaSeconds: seconds })
       .onConflictDoUpdate({
         target: trainingTotals.userId,
         set: {
           kanaSeconds: sql`${trainingTotals.kanaSeconds} + ${seconds}`,
+          updatedAt: new Date(),
+        },
+      });
+  } else {
+    await db
+      .insert(trainingTotals)
+      .values({ userId: u.id, ...zero, kanjiSeconds: seconds })
+      .onConflictDoUpdate({
+        target: trainingTotals.userId,
+        set: {
+          kanjiSeconds: sql`${trainingTotals.kanjiSeconds} + ${seconds}`,
           updatedAt: new Date(),
         },
       });
@@ -52,7 +64,8 @@ trainingRoute.get("/me", async (c) => {
   const response: TrainingTotalsDto = {
     reviewSeconds: row?.reviewSeconds ?? 0,
     kanaSeconds: row?.kanaSeconds ?? 0,
-    totalSeconds: (row?.reviewSeconds ?? 0) + (row?.kanaSeconds ?? 0),
+    kanjiSeconds: row?.kanjiSeconds ?? 0,
+    totalSeconds: (row?.reviewSeconds ?? 0) + (row?.kanaSeconds ?? 0) + (row?.kanjiSeconds ?? 0),
   };
   return c.json(response);
 });

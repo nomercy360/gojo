@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { TrainingActivity } from "@gojo/shared";
+import { useEffect, useRef } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PING_INTERVAL_MS = 20_000;
@@ -24,10 +24,11 @@ function ping(activity: TrainingActivity, seconds: number) {
  * Only counts time while the tab is visible, in small bounded pings so a
  * backgrounded/closed tab never over-reports.
  */
-export function useTrainingHeartbeat(activity: TrainingActivity) {
+export function useTrainingHeartbeat(activity: TrainingActivity, enabled = true) {
   const lastTickRef = useRef(Date.now());
 
   useEffect(() => {
+    if (!enabled) return;
     lastTickRef.current = Date.now();
 
     const interval = setInterval(() => {
@@ -53,5 +54,5 @@ export function useTrainingHeartbeat(activity: TrainingActivity) {
       const elapsed = Math.round((now - lastTickRef.current) / 1000);
       if (document.visibilityState === "visible") ping(activity, elapsed);
     };
-  }, [activity]);
+  }, [activity, enabled]);
 }

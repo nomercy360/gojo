@@ -23,3 +23,9 @@ export const quizResultDto = z.object({
   total: z.number().int().min(1),
 });
 export type QuizResultDto = z.infer<typeof quizResultDto>;
+
+/** Teacher sets the official level for a student after the free consultation lesson. */
+export const setStudentLevelInput = z.object({
+  jlptLevel: jlptLevelSchema,
+});
+export type SetStudentLevelInput = z.infer<typeof setStudentLevelInput>;

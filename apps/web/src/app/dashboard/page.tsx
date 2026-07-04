@@ -1,10 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { StudentStatsDto } from "@gojo/shared";
-import { AvatarUpload } from "@/components/avatar-upload";
+import { Avatar } from "@/components/avatar";
 import { CalendarSection } from "@/components/calendar-section";
 import { fetchStudentStats } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
+
+const ROLE_LABEL: Record<string, string> = {
+  student: "Студент",
+  teacher: "Учитель",
+  admin: "Админ",
+};
+
+const LEVEL_BLURB: Record<string, string> = {
+  N5: "Базовый уровень · хирагана, катакана, первые иероглифы",
+  N4: "Уверенный новичок · базовая грамматика, 250+ кандзи",
+  N3: "Средний уровень · простые тексты, поддержка диалога",
+  N2: "Продвинутый уровень · новости, деловой язык",
+};
 
 const RANKS = [
   { name: "見習い",  sub: "Minarai",    min: 0,  max: 24,  color: "#7B9BAD", stars: 1 },
@@ -134,12 +147,14 @@ export default async function DashboardPage() {
 
         {/* ── Profile card ── */}
         <div className="mb-6 flex items-center gap-5 rounded-2xl bg-white px-7 py-5" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
-          <AvatarUpload />
+          <Avatar value={user.avatarUrl} size={64} fallback={user.nickname ?? user.email} />
           <div className="flex-1 min-w-0">
-            <div className="g-display text-[18px] font-extrabold leading-tight" style={{ color: "#252525" }}>
-              Имя Фамилия
+            <div className="g-display truncate text-[18px] font-extrabold leading-tight" style={{ color: "#252525" }}>
+              {user.nickname ?? user.email}
             </div>
-            <div className="g-mono mt-0.5 text-[12px]" style={{ color: "#a0a0a0" }}>@никнейм · Студент</div>
+            <div className="g-mono mt-0.5 truncate text-[12px]" style={{ color: "#a0a0a0" }}>
+              @{user.nickname ?? user.email.split("@")[0]} · {ROLE_LABEL[user.role] ?? user.role}
+            </div>
           </div>
           <Link
             href="/profile"
@@ -300,21 +315,35 @@ export default async function DashboardPage() {
             <div className="g-mono mb-4 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "#e8420a" }}>
               Уровень
             </div>
-            <div className="g-display text-[72px] font-extrabold leading-none" style={{ color: "#252525", letterSpacing: "-0.04em" }}>
-              N5
-            </div>
-            <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
-              Базовый уровень · хирагана, катакана, первые иероглифы
-            </p>
-            <div className="mt-5">
-              <div className="mb-1.5 flex justify-between">
-                <span className="g-mono text-[10px] font-bold" style={{ color: "#a0a0a0" }}>N5</span>
-                <span className="g-mono text-[10px] font-bold" style={{ color: "#a0a0a0" }}>N4</span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "#efe7d8" }}>
-                <div className="h-full w-[8%] rounded-full" style={{ background: "#e8420a" }} />
-              </div>
-            </div>
+            {user.jlptLevel ? (
+              <>
+                <div className="g-display text-[72px] font-extrabold leading-none" style={{ color: "#252525", letterSpacing: "-0.04em" }}>
+                  {user.jlptLevel}
+                </div>
+                <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
+                  {LEVEL_BLURB[user.jlptLevel] ?? "Уровень подтверждён преподавателем"}
+                </p>
+              </>
+            ) : user.quizLevel ? (
+              <>
+                <div className="g-display text-[56px] font-extrabold leading-none" style={{ color: "#252525", letterSpacing: "-0.04em" }}>
+                  ~{user.quizLevel}
+                </div>
+                <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
+                  Предварительная оценка по квизу. Финальный уровень выставит преподаватель на
+                  бесплатной консультации.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="g-display text-[32px] font-extrabold leading-tight" style={{ color: "#252525" }}>
+                  Пока не определён
+                </div>
+                <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
+                  Пройди короткий квиз или запишись на бесплатную консультацию с преподавателем.
+                </p>
+              </>
+            )}
 
             <div className="mt-6 rounded-xl p-4" style={{ background: "#f8f4ec" }}>
               <div className="g-mono mb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#e8420a" }}>
@@ -369,21 +398,22 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <div
-              className="flex items-center gap-4 rounded-xl bg-white p-5"
-              style={{ border: "1px dashed rgba(0,0,0,0.12)", opacity: 0.5 }}
+            <Link
+              href="/kanji"
+              className="group flex items-center gap-4 rounded-xl bg-white p-5 transition-all hover:shadow-sm"
+              style={{ border: "1px solid rgba(0,0,0,0.06)" }}
             >
               <div
-                className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[24px]"
-                style={{ background: "#f8f4ec", color: "#a0a0a0" }}
+                className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[24px] font-bold"
+                style={{ background: "#f8f4ec", color: "#e8420a" }}
               >
                 漢
               </div>
               <div>
-                <div className="g-display text-[15px] font-bold" style={{ color: "#252525" }}>Словарь кандзи</div>
-                <div className="g-mono mt-0.5 text-[10px] uppercase tracking-wider" style={{ color: "#a0a0a0" }}>Скоро</div>
+                <div className="g-display text-[15px] font-bold" style={{ color: "#252525" }}>Кандзи</div>
+                <div className="g-body mt-0.5 text-[12px]" style={{ color: "#6b6b6b" }}>Тренажёр иероглифов</div>
               </div>
-            </div>
+            </Link>
 
           </div>
         </div>

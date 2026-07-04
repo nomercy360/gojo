@@ -11,6 +11,7 @@ export const authClient = createAuthClient({
         role: { type: "string", defaultValue: "student" },
         nickname: { type: "string", required: false },
         jlptLevel: { type: "string", required: false },
+        quizLevel: { type: "string", required: false },
       },
     }),
   ],

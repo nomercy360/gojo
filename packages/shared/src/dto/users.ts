@@ -10,6 +10,7 @@ export const userDto = z.object({
   avatarUrl: z.string().nullable(),
   role: userRoleSchema,
   jlptLevel: z.string().nullable(),
+  quizLevel: z.string().nullable(),
   createdAt: z.string(),
 });
 export type UserDto = z.infer<typeof userDto>;

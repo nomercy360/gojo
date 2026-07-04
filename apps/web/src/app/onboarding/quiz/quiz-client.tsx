@@ -70,13 +70,13 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-xl px-6 py-16">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Готово
+            Интересно!
           </div>
           <h1 className="mt-2 font-serif text-[36px] font-bold leading-tight">
-            Твой уровень — {result.level}
+            Похоже, твой уровень — примерно {result.level}
           </h1>
           <p className="mt-2 text-sm text-gojo-ink-muted">
-            {result.correct} из {result.total} правильных ответов
+            {result.correct} из {result.total} правильных ответов · это лишь предварительная оценка
           </p>
 
           <div className="mt-8 rounded-md border-2 border-gojo-ink bg-gojo-surface p-6 shadow-[3px_3px_0_var(--color-gojo-ink)]">
@@ -84,26 +84,45 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
             <p className="mt-2 text-[15px] leading-relaxed text-gojo-ink-soft">{blurb.body}</p>
           </div>
 
+          <div className="mt-6 rounded-md border-2 border-dashed border-gojo-ink/30 bg-gojo-surface-2 p-5">
+            <p className="text-[14px] font-bold text-gojo-ink">
+              Теперь проведём бесплатную консультацию с преподавателем
+            </p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-gojo-ink-muted">
+              Точный уровень и программу обучения преподаватель определит на живом занятии —
+              квиз лишь ориентир, чтобы вам обоим было проще начать разговор.
+            </p>
+          </div>
+
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a
+              href="https://t.me/gojoedu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-pop flex-1 rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-3 text-center text-sm font-bold text-white"
+            >
+              Записаться на консультацию →
+            </a>
             <Link
               href="/lessons"
-              className="btn-pop flex-1 rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-3 text-center text-sm font-bold text-white"
+              className="rounded-md border-2 border-gojo-ink bg-transparent px-5 py-3 text-center text-sm font-bold text-gojo-ink hover:bg-gojo-surface-2"
               onClick={() => router.refresh()}
             >
-              Посмотреть уроки {result.level}
+              Посмотреть уроки
             </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setIndex(0);
-                setAnswers({});
-                setResult(null);
-              }}
-              className="rounded-md border-2 border-gojo-ink bg-transparent px-5 py-3 text-sm font-bold text-gojo-ink hover:bg-gojo-surface-2"
-            >
-              Пройти заново
-            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIndex(0);
+              setAnswers({});
+              setResult(null);
+            }}
+            className="mt-3 text-[12px] font-bold text-gojo-ink-muted hover:text-gojo-ink"
+          >
+            Пройти заново
+          </button>
         </div>
       </main>
     );
@@ -119,7 +138,7 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
           Квиз уровня · {index + 1} / {total}
         </div>
         <h1 className="mt-2 font-serif text-[28px] font-bold leading-tight">
-          Определим твой JLPT за 2 минуты
+          Прикинем твой уровень JLPT за 2 минуты
         </h1>
 
         <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full border border-gojo-ink bg-gojo-surface-2">
@@ -147,7 +166,7 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
         </div>
 
         <p className="mt-6 text-[11px] text-gojo-ink-muted">
-          Не угадываешь — жми любой вариант. Квиз выставит уровень с запасом, преподаватель скорректирует на пробном уроке.
+          Не угадываешь — жми любой вариант. Это лишь ориентир: финальный уровень определит преподаватель на бесплатной консультации.
         </p>
       </div>
     </main>

@@ -17,6 +17,7 @@ export function toUserDto(u: User): UserDto {
     avatarUrl: u.image ?? null,
     role: u.role,
     jlptLevel: u.jlptLevel ?? null,
+    quizLevel: u.quizLevel ?? null,
     createdAt: u.createdAt.toISOString(),
   };
 }

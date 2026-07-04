@@ -26,7 +26,6 @@ export default function LoginPage() {
 
     try {
       let isNewStudent = false;
-      let jlptLevel: string | null = null;
       if (mode === "signup") {
         const res = await authClient.signUp.email({
           email,
@@ -44,8 +43,7 @@ export default function LoginPage() {
         toast.success("С возвращением!");
         // biome-ignore lint/suspicious/noExplicitAny: additional fields
         const u = (res.data as any)?.user;
-        jlptLevel = u?.jlptLevel ?? null;
-        isNewStudent = u?.role === "student" && !jlptLevel;
+        isNewStudent = u?.role === "student" && !u?.quizLevel;
       }
       router.push(isNewStudent ? "/onboarding/quiz" : "/dashboard");
       router.refresh();

@@ -1,7 +1,7 @@
 "use server";
 
-import type { HomeworkStatus } from "@gojo/shared";
-import { setHomeworkStatus } from "@/lib/api";
+import type { HomeworkStatus, JlptLevel } from "@gojo/shared";
+import { setHomeworkStatus, setStudentLevel } from "@/lib/api";
 
 export async function setHomeworkStatusAction(
   lessonId: string,
@@ -9,4 +9,12 @@ export async function setHomeworkStatusAction(
   status: HomeworkStatus,
 ) {
   return setHomeworkStatus(lessonId, studentId, status);
+}
+
+export async function setStudentLevelAction(
+  lessonId: string,
+  studentId: string,
+  jlptLevel: JlptLevel,
+) {
+  return setStudentLevel(lessonId, studentId, jlptLevel);
 }
