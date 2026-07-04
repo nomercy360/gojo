@@ -21,6 +21,12 @@ COPY tsconfig.base.json .
 COPY package.json .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars are inlined into the client bundle at BUILD time, so the
+# public API URL must be provided here as a build arg — a runtime env in
+# docker-compose does NOT reach the browser. Defaults to localhost for local
+# image builds; CI passes the prod value (e.g. https://gojolearn.ru/api).
+ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN cd apps/web && bun run build
 
 EXPOSE 3000

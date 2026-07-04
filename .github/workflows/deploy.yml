@@ -41,6 +41,10 @@ jobs:
           context: .
           file: ./apps/${{ matrix.app }}/Dockerfile
           push: true
+          # NEXT_PUBLIC_API_URL is inlined into the web bundle at build time.
+          # Harmless for the api build (its Dockerfile ignores the arg).
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://gojolearn.ru/api' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/gojo-${{ matrix.app }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/gojo-${{ matrix.app }}:${{ steps.tag.outputs.sha }}
