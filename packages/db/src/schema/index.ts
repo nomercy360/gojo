@@ -1,6 +1,7 @@
 export * from "./auth.ts";
 export * from "./leads.ts";
 export * from "./lessons.ts";
+export * from "./personal-events.ts";
 export * from "./materials.ts";
 export * from "./kanji.ts";
 export * from "./flashcards.ts";

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { LessonDto } from "@gojo/shared";
+import type { LessonDto, PersonalEventDto } from "@gojo/shared";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -19,7 +20,8 @@ interface Session {
   time: string;
   duration: string;
   topic: string;
-  source: "google" | "internal";
+  source: "google" | "internal" | "personal";
+  id?: string;
 }
 
 function formatLesson(l: LessonDto): Session {
@@ -39,11 +41,27 @@ function formatLesson(l: LessonDto): Session {
   };
 }
 
-function buildWeekFromLessons(lessons: LessonDto[]) {
+function formatPersonalEvent(e: PersonalEventDto): Session {
+  const start = new Date(e.startsAt);
+  const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  const h = Math.floor(e.durationMinutes / 60);
+  const m = e.durationMinutes % 60;
+  return {
+    day: days[start.getDay()],
+    date: start.getDate().toString(),
+    time: start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+    duration: h > 0 ? `${h}ч${m ? ` ${m}м` : ""}` : `${e.durationMinutes} мин`,
+    topic: e.title,
+    source: "personal",
+    id: e.id,
+  };
+}
+
+function buildWeekFromDates(isoDates: string[]) {
   const today = new Date();
-  const lessonKeys = new Set(
-    lessons.map((l) => {
-      const d = new Date(l.startsAt);
+  const dateKeys = new Set(
+    isoDates.map((iso) => {
+      const d = new Date(iso);
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     }),
   );
@@ -56,7 +74,7 @@ function buildWeekFromLessons(lessons: LessonDto[]) {
     return {
       label: labels[i],
       date: d.getDate(),
-      hasSession: lessonKeys.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
+      hasSession: dateKeys.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
       isToday: d.toDateString() === today.toDateString(),
     };
   });
@@ -105,9 +123,15 @@ export function CalendarSection() {
   const [status, setStatus]       = useState<"loading" | "connected" | "disconnected">("loading");
   const [events, setEvents]       = useState<GCalEvent[]>([]);
   const [bookedLessons, setBookedLessons] = useState<LessonDto[]>([]);
+  const [personalEvents, setPersonalEvents] = useState<PersonalEventDto[]>([]);
   const [connecting, setConnecting] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(true);
   const [hidden, setHidden] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addTitle, setAddTitle] = useState("");
+  const [addWhen, setAddWhen] = useState("");
+  const [addDuration, setAddDuration] = useState(30);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     setHidden(localStorage.getItem("gojo:calendar-hidden") === "1");
@@ -147,6 +171,54 @@ export function CalendarSection() {
       .catch(() => setBookedLessons([]));
   }, []);
 
+  const loadPersonalEvents = () => {
+    fetch(`${API_URL}/personal-events`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((rows: PersonalEventDto[]) => setPersonalEvents(rows))
+      .catch(() => setPersonalEvents([]));
+  };
+
+  useEffect(loadPersonalEvents, []);
+
+  const handleAddTraining = async () => {
+    if (!addTitle.trim() || !addWhen) {
+      toast.error("Укажи название и дату/время");
+      return;
+    }
+    setAdding(true);
+    try {
+      const res = await fetch(`${API_URL}/personal-events`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: addTitle.trim(),
+          startsAt: new Date(addWhen).toISOString(),
+          durationMinutes: addDuration,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setAddTitle("");
+      setAddWhen("");
+      setAddDuration(30);
+      setAddOpen(false);
+      loadPersonalEvents();
+    } catch {
+      toast.error("Не удалось добавить тренировку");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleDeletePersonal = async (id: string) => {
+    try {
+      await fetch(`${API_URL}/personal-events/${id}`, { method: "DELETE", credentials: "include" });
+      loadPersonalEvents();
+    } catch {
+      toast.error("Не удалось удалить");
+    }
+  };
+
   const handleConnect = async () => {
     setConnecting(true);
     await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
@@ -158,9 +230,17 @@ export function CalendarSection() {
     setEvents([]);
   };
 
+  const internalItems = [
+    ...bookedLessons.map((l) => ({ startsAt: l.startsAt, session: formatLesson(l) })),
+    ...personalEvents.map((e) => ({ startsAt: e.startsAt, session: formatPersonalEvent(e) })),
+  ].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+
   const sessions: Session[] =
-    status === "connected" ? events.slice(0, 5).map(formatEvent) : bookedLessons.slice(0, 5).map(formatLesson);
-  const week = status === "connected" ? buildWeek(events) : buildWeekFromLessons(bookedLessons);
+    status === "connected" ? events.slice(0, 5).map(formatEvent) : internalItems.slice(0, 5).map((i) => i.session);
+  const week =
+    status === "connected"
+      ? buildWeek(events)
+      : buildWeekFromDates(internalItems.map((i) => i.startsAt));
 
   if (hidden) {
     return (
@@ -193,6 +273,14 @@ export function CalendarSection() {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => setAddOpen((o) => !o)}
+            className="g-mono text-[10px] uppercase tracking-wider transition-colors hover:opacity-60"
+            style={{ color: "#e8420a" }}
+          >
+            + Своя тренировка
+          </button>
+          <button
+            type="button"
             onClick={hideCalendar}
             className="g-mono text-[10px] uppercase tracking-wider transition-colors hover:opacity-60"
             style={{ color: "#a0a0a0" }}
@@ -219,6 +307,49 @@ export function CalendarSection() {
           </a>
         </div>
       </div>
+
+      {/* Add own training */}
+      {addOpen && (
+        <div className="mb-5 rounded-xl p-4" style={{ background: "#f8f4ec", border: "1px dashed rgba(232,66,10,0.25)" }}>
+          <div className="mb-3 flex flex-wrap gap-2">
+            <input
+              type="text"
+              placeholder="Название (напр. Повторить кандзи)"
+              value={addTitle}
+              onChange={(e) => setAddTitle(e.target.value)}
+              className="g-body flex-1 rounded-lg border px-3 py-2 text-[13px]"
+              style={{ borderColor: "rgba(0,0,0,0.12)", minWidth: 180 }}
+            />
+            <input
+              type="datetime-local"
+              value={addWhen}
+              onChange={(e) => setAddWhen(e.target.value)}
+              className="g-body rounded-lg border px-3 py-2 text-[13px]"
+              style={{ borderColor: "rgba(0,0,0,0.12)" }}
+            />
+            <select
+              value={addDuration}
+              onChange={(e) => setAddDuration(Number(e.target.value))}
+              className="g-body rounded-lg border px-3 py-2 text-[13px]"
+              style={{ borderColor: "rgba(0,0,0,0.12)" }}
+            >
+              <option value={15}>15 мин</option>
+              <option value={30}>30 мин</option>
+              <option value={60}>60 мин</option>
+              <option value={90}>90 мин</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleAddTraining}
+            disabled={adding}
+            className="g-body rounded-lg px-4 py-2 text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ background: "#e8420a" }}
+          >
+            {adding ? "Добавляю..." : "Добавить в расписание"}
+          </button>
+        </div>
+      )}
 
       {/* Connect banner */}
       {status === "disconnected" && (
@@ -313,11 +444,27 @@ export function CalendarSection() {
                   style={{ background: "rgba(66,133,244,0.1)", color: "#4285F4" }}>
                   Google
                 </div>
+              ) : s.source === "personal" ? (
+                <div className="g-mono shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                  style={{ background: "rgba(107,127,191,0.12)", color: "#6B7FBF" }}>
+                  Своё
+                </div>
               ) : (
                 <div className="g-mono shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
                   style={{ background: "rgba(232,66,10,0.1)", color: "#e8420a" }}>
                   Инд.
                 </div>
+              )}
+              {s.source === "personal" && s.id && (
+                <button
+                  type="button"
+                  onClick={() => handleDeletePersonal(s.id!)}
+                  aria-label="Удалить тренировку"
+                  className="g-mono shrink-0 text-[14px] transition-colors hover:opacity-60"
+                  style={{ color: "#a0a0a0" }}
+                >
+                  ✕
+                </button>
               )}
             </div>
           ))}
