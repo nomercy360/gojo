@@ -3,6 +3,10 @@ name: Build & Deploy
 on:
   push:
     branches: [main]
+    # Roadmap/doc-only commits must not trigger a prod deploy.
+    paths-ignore:
+      - 'roadmap.json'
+      - '**/*.md'
   workflow_dispatch: {}
 
 env:

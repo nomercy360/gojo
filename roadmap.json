@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "updated_at": "2026-07-04",
+  "note": "Source of truth for the Gojo roadmap. Agent-maintained (JSON is edited field-by-field; humans read roadmap.md, which is regenerated from this). Drive from Telegram: '@mojo_dojo_bot roadmap <command>'.",
+  "statuses": ["backlog", "now", "in_progress", "blocked", "done"],
+  "priorities": ["now", "next", "later"],
+  "items": [
+    {
+      "id": "R7",
+      "title": "Кнопка «скрыть календарь» в ЛК",
+      "category": "lk",
+      "description": "Тумблер, прячущий блок расписания для тех, кому он не нужен; выбор запоминается.",
+      "priority": "now",
+      "status": "done",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "В ЛК у блока расписания есть кнопка «Скрыть»",
+        "После скрытия показывается кнопка «Показать расписание»",
+        "Выбор сохраняется между перезагрузками (localStorage)"
+      ],
+      "passes": true,
+      "done_at": "2026-07-04"
+    },
+    {
+      "id": "R2a",
+      "title": "Тренажёр каны до регистрации + CTA на лендинге",
+      "category": "trainer",
+      "description": "/kana уже публичен; добавлена ссылка в hero и пункт меню как УТП «поиграй без регистрации».",
+      "priority": "now",
+      "status": "done",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "На лендинге есть ссылка на тренажёр в hero",
+        "В меню (десктоп + мобилка) есть пункт «Тренажёр»",
+        "Тренажёр открывается без логина"
+      ],
+      "passes": true,
+      "done_at": "2026-07-04"
+    },
+    {
+      "id": "R8",
+      "title": "Оплата / подписка",
+      "category": "payments",
+      "description": "Владелец подтвердил: оплата/подписка входит в MVP. Нужен провайдер, флоу оплаты, статусы подписки.",
+      "priority": "now",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "Выбран платёжный провайдер",
+        "Пользователь может оформить подписку и оплатить",
+        "Статус подписки хранится и проверяется на доступ"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R3",
+      "title": "Реальная статистика в ЛК",
+      "category": "lk",
+      "description": "Сейчас цифры на дашборде захардкожены (моки). Нужны API-эндпоинты и подтягивание реальных данных.",
+      "priority": "next",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "API отдаёт реальные стрик / прогресс / историю повторений из БД",
+        "Дашборд отображает эти данные вместо захардкоженных массивов",
+        "Пустое состояние обрабатывается корректно"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R5",
+      "title": "Реальная интеграция с календарём",
+      "category": "calendar",
+      "description": "Сейчас Google Calendar только на чтение. Нужна запись событий и двусторонняя синхронизация.",
+      "priority": "next",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "Создание событий в подключённом календаре",
+        "Двусторонняя синхронизация занятий",
+        "Обработка отключения / переподключения"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R6",
+      "title": "Календарь как в Google (свои тренировки + напоминания)",
+      "category": "calendar",
+      "description": "Пользователь может добавить себе тренировку и получить уведомление. Групповые/личные согласованные занятия — хардкодом.",
+      "priority": "later",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "Пользователь добавляет собственное событие/тренировку",
+        "Приходит напоминание/уведомление",
+        "Согласованные групповые и личные занятия отображаются"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R2b",
+      "title": "Доделать игры-тренажёры + Higgsfield",
+      "category": "trainer",
+      "description": "Довести тренажёры и потенциально интегрировать Higgsfield, чтобы сделать игру визуально впечатляющей и attractive.",
+      "priority": "later",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "Определён скоуп: какая именно фича от Higgsfield в геймплее",
+        "Тренажёры доведены до готового состояния",
+        "Higgsfield-элемент интегрирован в тренажёр"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R4",
+      "title": "Единый инбокс с админом/учителем (WhatsApp/Instagram/Max)",
+      "category": "integrations",
+      "description": "Флоу связи с администрацией. Боты в WhatsApp/Instagram/Max, менеджимые с одного эндпоинта. Первый ответ вручную, дальше — переход к команде.",
+      "priority": "later",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "bilunar",
+      "steps": [
+        "Выбран первый канал (напр. WhatsApp Business API)",
+        "Входящие агрегируются в один эндпоинт",
+        "Первый авто-ответ + передача живому менеджеру"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R1",
+      "title": "Новое фото Руслана на лендинге",
+      "category": "landing",
+      "description": "Заменить фото Руслана на лендинге на новое. Отложено (пропущено в первой итерации Фазы 1).",
+      "priority": "later",
+      "status": "backlog",
+      "owner": "ruslan",
+      "requested_by": "bilunar",
+      "steps": [
+        "Получено новое фото Руслана",
+        "Фото заменено на лендинге"
+      ],
+      "passes": false,
+      "done_at": null
+    }
+  ]
+}
