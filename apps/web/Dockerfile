@@ -27,6 +27,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # image builds; CI passes the prod value (e.g. https://gojolearn.ru/api).
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Same build-time-inlining rule applies to the client-side Sentry DSN.
+ARG NEXT_PUBLIC_SENTRY_DSN=""
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 RUN cd apps/web && bun run build
 
 EXPOSE 3000

@@ -1,3 +1,6 @@
+import "./instrument.ts"; // must load first — see @sentry/bun docs
+
+import * as Sentry from "@sentry/bun";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
@@ -34,6 +37,7 @@ app.use(
 app.onError((err, c) => {
   if (err instanceof HTTPException) return err.getResponse();
   console.error(err);
+  Sentry.captureException(err);
   return c.json({ error: "internal_error" }, 500);
 });
 

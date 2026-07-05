@@ -126,6 +126,9 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-Gojo Learn <no-reply@gojolearn.ru>}
+      # Error monitoring — its own Sentry project, separate from web's, so
+      # backend vs frontend errors triage separately. Unset = no-ops.
+      SENTRY_DSN: ${SENTRY_DSN_API:-}
 
   web:
     image: ${GOJO_IMAGE_WEB:-ghcr.io/nomercy360/gojo-web:latest}
@@ -136,6 +139,11 @@ services:
       - api
     environment:
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:?set PUBLIC_API_URL}
+      # Web's own Sentry project (server/edge side — runtime env is fine
+      # here). Same project's DSN the CLIENT bundle uses, but the client one
+      # (NEXT_PUBLIC_SENTRY_DSN) must be a build ARG (see apps/web/Dockerfile
+      # + deploy.yml) — a runtime env here can't reach an already-built bundle.
+      SENTRY_DSN: ${SENTRY_DSN_WEB:-}
 
   caddy:
     image: caddy:2-alpine

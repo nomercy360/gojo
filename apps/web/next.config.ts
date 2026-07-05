@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
@@ -14,4 +15,9 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+// No org/project/authToken configured yet -- source map upload is skipped
+// (raw, non-source-mapped stack traces still work fine) until those exist.
+export default withSentryConfig(config, {
+  silent: true,
+  webpack: { treeshake: { removeDebugLogging: true } },
+});

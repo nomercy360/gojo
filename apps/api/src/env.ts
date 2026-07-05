@@ -42,6 +42,9 @@ const schema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default("Gojo Learn <no-reply@gojolearn.ru>"),
+  // Error monitoring. Unset = Sentry.init() no-ops (documented behavior),
+  // so this is safe to ship before a Sentry project/DSN exists.
+  SENTRY_DSN: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
