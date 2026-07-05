@@ -34,6 +34,14 @@ const schema = z.object({
     .string()
     .default("true")
     .transform((v) => v === "true" || v === "1"),
+  // Transactional email (verification, password reset). Defaults target the
+  // local Mailpit dev catcher (infra/docker-compose.yml, SMTP on :1025, no
+  // auth needed). In prod, point these at a real SMTP provider.
+  SMTP_HOST: z.string().default("localhost"),
+  SMTP_PORT: z.coerce.number().default(1025),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("Gojo Learn <no-reply@gojolearn.ru>"),
 });
 
 export const env = schema.parse(process.env);

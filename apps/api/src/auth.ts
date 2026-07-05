@@ -3,6 +3,7 @@ import { account, session, user, verification } from "@gojo/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { env } from "./env.ts";
+import { sendEmail } from "./mailer.ts";
 
 const db = createDb(env.DATABASE_URL);
 
@@ -18,6 +19,46 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
     minPasswordLength: 8,
+    // Not enforced (requireEmailVerification unset) — sign-in isn't blocked
+    // on verification yet. Turn on once deliverability with the chosen SMTP
+    // provider is confirmed; blocking on an unverified new domain risks
+    // locking real signups out if mail lands in spam or bounces.
+    // Best-effort — an SMTP hiccup (or SMTP not configured yet) must not
+    // break the reset-password request itself.
+    sendResetPassword: async ({ user, url }) => {
+      try {
+        await sendEmail(
+          user.email,
+          "Восстановление пароля — Gojo Learn",
+          `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
+           <p>Кто-то (надеемся, ты) запросил сброс пароля для аккаунта Gojo Learn.</p>
+           <p><a href="${url}">Сбросить пароль</a></p>
+           <p>Если это был не ты — просто проигнорируй это письмо.</p>`,
+        );
+      } catch (err) {
+        console.error("sendResetPassword email failed:", err);
+      }
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    // Best-effort — same reasoning: a mail failure must not break sign-up
+    // itself, since sign-in isn't gated on verification (yet).
+    sendVerificationEmail: async ({ user, url }) => {
+      try {
+        await sendEmail(
+          user.email,
+          "Подтверди почту — Gojo Learn",
+          `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
+           <p>Спасибо за регистрацию в Gojo Learn. Подтверди свою почту:</p>
+           <p><a href="${url}">Подтвердить почту</a></p>
+           <p>Если ты не регистрировался — просто проигнорируй это письмо.</p>`,
+        );
+      } catch (err) {
+        console.error("sendVerificationEmail failed:", err);
+      }
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30,

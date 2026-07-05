@@ -117,6 +117,15 @@ services:
       # (never committed). If unset, leads still save — the ping is skipped.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_LEAD_CHAT_ID: ${TELEGRAM_LEAD_CHAT_ID:-}
+      # Transactional email (verification, password reset) — SMTP, provider-
+      # agnostic. Values live in .env.prod (never committed). Unset SMTP_HOST
+      # falls back to localhost:1025, which doesn't exist in prod, so mail
+      # sends will fail (logged, not fatal) until this is configured.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Gojo Learn <no-reply@gojolearn.ru>}
 
   web:
     image: ${GOJO_IMAGE_WEB:-ghcr.io/nomercy360/gojo-web:latest}
