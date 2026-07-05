@@ -7,9 +7,11 @@ import {
   fetchLessonMaterials,
   fetchLessonStudents,
 } from "@/lib/api";
+import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import type { LessonCardDto, LessonMaterialDto } from "@gojo/shared";
+import type { LessonCardDto, LessonDto, LessonMaterialDto } from "@gojo/shared";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LessonCardsManager } from "./cards-manager";
 import { HomeworkManager } from "./homework-manager";
 
@@ -20,8 +22,9 @@ type Props = { params: Promise<{ id: string }> };
 export default async function LessonDetailPage({ params }: Props) {
   const { id } = await params;
   const user = await getCurrentUser();
+  if (isTeacherUser(user)) redirect(`/teacher/lessons/${id}`);
 
-  let lesson;
+  let lesson: LessonDto;
   try {
     lesson = await fetchLesson(id);
   } catch (e) {

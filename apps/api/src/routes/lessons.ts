@@ -194,6 +194,9 @@ lessonsRoute.get("/:id", async (c) => {
 
 lessonsRoute.post("/:id/book", requireAuth, async (c) => {
   const user = c.get("user")!;
+  if (user.role !== "student") {
+    throw new HTTPException(403, { message: "only students can book lessons" });
+  }
   const lessonId = c.req.param("id");
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);

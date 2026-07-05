@@ -1,9 +1,11 @@
-import Link from "next/link";
-import { Suspense } from "react";
-import type { LessonDto } from "@gojo/shared";
 import { LessonCountdown } from "@/components/lesson-countdown";
 import { fetchLessons } from "@/lib/api";
+import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import type { LessonDto } from "@gojo/shared";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { bookLessonAction } from "./actions";
 import { CalendarView } from "./calendar";
 import { ViewToggle } from "./view-toggle";
@@ -16,12 +18,12 @@ export default async function LessonsPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view = "list" } = await searchParams;
-  const [user, lessonsResult] = await Promise.all([
-    getCurrentUser(),
-    fetchLessons().catch((e: unknown) =>
-      e instanceof Error ? e.message : "unknown error",
-    ),
-  ]);
+  const user = await getCurrentUser();
+  if (isTeacherUser(user)) redirect("/teacher");
+
+  const lessonsResult = await fetchLessons().catch((e: unknown) =>
+    e instanceof Error ? e.message : "unknown error",
+  );
 
   const error = typeof lessonsResult === "string" ? lessonsResult : null;
   const lessons: LessonDto[] = typeof lessonsResult === "string" ? [] : lessonsResult;
@@ -72,8 +74,7 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
   const starts = new Date(lesson.startsAt);
   const ends = new Date(lesson.endsAt);
   const isToday = starts.toDateString() === new Date().toDateString();
-  const isTomorrow =
-    starts.toDateString() === new Date(Date.now() + 86400000).toDateString();
+  const isTomorrow = starts.toDateString() === new Date(Date.now() + 86400000).toDateString();
   const dayLabel = isToday ? "СЕГОДНЯ" : isTomorrow ? "ЗАВТРА" : null;
   const durationMin = Math.round((ends.getTime() - starts.getTime()) / 60000);
   const fmt = new Intl.DateTimeFormat("ru-RU", {
@@ -128,11 +129,7 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
           </p>
         </div>
 
-        <LessonAction
-          lesson={lesson}
-          authenticated={authenticated}
-          isFull={isFull}
-        />
+        <LessonAction lesson={lesson} authenticated={authenticated} isFull={isFull} />
       </div>
       {lesson.joinState === "waiting" && lesson.joinOpensAt ? (
         <div className="mt-3 flex justify-end">

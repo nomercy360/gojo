@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/avatar";
 import { ApiError, type TeacherStudentDto, fetchTeacherStudents } from "@/lib/api";
+import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -9,17 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function TeacherStudentsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "teacher" && user.role !== "admin") {
-    return (
-      <main className="min-h-screen bg-gojo-paper">
-        <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
-            <p className="text-sm font-bold text-gojo-error">Доступ только для учителей.</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (!isTeacherUser(user)) redirect("/dashboard");
 
   let students: TeacherStudentDto[] = [];
   let error: string | null = null;

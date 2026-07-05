@@ -1,6 +1,7 @@
 import { Avatar } from "@/components/avatar";
 import { CalendarSection } from "@/components/calendar-section";
 import { fetchStudentStats } from "@/lib/api";
+import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import type { StudentStatsDto } from "@gojo/shared";
 import Link from "next/link";
@@ -35,6 +36,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (isTeacherUser(user)) redirect("/teacher");
 
   const greeting = getGreeting();
 

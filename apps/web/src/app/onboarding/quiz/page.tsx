@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
 import { fetchQuizQuestions } from "@/lib/api";
+import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { redirect } from "next/navigation";
 import { QuizClient } from "./quiz-client";
 
 export default async function OnboardingQuizPage({
@@ -10,6 +11,7 @@ export default async function OnboardingQuizPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (isTeacherUser(user)) redirect("/teacher");
 
   const { retake } = await searchParams;
   if (user.quizLevel && retake !== "1") redirect("/lessons");

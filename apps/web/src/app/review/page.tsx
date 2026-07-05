@@ -1,7 +1,8 @@
+import { fetchReviewQueue } from "@/lib/api";
+import { isTeacherUser } from "@/lib/roles";
+import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { fetchReviewQueue } from "@/lib/api";
-import { getCurrentUser } from "@/lib/session";
 import { ReviewClient } from "./review-client";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function ReviewPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (isTeacherUser(user)) redirect("/teacher");
 
   const queue = await fetchReviewQueue();
 
@@ -21,8 +23,8 @@ export default async function ReviewPage() {
           </div>
           <h1 className="mt-2 font-serif text-[28px] font-bold">Пока пусто</h1>
           <p className="mt-3 text-[15px] leading-relaxed text-gojo-ink-soft">
-            Карточки появятся, когда запишешься на урок — преподаватель добавляет
-            слова к уроку, и они автоматически попадают в твой пул для повторения.
+            Карточки появятся, когда запишешься на урок — преподаватель добавляет слова к уроку, и
+            они автоматически попадают в твой пул для повторения.
           </p>
           <Link
             href="/lessons"

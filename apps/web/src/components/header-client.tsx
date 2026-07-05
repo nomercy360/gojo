@@ -2,6 +2,7 @@
 
 import { Avatar } from "@/components/avatar";
 import { authClient } from "@/lib/auth-client";
+import { homePathForUser, isTeacherUser } from "@/lib/roles";
 import type { UserDto } from "@gojo/shared";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -47,8 +48,8 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
     : "border-b-2 border-gojo-ink bg-gojo-paper";
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
-  const teacherUser = user?.role === "teacher" || user?.role === "admin";
-  const homeHref = user ? (teacherUser ? "/teacher" : "/dashboard") : "/";
+  const teacherUser = isTeacherUser(user);
+  const homeHref = user ? homePathForUser(user) : "/";
 
   async function handleLogout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import { homePathForUser, isTeacherUser } from "@/lib/roles";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -56,7 +57,8 @@ export default function LoginPage() {
         isNewStudent = u?.role === "student" && !u?.quizLevel;
       }
       const authUser = await authClient.getSession();
-      const id = authUser.data?.user?.id;
+      const sessionUser = authUser.data?.user;
+      const id = sessionUser?.id;
       if (id && migrateGuestTrainerProgress(id)) {
         toast.success("Прогресс тренажёра сохранён");
       }
@@ -64,7 +66,13 @@ export default function LoginPage() {
       if (linkedLeads > 0) {
         toast.success("Заявка привязана к аккаунту");
       }
-      router.push(isNewStudent ? "/onboarding/quiz" : "/dashboard");
+      const destination =
+        isNewStudent && sessionUser && !isTeacherUser(sessionUser)
+          ? "/onboarding/quiz"
+          : sessionUser
+            ? homePathForUser(sessionUser)
+            : "/dashboard";
+      router.push(destination);
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Ошибка";
