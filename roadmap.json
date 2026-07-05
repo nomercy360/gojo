@@ -20,16 +20,12 @@
       "id": "R7",
       "title": "Кнопка «скрыть календарь» в ЛК",
       "category": "lk",
-      "description": "Тумблер, прячущий блок расписания для тех, кому он не нужен; выбор запоминается.",
+      "description": "Тумблер скрытия блока расписания, сохраняется в localStorage.",
       "priority": "now",
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": [
-        "В ЛК у блока расписания есть кнопка «Скрыть»",
-        "После скрытия показывается кнопка «Показать расписание»",
-        "Выбор сохраняется между перезагрузками (localStorage)"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-04"
     },
@@ -37,16 +33,12 @@
       "id": "R2a",
       "title": "Тренажёр каны до регистрации + CTA на лендинге",
       "category": "trainer",
-      "description": "/kana уже публичен; добавлена ссылка в hero и пункт меню как УТП «поиграй без регистрации».",
+      "description": "/kana публичен, ссылка в hero + меню лендинга.",
       "priority": "now",
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": [
-        "На лендинге есть ссылка на тренажёр в hero",
-        "В меню (десктоп + мобилка) есть пункт «Тренажёр»",
-        "Тренажёр открывается без логина"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-04"
     },
@@ -71,16 +63,12 @@
       "id": "R3",
       "title": "Реальная статистика в ЛК",
       "category": "lk",
-      "description": "Проверено 2026-07-05: уже сделано ранее (commit 1c03ac4, до этой сессии). GET /lessons/my-stats полностью реальный — все поля (уроки/домашние/тренировки) считаются из БД (bookings/lessons/homework/trainingTotals), моков нет. Единственные оставшиеся фейковые данные в ЛК — это STATIC_SESSIONS/STATIC_WEEK в calendar-section.tsx, но это относится к R6 (внутреннее расписание), не к этому пункту.",
+      "description": "Было готово ранее (commit 1c03ac4) — GET /lessons/my-stats уже реальный, моков нет.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": [
-        "API отдаёт реальные стрик / прогресс / историю повторений из БД",
-        "Дашборд отображает эти данные вместо захардкоженных массивов",
-        "Пустое состояние обрабатывается корректно"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -105,16 +93,12 @@
       "id": "R6",
       "title": "Внутреннее расписание в ЛК + напоминания",
       "category": "calendar",
-      "description": "Вместо Google-интеграции (R5, dropped) — собственное расписание в ЛК. Все 3 шага задеплоены 2026-07-05: (1) реальные забронированные занятия вместо STATIC_SESSIONS; (2) таблица personal_events + CRUD, кнопка «+ Своя тренировка» в ЛК; (3) Telegram-напоминания — привязка Telegram ID вручную в /profile (как @userinfobot, без нового бота/деплой-линка), ~60с интервал в api шлёт sendMessage за 15 мин до старта, remindedAt защищает от повторной отправки. Дедикейтед бот для /start-флоу линковки НЕ заводили — переиспользован существующий TELEGRAM_BOT_TOKEN (send не конфликтует с polling).",
+      "description": "Замена Google (R5): реальные lessons/bookings в ЛК, +personal_events CRUD, +Telegram-напоминания за 15м (см. R32 для расширения на реальные уроки).",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": [
-        "Расписание занятий в ЛК из таблиц lessons/bookings",
-        "Пользователь может добавить собственную тренировку",
-        "Приходит напоминание/уведомление"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -172,17 +156,12 @@
       "id": "R9",
       "title": "Форма заявки сохраняет лиды",
       "category": "landing",
-      "description": "Формы «записаться на урок» и «получить гайд» раньше рисовали успех, но никуда не слали данные — все лиды терялись. Добавлена таблица leads + POST /leads + дублирование заявки в Telegram.",
+      "description": "Формы лендинга раньше не слали данные никуда; теперь есть таблица leads + POST /leads + дублирование в Telegram.",
       "priority": "now",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Таблица leads в БД + миграция",
-        "Публичный POST /leads сохраняет заявку",
-        "Обе формы лендинга реально отправляют данные",
-        "Новая заявка дублируется в Telegram (фикс IPv4-пина для api-контейнера)"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -190,15 +169,12 @@
       "id": "R10",
       "title": "Убрать выбор роли «учитель» на регистрации",
       "category": "lk",
-      "description": "Публичная регистрация всегда создаёт student; учителей заводим отдельно. Дропдаун роли убран.",
+      "description": "Публичная регистрация всегда создаёт student; учителей заводим отдельно (R17).",
       "priority": "now",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Дропдаун роли убран из формы регистрации",
-        "Новые аккаунты создаются с role=student"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -206,16 +182,12 @@
       "id": "R11",
       "title": "Проверка почты при регистрации + транзакционные письма",
       "category": "auth",
-      "description": "Полностью готово 2026-07-05: better-auth шлёт письмо подтверждения при регистрации + письмо сброса пароля через provider-agnostic SMTP-мейлер (nodemailer). Провайдер — RuSender (RU-хостинг, домен gojolearn.ru верифицирован: SPF/DKIM/DMARC настроены в Timeweb, отправитель no-reply@gojolearn.ru подтверждён). Реальный тест на проде: письмо дошло во входящие (не в спам) на живой email. requireEmailVerification НЕ включён — вход пока не блокируется непройденной верификацией (осознанно, до накопления статистики доставляемости).",
+      "description": "better-auth + RuSender SMTP шлют verification/reset письма; домен верифицирован (SPF/DKIM/DMARC). requireEmailVerification намеренно не включён.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Подключён провайдер отправки email",
-        "При регистрации отправляется письмо подтверждения",
-        "Сброс пароля и базовые уведомления работают"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -223,16 +195,12 @@
       "id": "R12",
       "title": "Хук «сохранить прогресс → регистрация» в тренажёре",
       "category": "trainer",
-      "description": "Готово 2026-07-05: summary-экраны kana/kanji сохраняют гостевой результат в localStorage и показывают CTA «Сохранить прогресс в аккаунте». /login?mode=signup открывает регистрацию, а после входа/регистрации гостевой прогресс переносится в account-scoped localStorage ключ.",
+      "description": "Гостевой прогресс kana/kanji в localStorage + CTA на регистрацию, переносится в account-scoped ключ после входа.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "После сессии тренажёра показывается CTA «сохранить прогресс»",
-        "CTA ведёт на регистрацию",
-        "Прогресс гостя привязывается к новому аккаунту"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -240,16 +208,12 @@
       "id": "R13",
       "title": "Связать бронь → аккаунт → онбординг",
       "category": "landing",
-      "description": "Готово 2026-07-05: после заявки на бесплатный урок success-state предлагает создать аккаунт через /login?mode=signup&intent=booking. Регистрация уже ведёт нового student в onboarding quiz, а POST /leads/link-current привязывает существующие заявки с тем же email к текущему userId.",
+      "description": "После заявки — CTA на регистрацию (intent=booking), POST /leads/link-current привязывает лид к аккаунту по email.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "После заявки предлагается создать аккаунт",
-        "Новый юзер попадает в онбординг-квиз",
-        "Заявка связывается с аккаунтом"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -257,16 +221,12 @@
       "id": "R15",
       "title": "Упростить геймификацию / ранги для MVP",
       "category": "lk",
-      "description": "Готово 2026-07-05: дашборд больше не показывает 4-уровневые ранги, звёзды и декоративные медали. Оставлен компактный прогресс-бар и простая серия/активность; пустые плитки уроков/домашки/тренировок скрываются до появления реальных данных.",
+      "description": "4-уровневые ранги/медали убраны, оставлен компактный прогресс-бар + серия; пустые плитки скрываются.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Виджет рангов упрощён до стрик + прогресс-бар",
-        "4-уровневые ранги свёрнуты в бейдж или убраны",
-        "Пустые статы не показываются новому юзеру"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -274,16 +234,12 @@
       "id": "R14",
       "title": "Убрать фейк-данные из продукта",
       "category": "lk",
-      "description": "Проверено и закрыто 2026-07-05: дашборд берёт реальные значения из /lessons/my-stats, календарь строится из реальных booked lessons + personal_events, а новый пользователь видит пустые состояния вместо выдуманных занятий/цифр. Demo/seed-скрипты остаются только dev-инструментами и не рендерятся в продукте.",
+      "description": "Дашборд/календарь берут реальные данные из БД, пустые состояния вместо выдумки.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Захардкоженные занятия в календаре заменены на пустое состояние/реальные данные",
-        "Моковые цифры на дашборде убраны",
-        "Новый юзер не видит фейковых данных"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -291,14 +247,12 @@
       "id": "R16",
       "title": "[EPIC] Панель учителя/админа для MVP",
       "category": "teacher",
-      "description": "Готово 2026-07-05: эпик закрыт через R17-R21. Есть команда назначения учителя, страница управления уроком, материалы, флэшкарты, общий ростер студентов и admin-семантика поверх teacher-view.",
+      "description": "Эпик закрыт через R17-R21.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "См. подзадачи R17 (блокер), R18, R19, R20, R21"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -307,14 +261,12 @@
       "epic": "R16",
       "title": "Способ назначить учителя (блокер)",
       "category": "teacher",
-      "description": "Готово 2026-07-05: добавлена команда packages/db `bun run promote-teacher <email>`, которая выставляет role='teacher' существующему пользователю по email. Это быстрый MVP-путь, чтобы доступ к /teacher можно было выдать без публичного выбора роли. Более капитальный admin UI оставлен на будущее при необходимости.",
+      "description": "`bun run promote-teacher <email>` выставляет role=teacher вручную (MVP-путь).",
       "priority": "now",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Скрипт/команда для назначения role=teacher по email"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -323,16 +275,12 @@
       "epic": "R16",
       "title": "Страница урока: студенты + ДЗ + JLPT-уровень",
       "category": "teacher",
-      "description": "Готово 2026-07-05: добавлена страница /teacher/lessons/[id] с переходом из панели учителя. На странице учитель видит студентов урока, отмечает домашку и выставляет официальный JLPT-уровень через уже готовые API.",
+      "description": "/teacher/lessons/[id]: роcтер студентов, отметка ДЗ, JLPT-уровень.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Страница /teacher/lessons/[id] со списком забронированных студентов",
-        "Контрол статуса ДЗ (pending/done/missed) на каждого студента",
-        "Селект JLPT-уровня на каждого студента"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -341,16 +289,12 @@
       "epic": "R16",
       "title": "Материалы + флэшкарты урока из UI учителя",
       "category": "teacher",
-      "description": "Готово 2026-07-05: на странице /teacher/lessons/[id] добавлены материалы и карточки урока. Учитель может загрузить файл с названием, добавить карточку слово/чтение/значение и удалить карточку.",
+      "description": "На /teacher/lessons/[id]: загрузка материалов + добавление/удаление флэшкарт.",
       "priority": "next",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Загрузка материала (файл + название) на страницу урока",
-        "Добавление флэшкарты (word/reading/meaning/notes)",
-        "Список существующих карточек с удалением"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -359,16 +303,12 @@
       "epic": "R16",
       "title": "«Мои студенты» — общий ростер across все уроки",
       "category": "teacher",
-      "description": "Готово 2026-07-05: добавлен GET /teacher/students, страница /teacher/students и навигация для teacher/admin. Ростер агрегирует студентов по урокам учителя: кол-во уроков, дата последнего, JLPT и квиз-уровень.",
+      "description": "GET /teacher/students + страница со списком, агрегирует по учителю.",
       "priority": "later",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Новый API-эндпоинт GET /teacher/students",
-        "Страница /teacher/students со списком + JLPT + кол-во уроков",
-        "Пункт навигации для teacher/admin"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -377,15 +317,12 @@
       "epic": "R16",
       "title": "Семантика admin vs teacher",
       "category": "teacher",
-      "description": "Готово 2026-07-05: teacher API теперь учитывает role=admin как надстройку над teacher-view. Учитель видит только свои уроки/студентов, admin видит и может управлять уроками и студентами всех учителей.",
+      "description": "role=admin видит/управляет уроками и студентами всех учителей (teacher видит только свои).",
       "priority": "later",
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Решить, нужен ли admin-обзор через всех учителей уже в MVP",
-        "Если да — убрать teacherId-фильтр для role=admin в соответствующих запросах"
-      ],
+      "steps": ["done"],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -393,15 +330,14 @@
       "id": "R22",
       "title": "Lead CRM: pipeline заявок",
       "category": "crm",
-      "description": "Полный цикл начинается с обработки заявки: lead получает статус, ответственного, заметки и дату следующего контакта. Это превращает текущую таблицу leads из склада заявок в рабочий pipeline для админа/учителя.",
+      "description": "Полный цикл начинается с обработки заявки: lead получает статус, ответственного, заметки и дату следующего контакта. Это превращает текущую таблицу leads из склада заявок в рабочий pipeline для админа/учителя. СЕКВЕНС: сначала статус+список (1 день, реально полезно сразу), assignee/notes/follow-up слоем вторым — после недели живого использования станет ясно, что из этого реально нужно.",
       "priority": "now",
       "status": "backlog",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Добавить статусы lead: new/contacted/trial_booked/trial_done/converted/lost",
-        "Добавить assignee, notes, nextFollowUpAt и историю контактов",
-        "Сделать admin/teacher страницу списка лидов с фильтрами по статусу"
+        "Шаг 1: статусы lead (new/contacted/trial_booked/trial_done/converted/lost) + список с фильтром",
+        "Шаг 2: assignee, notes, nextFollowUpAt и история контактов"
       ],
       "passes": false,
       "done_at": null
@@ -410,7 +346,7 @@
       "id": "R23",
       "title": "Trial lesson flow: заявка → пробный урок",
       "category": "booking",
-      "description": "После заявки админ/учитель должен назначить бесплатный пробный урок, связать его с lead/user и провести студента в кабинет без ручных обходных действий.",
+      "description": "После заявки админ/учитель должен назначить бесплатный пробный урок, связать его с lead/user и провести студента в кабинет без ручных обходных действий. РИСК РЕАЛИЗАЦИИ: не изобретать pre-account booking заново — лид без аккаунта должен идти через существующий register+link флоу (R13, POST /leads/link-current), учитель просто создаёт урок обычным способом (R18) и помечает, из какого лида он пришёл.",
       "priority": "now",
       "status": "backlog",
       "owner": "maksim",
@@ -444,7 +380,7 @@
       "id": "R25",
       "title": "Booking eligibility: trial/paid access rules",
       "category": "booking",
-      "description": "Бронирование должно учитывать жизненный цикл: новый lead может получить только trial, активный платящий студент — регулярные уроки, unpaid/expired — видит CTA на оплату или контакт с админом.",
+      "description": "Бронирование должно учитывать жизненный цикл: новый lead может получить только trial, активный платящий студент — регулярные уроки, unpaid/expired — видит CTA на оплату или контакт с админом. ЖДЁТ R28: схема доступа должна опираться на реальную форму subscription/payment данных, иначе придётся переделывать после выбора провайдера.",
       "priority": "next",
       "status": "backlog",
       "owner": "maksim",
@@ -476,9 +412,9 @@
     },
     {
       "id": "R27",
-      "title": "Notification lifecycle",
+      "title": "Notification lifecycle (шаблоны, очередь, полный набор событий)",
       "category": "notifications",
-      "description": "Системные уведомления должны покрывать весь цикл: lead follow-up, trial scheduled, booking confirmation, 24h/15m reminders, homework due, payment due/failed, inactive student nudges.",
+      "description": "Системные уведомления на весь цикл: lead follow-up, trial scheduled, homework due, payment due/failed, inactive student nudges + шаблоны и очередь/лог отправок. Booking confirmation и lesson-напоминания вынесены в R32 (дешевле и делаются раньше, инфра уже есть).",
       "priority": "later",
       "status": "backlog",
       "owner": "maksim",
@@ -486,7 +422,24 @@
       "steps": [
         "Описать notification events и templates",
         "Сделать очередь/лог отправок с каналами email/Telegram",
-        "Добавить базовые триггеры: booking confirmation, reminders, homework due"
+        "Добавить триггеры: lead follow-up, homework due, payment due/failed, inactive nudges"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R32",
+      "title": "Lesson booking confirmation + напоминания (расширение R6)",
+      "category": "notifications",
+      "description": "R6 уже построил рабочий 15-минутный Telegram-reminder loop + флоу привязки Telegram ID — сейчас он смотрит только personal_events. Дёшево расширить на реальные lessons/bookings: booking confirmation при записи + те же 24h/15m напоминания. Не ждать R27 — инфраструктура уже есть.",
+      "priority": "now",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "mkkksim",
+      "steps": [
+        "Booking confirmation через существующий sendReminder-механизм при успешном POST /lessons/:id/book",
+        "Reminder-loop в reminders.ts дополнен запросом по bookings, не только personal_events",
+        "24h и 15m напоминания перед реальным уроком"
       ],
       "passes": false,
       "done_at": null
@@ -495,8 +448,8 @@
       "id": "R28",
       "title": "Payment/subscription integration",
       "category": "payments",
-      "description": "Реальная монетизация: тарифы/пакеты, checkout, webhooks, subscription/payment status, receipts and access gating. Зависит от выбора провайдера, но описано как отдельный full-cycle эпик.",
-      "priority": "next",
+      "description": "Реальная монетизация: тарифы/пакеты, checkout, webhooks, subscription/payment status, receipts and access gating. Блокер (выбор провайдера) решается вами напрямую, не зависит от внешней стороны — в отличие от R1/R4. RU-варианты: ЮKassa, CloudPayments. Приоритет поднят: R25/R29/R30 каскадно зависят от этого.",
+      "priority": "now",
       "status": "blocked",
       "owner": "maksim",
       "requested_by": "mkkksim",
