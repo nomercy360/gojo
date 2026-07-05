@@ -1914,13 +1914,10 @@ html:has(.landing-root) {
 .landing-root .modal-box {
   background: var(--white);
   border-radius: 20px;
-  padding: 36px 44px 30px;
+  padding: 30px 40px 24px;
   max-width: 520px;
-  max-height: calc(100dvh - 32px);
   width: 100%;
   position: relative;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 6px 6px 0 var(--orange);
   animation: modal-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1962,12 +1959,12 @@ html:has(.landing-root) {
   text-transform: uppercase;
   padding: 6px 14px;
   border-radius: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   border: 1px solid rgba(247, 107, 0, 0.25);
 }
 .landing-root .modal-title {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
   color: var(--ink);
   line-height: 1.1;
@@ -1979,10 +1976,10 @@ html:has(.landing-root) {
   font-style: normal;
 }
 .landing-root .modal-sub {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink-2);
-  line-height: 1.55;
-  margin-bottom: 20px;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 .landing-root .modal-form {
   display: flex;
@@ -1996,7 +1993,7 @@ html:has(.landing-root) {
 }
 .landing-root .form-label {
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: 0.04em;
@@ -2007,7 +2004,7 @@ html:has(.landing-root) {
   background: var(--cream);
   border: 1.5px solid rgba(17, 17, 17, 0.15);
   border-radius: 8px;
-  padding: 11px 16px;
+  padding: 10px 14px;
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--ink);
@@ -2032,7 +2029,7 @@ html:has(.landing-root) {
   background: var(--orange);
   color: var(--white);
   border: none;
-  padding: 14px 16px;
+  padding: 13px 16px;
   border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-body);
@@ -2047,7 +2044,7 @@ html:has(.landing-root) {
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
 }
 .landing-root .form-note {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--ink-3);
   text-align: center;
   margin-top: 0;
@@ -2454,6 +2451,34 @@ html:has(.landing-root) {
   .landing-root .formula-op {
     font-size: 24px;
     padding: 0 4px;
+  }
+}
+@media (max-height: 760px) and (min-width: 601px) {
+  .landing-root .modal-overlay {
+    align-items: flex-start;
+  }
+  .landing-root .modal-box {
+    margin: 12px 0;
+    padding: 24px 36px 22px;
+  }
+  .landing-root .modal-title {
+    font-size: 25px;
+  }
+  .landing-root .modal-tag {
+    margin-bottom: 10px;
+  }
+  .landing-root .modal-sub {
+    margin-bottom: 12px;
+  }
+  .landing-root .modal-form {
+    gap: 9px;
+  }
+  .landing-root .form-input,
+  .landing-root .form-select {
+    padding: 8px 12px;
+  }
+  .landing-root .form-submit {
+    padding: 12px 16px;
   }
 }
 @media (max-width: 600px) {
@@ -3020,7 +3045,6 @@ html:has(.landing-root) {
   }
   .landing-root .modal-box {
     border-radius: 14px;
-    max-height: calc(100dvh - 20px);
     padding: 26px 18px 22px;
   }
   .landing-root .modal-title {
