@@ -5,18 +5,25 @@ _Обновлено: 2026-07-05 · источник истины: `roadmap.json`
 
 ## 🔵 Now
 - [ ] **R8** · Оплата / подписка · owner @maksim · by @bilunar
+- [ ] **R17** · [R16] Способ назначить учителя (блокер) · owner @maksim · by @mkkksim
 
 ## 🟡 Next
 - [ ] **R12** · Хук «сохранить прогресс → регистрация» в тренажёре · owner @maksim · by @mkkksim
 - [ ] **R13** · Связать бронь → аккаунт → онбординг · owner @maksim · by @mkkksim
 - [ ] **R14** · Убрать фейк-данные из продукта · owner @maksim · by @mkkksim
 - [ ] **R15** · Упростить геймификацию / ранги для MVP · owner @maksim · by @mkkksim
-- [ ] **R16** · Панель учителя/админа для MVP · owner @maksim · by @mkkksim _(бэкенд частично готов; критично — сейчас нет способа назначить учителя)_
+- [ ] **R18** · [R16] Страница урока: студенты + ДЗ + JLPT · owner @maksim · by @mkkksim
+- [ ] **R19** · [R16] Материалы + флэшкарты урока из UI учителя · owner @maksim · by @mkkksim
 
 ## 📋 Backlog / Later
+- [ ] **R20** · [R16] «Мои студенты» — ростер across все уроки · owner @maksim · by @mkkksim
+- [ ] **R21** · [R16] Семантика admin vs teacher · owner @maksim · by @mkkksim
 - [ ] **R2b** · Доделать игры-тренажёры + Higgsfield · owner @maksim · by @bilunar
 - [ ] **R4** · Единый инбокс (WhatsApp/Instagram/Max) · owner @maksim · by @bilunar
 - [ ] **R1** · Новое фото Руслана на лендинге · owner @ruslan · by @bilunar
+
+## 📦 Эпики
+- **R16** · Панель учителя/админа для MVP → разбит на R17-R21 выше
 
 ## ✅ Done
 - [x] **R11** · Email-верификация + сброс пароля (RuSender, SPF/DKIM/DMARC) · shipped 2026-07-05

@@ -278,19 +278,103 @@
     },
     {
       "id": "R16",
-      "title": "Панель учителя/админа для MVP",
+      "title": "[EPIC] Панель учителя/админа для MVP",
       "category": "teacher",
-      "description": "Ресёрч 2026-07-05: бэкенд для учителя уже частично готов (apps/api/src/routes/teacher.ts) — create/edit/cancel урока, список забронированных студентов, отметка ДЗ, JLPT-уровень, загрузка материалов, флэшкарты урока — всё под requireTeacher (role=teacher|admin). Фронтенд /teacher есть, но минимальный: только список уроков + форма создания. КРИТИЧНЫЙ ПРОБЕЛ: нет НИ ОДНОГО способа сделать пользователя учителем — раньше был дропдаун роли при регистрации, его убрали (R10), а замены (админ-панель/промоушен) не появилось. Сейчас role=teacher можно выставить только вручную в БД.",
+      "description": "Эпик 2026-07-05, разбит на подзадачи R17-R21 (см. epic:R16 в каждой). Бэкенд для учителя уже частично готов (apps/api/src/routes/teacher.ts) — create/edit/cancel урока, список забронированных студентов, отметка ДЗ, JLPT-уровень, загрузка материалов, флэшкарты урока — всё под requireTeacher (role=teacher|admin). Фронтенд /teacher минимальный: только список уроков + форма создания.",
       "priority": "next",
       "status": "backlog",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Способ назначить учителя (админом вручную через Kaiten/скрипт, или мини-админка) — БЕЗ этого пункт неюзабелен",
-        "Страница урока для учителя: список забронированных студентов + отметка ДЗ + JLPT-уровень (API уже есть, фронта нет)",
-        "Загрузка материалов и добавление флэшкарт урока из UI учителя (API уже есть, фронта нет)",
-        "Список всех своих студентов (не только по одному уроку)",
-        "Решить: 'admin' — надстройка над учителем (видит всё) или отдельная роль — сейчас requireTeacher трактует их одинаково"
+        "См. подзадачи R17 (блокер), R18, R19, R20, R21"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R17",
+      "epic": "R16",
+      "title": "Способ назначить учителя (блокер)",
+      "category": "teacher",
+      "description": "Сейчас НИКТО не может стать учителем — дропдаун роли при регистрации убран (R10), замены нет, role=teacher выставляется только вручную в БД. Без этого весь остальной teacher-функционал недостижим для реальных людей. Быстрый путь: одноразовый скрипт в packages/db (bun run promote-teacher <email>) — UPDATE user SET role='teacher'. Более капитальный путь (не обязателен для MVP): requireAdmin middleware (role==='admin' отдельно от requireTeacher) + PATCH /admin/users/:id/role + мини-страница «Пользователи».",
+      "priority": "now",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "mkkksim",
+      "steps": [
+        "Скрипт/команда для назначения role=teacher по email",
+        "(опционально) requireAdmin + эндпоинт + мини-UI назначения роли"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R18",
+      "epic": "R16",
+      "title": "Страница урока: студенты + ДЗ + JLPT-уровень",
+      "category": "teacher",
+      "description": "API уже полностью готов: GET /teacher/lessons/:id/students, PATCH .../homework/:studentId, PATCH .../students/:studentId/level — фронта нет вообще. Новый route apps/web/src/app/teacher/lessons/[id]/page.tsx, server actions по образцу teacher/actions.ts (cancelLessonAction). Линк на эту страницу добавить из TeacherLessonCard в teacher/page.tsx (сейчас там только ссылка на видео-комнату).",
+      "priority": "next",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "mkkksim",
+      "steps": [
+        "Страница /teacher/lessons/[id] со списком забронированных студентов",
+        "Контрол статуса ДЗ (pending/done/missed) на каждого студента",
+        "Селект JLPT-уровня на каждого студента"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R19",
+      "epic": "R16",
+      "title": "Материалы + флэшкарты урока из UI учителя",
+      "category": "teacher",
+      "description": "API готов: POST /teacher/lessons/:id/materials (multipart), GET/POST/DELETE /teacher/lessons/:id/cards — фронта нет. На той же странице урока (R18): блок материалов (файл+название, multipart форма по образцу profile-form.tsx аплоада аватара) и блок карточек (слово/чтение/значение/заметки, список с удалением).",
+      "priority": "next",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "mkkksim",
+      "steps": [
+        "Загрузка материала (файл + название) на страницу урока",
+        "Добавление флэшкарты (word/reading/meaning/notes)",
+        "Список существующих карточек с удалением"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R20",
+      "epic": "R16",
+      "title": "«Мои студенты» — общий ростер across все уроки",
+      "category": "teacher",
+      "description": "Сейчас студентов видно только по одному уроку за раз. Нужен новый эндпоинт GET /teacher/students (join bookings->lessons по teacherId=я, group by student, кол-во уроков + дата последнего + JLPT) + новая страница /teacher/students + пункт меню для teacher/admin в header-client.tsx.",
+      "priority": "later",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "mkkksim",
+      "steps": [
+        "Новый API-эндпоинт GET /teacher/students",
+        "Страница /teacher/students со списком + JLPT + кол-во уроков",
+        "Пункт навигации для teacher/admin"
+      ],
+      "passes": false,
+      "done_at": null
+    },
+    {
+      "id": "R21",
+      "epic": "R16",
+      "title": "Семантика admin vs teacher",
+      "category": "teacher",
+      "description": "Сейчас requireTeacher трактует role=teacher и role=admin ОДИНАКОВО. Отложено — актуально только если нужен обзор через нескольких учителей. Если понадобится: admin = надстройка над teacher-view, убрать фильтр teacherId в запросах когда role==='admin', чтобы видеть уроки/студентов всех учителей.",
+      "priority": "later",
+      "status": "backlog",
+      "owner": "maksim",
+      "requested_by": "mkkksim",
+      "steps": [
+        "Решить, нужен ли admin-обзор через всех учителей уже в MVP",
+        "Если да — убрать teacherId-фильтр для role=admin в соответствующих запросах"
       ],
       "passes": false,
       "done_at": null
