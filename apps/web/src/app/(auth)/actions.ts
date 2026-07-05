@@ -22,9 +22,13 @@ export async function logoutAction() {
     // ignore — still clear local cookies below
   }
 
-  // Clear all better-auth cookies (they start with "better-auth")
+  // Clear all better-auth cookies. In prod these carry a "__Secure-" (or
+  // "__Host-") prefix (e.g. __Secure-better-auth.session_token) because
+  // defaultCookieAttributes sets secure:true — a plain startsWith("better-auth")
+  // check misses those entirely, so logout silently failed to clear the
+  // session cookie in production.
   for (const c of cookieStore.getAll()) {
-    if (c.name.startsWith("better-auth") || c.name === "gojo_session") {
+    if (c.name.includes("better-auth") || c.name === "gojo_session") {
       cookieStore.delete(c.name);
     }
   }
