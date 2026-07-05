@@ -4,28 +4,30 @@
 _Обновлено: 2026-07-05 · источник истины: `roadmap.json` · правится из Telegram: `@mojo_dojo_bot roadmap <команда>`_
 
 ## 🔵 Now
-- [ ] **R8** · Оплата / подписка · owner @maksim · by @bilunar
-- [ ] **R17** · [R16] Способ назначить учителя (блокер) · owner @maksim · by @mkkksim
 
 ## 🟡 Next
-- [ ] **R12** · Хук «сохранить прогресс → регистрация» в тренажёре · owner @maksim · by @mkkksim
-- [ ] **R13** · Связать бронь → аккаунт → онбординг · owner @maksim · by @mkkksim
-- [ ] **R14** · Убрать фейк-данные из продукта · owner @maksim · by @mkkksim
-- [ ] **R15** · Упростить геймификацию / ранги для MVP · owner @maksim · by @mkkksim
-- [ ] **R18** · [R16] Страница урока: студенты + ДЗ + JLPT · owner @maksim · by @mkkksim
-- [ ] **R19** · [R16] Материалы + флэшкарты урока из UI учителя · owner @maksim · by @mkkksim
 
 ## 📋 Backlog / Later
-- [ ] **R20** · [R16] «Мои студенты» — ростер across все уроки · owner @maksim · by @mkkksim
-- [ ] **R21** · [R16] Семантика admin vs teacher · owner @maksim · by @mkkksim
-- [ ] **R2b** · Доделать игры-тренажёры + Higgsfield · owner @maksim · by @bilunar
-- [ ] **R4** · Единый инбокс (WhatsApp/Instagram/Max) · owner @maksim · by @bilunar
-- [ ] **R1** · Новое фото Руслана на лендинге · owner @ruslan · by @bilunar
+
+## ⛔ Blocked
+- [ ] **R8** · Оплата / подписка · blocked: нужен платёжный провайдер и правила доступа · owner @maksim · by @bilunar
+- [ ] **R2b** · Доделать игры-тренажёры + Higgsfield · blocked: нужен скоуп Higgsfield и доступ/API · owner @maksim · by @bilunar
+- [ ] **R4** · Единый инбокс (WhatsApp/Instagram/Max) · blocked: нужен первый канал и провайдер/доступы · owner @maksim · by @bilunar
+- [ ] **R1** · Новое фото Руслана на лендинге · blocked: нужен новый фото-ассет · owner @ruslan · by @bilunar
 
 ## 📦 Эпики
-- **R16** · Панель учителя/админа для MVP → разбит на R17-R21 выше
+- **R16** · Панель учителя/админа для MVP → done 2026-07-05
 
 ## ✅ Done
+- [x] **R13** · Связать бронь → аккаунт → онбординг · shipped 2026-07-05
+- [x] **R12** · Хук «сохранить прогресс → регистрация» в тренажёре · shipped 2026-07-05
+- [x] **R14** · Убрать фейк-данные из продукта · shipped 2026-07-05
+- [x] **R15** · Упростить геймификацию / ранги для MVP · shipped 2026-07-05
+- [x] **R21** · [R16] Семантика admin vs teacher · shipped 2026-07-05
+- [x] **R20** · [R16] «Мои студенты» — ростер across все уроки · shipped 2026-07-05
+- [x] **R19** · [R16] Материалы + флэшкарты урока из UI учителя · shipped 2026-07-05
+- [x] **R18** · [R16] Страница урока: студенты + ДЗ + JLPT · shipped 2026-07-05
+- [x] **R17** · [R16] Способ назначить учителя (блокер) · shipped 2026-07-05
 - [x] **R11** · Email-верификация + сброс пароля (RuSender, SPF/DKIM/DMARC) · shipped 2026-07-05
 - [x] **R6** · Внутреннее расписание в ЛК + напоминания (Google Calendar → своё + Telegram) · shipped 2026-07-05
 - [x] **R3** · Реальная статистика в ЛК — оказалось уже сделано ранее (до этой сессии) · verified 2026-07-05

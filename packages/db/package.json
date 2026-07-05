@@ -12,6 +12,7 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "bun --env-file=../../.env run src/migrate.ts",
+    "promote-teacher": "bun --env-file=../../.env run src/promote-teacher.ts",
     "seed": "bun --env-file=../../.env run src/seed.ts",
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"

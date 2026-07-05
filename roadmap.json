@@ -43,9 +43,9 @@
       "id": "R8",
       "title": "Оплата / подписка",
       "category": "payments",
-      "description": "Владелец подтвердил: оплата/подписка входит в MVP. Нужен провайдер, флоу оплаты, статусы подписки.",
+      "description": "BLOCKED 2026-07-05: нужен выбранный платёжный провайдер и правила подписки/доступа. Без этого можно только сделать мок, что не закрывает MVP-оплату.",
       "priority": "now",
-      "status": "backlog",
+      "status": "blocked",
       "owner": "maksim",
       "requested_by": "bilunar",
       "steps": [
@@ -111,9 +111,9 @@
       "id": "R2b",
       "title": "Доделать игры-тренажёры + Higgsfield",
       "category": "trainer",
-      "description": "Довести тренажёры и потенциально интегрировать Higgsfield, чтобы сделать игру визуально впечатляющей и attractive.",
+      "description": "BLOCKED 2026-07-05: нужен скоуп, что именно Higgsfield должен делать в тренажёре, и доступ/API-ключи. Без этого можно улучшать UI, но нельзя выполнить заявленную интеграцию.",
       "priority": "later",
-      "status": "backlog",
+      "status": "blocked",
       "owner": "maksim",
       "requested_by": "bilunar",
       "steps": [
@@ -128,9 +128,9 @@
       "id": "R4",
       "title": "Единый инбокс с админом/учителем (WhatsApp/Instagram/Max)",
       "category": "integrations",
-      "description": "Флоу связи с администрацией. Боты в WhatsApp/Instagram/Max, менеджимые с одного эндпоинта. Первый ответ вручную, дальше — переход к команде.",
+      "description": "BLOCKED 2026-07-05: нужно выбрать первый канал и предоставить доступы/провайдера (например WhatsApp Business API). До выбора канала общий endpoint будет спекулятивным.",
       "priority": "later",
-      "status": "backlog",
+      "status": "blocked",
       "owner": "maksim",
       "requested_by": "bilunar",
       "steps": [
@@ -145,15 +145,12 @@
       "id": "R1",
       "title": "Новое фото Руслана на лендинге",
       "category": "landing",
-      "description": "Заменить фото Руслана на лендинге на новое. Отложено (пропущено в первой итерации Фазы 1).",
+      "description": "BLOCKED 2026-07-05: нужно получить новое фото Руслана. Без исходного ассета нечего заменить на лендинге.",
       "priority": "later",
-      "status": "backlog",
+      "status": "blocked",
       "owner": "ruslan",
       "requested_by": "bilunar",
-      "steps": [
-        "Получено новое фото Руслана",
-        "Фото заменено на лендинге"
-      ],
+      "steps": ["Получено новое фото Руслана", "Фото заменено на лендинге"],
       "passes": false,
       "done_at": null
     },
@@ -212,9 +209,9 @@
       "id": "R12",
       "title": "Хук «сохранить прогресс → регистрация» в тренажёре",
       "category": "trainer",
-      "description": "Тренажёр публичный, но нет конверсии игроков в аккаунты. Тренд: активация в 1–3 дня = 4× конверсия. Добавить призыв зарегистрироваться, чтобы сохранить прогресс.",
+      "description": "Готово 2026-07-05: summary-экраны kana/kanji сохраняют гостевой результат в localStorage и показывают CTA «Сохранить прогресс в аккаунте». /login?mode=signup открывает регистрацию, а после входа/регистрации гостевой прогресс переносится в account-scoped localStorage ключ.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -222,16 +219,16 @@
         "CTA ведёт на регистрацию",
         "Прогресс гостя привязывается к новому аккаунту"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R13",
       "title": "Связать бронь → аккаунт → онбординг",
       "category": "landing",
-      "description": "После брони бесплатного урока юзер видит тупик («спасибо»). Провести его в регистрацию и уже существующий онбординг-квиз.",
+      "description": "Готово 2026-07-05: после заявки на бесплатный урок success-state предлагает создать аккаунт через /login?mode=signup&intent=booking. Регистрация уже ведёт нового student в onboarding quiz, а POST /leads/link-current привязывает существующие заявки с тем же email к текущему userId.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -239,16 +236,16 @@
         "Новый юзер попадает в онбординг-квиз",
         "Заявка связывается с аккаунтом"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R15",
       "title": "Упростить геймификацию / ранги для MVP",
       "category": "lk",
-      "description": "Текущий виджет рангов (4 тира 見習い→修行者→師匠→横綱, звёзды, кандзи, 3 плитки) переусложнён для новичка. Геймификацию не убираем (полезна для удержания), но сводим к простой петле: 1 стрик + 1 прогресс-бар. Ранги — в маленький бейдж или убрать. Пустые плитки (0/35 и т.п.) прятать до появления данных.",
+      "description": "Готово 2026-07-05: дашборд больше не показывает 4-уровневые ранги, звёзды и декоративные медали. Оставлен компактный прогресс-бар и простая серия/активность; пустые плитки уроков/домашки/тренировок скрываются до появления реальных данных.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -256,16 +253,16 @@
         "4-уровневые ранги свёрнуты в бейдж или убраны",
         "Пустые статы не показываются новому юзеру"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R14",
       "title": "Убрать фейк-данные из продукта",
       "category": "lk",
-      "description": "Дашборд и календарь показывают выдуманные занятия/цифры новому юзеру — теряется доверие в первые минуты. Связано с R3 (реальные статы). Пустые состояния вместо моков.",
+      "description": "Проверено и закрыто 2026-07-05: дашборд берёт реальные значения из /lessons/my-stats, календарь строится из реальных booked lessons + personal_events, а новый пользователь видит пустые состояния вместо выдуманных занятий/цифр. Demo/seed-скрипты остаются только dev-инструментами и не рендерятся в продукте.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -273,49 +270,44 @@
         "Моковые цифры на дашборде убраны",
         "Новый юзер не видит фейковых данных"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R16",
       "title": "[EPIC] Панель учителя/админа для MVP",
       "category": "teacher",
-      "description": "Эпик 2026-07-05, разбит на подзадачи R17-R21 (см. epic:R16 в каждой). Бэкенд для учителя уже частично готов (apps/api/src/routes/teacher.ts) — create/edit/cancel урока, список забронированных студентов, отметка ДЗ, JLPT-уровень, загрузка материалов, флэшкарты урока — всё под requireTeacher (role=teacher|admin). Фронтенд /teacher минимальный: только список уроков + форма создания.",
+      "description": "Готово 2026-07-05: эпик закрыт через R17-R21. Есть команда назначения учителя, страница управления уроком, материалы, флэшкарты, общий ростер студентов и admin-семантика поверх teacher-view.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "См. подзадачи R17 (блокер), R18, R19, R20, R21"
-      ],
-      "passes": false,
-      "done_at": null
+      "steps": ["См. подзадачи R17 (блокер), R18, R19, R20, R21"],
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R17",
       "epic": "R16",
       "title": "Способ назначить учителя (блокер)",
       "category": "teacher",
-      "description": "Сейчас НИКТО не может стать учителем — дропдаун роли при регистрации убран (R10), замены нет, role=teacher выставляется только вручную в БД. Без этого весь остальной teacher-функционал недостижим для реальных людей. Быстрый путь: одноразовый скрипт в packages/db (bun run promote-teacher <email>) — UPDATE user SET role='teacher'. Более капитальный путь (не обязателен для MVP): requireAdmin middleware (role==='admin' отдельно от requireTeacher) + PATCH /admin/users/:id/role + мини-страница «Пользователи».",
+      "description": "Готово 2026-07-05: добавлена команда packages/db `bun run promote-teacher <email>`, которая выставляет role='teacher' существующему пользователю по email. Это быстрый MVP-путь, чтобы доступ к /teacher можно было выдать без публичного выбора роли. Более капитальный admin UI оставлен на будущее при необходимости.",
       "priority": "now",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": [
-        "Скрипт/команда для назначения role=teacher по email",
-        "(опционально) requireAdmin + эндпоинт + мини-UI назначения роли"
-      ],
-      "passes": false,
-      "done_at": null
+      "steps": ["Скрипт/команда для назначения role=teacher по email"],
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R18",
       "epic": "R16",
       "title": "Страница урока: студенты + ДЗ + JLPT-уровень",
       "category": "teacher",
-      "description": "API уже полностью готов: GET /teacher/lessons/:id/students, PATCH .../homework/:studentId, PATCH .../students/:studentId/level — фронта нет вообще. Новый route apps/web/src/app/teacher/lessons/[id]/page.tsx, server actions по образцу teacher/actions.ts (cancelLessonAction). Линк на эту страницу добавить из TeacherLessonCard в teacher/page.tsx (сейчас там только ссылка на видео-комнату).",
+      "description": "Готово 2026-07-05: добавлена страница /teacher/lessons/[id] с переходом из панели учителя. На странице учитель видит студентов урока, отмечает домашку и выставляет официальный JLPT-уровень через уже готовые API.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -323,17 +315,17 @@
         "Контрол статуса ДЗ (pending/done/missed) на каждого студента",
         "Селект JLPT-уровня на каждого студента"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R19",
       "epic": "R16",
       "title": "Материалы + флэшкарты урока из UI учителя",
       "category": "teacher",
-      "description": "API готов: POST /teacher/lessons/:id/materials (multipart), GET/POST/DELETE /teacher/lessons/:id/cards — фронта нет. На той же странице урока (R18): блок материалов (файл+название, multipart форма по образцу profile-form.tsx аплоада аватара) и блок карточек (слово/чтение/значение/заметки, список с удалением).",
+      "description": "Готово 2026-07-05: на странице /teacher/lessons/[id] добавлены материалы и карточки урока. Учитель может загрузить файл с названием, добавить карточку слово/чтение/значение и удалить карточку.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -341,17 +333,17 @@
         "Добавление флэшкарты (word/reading/meaning/notes)",
         "Список существующих карточек с удалением"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R20",
       "epic": "R16",
       "title": "«Мои студенты» — общий ростер across все уроки",
       "category": "teacher",
-      "description": "Сейчас студентов видно только по одному уроку за раз. Нужен новый эндпоинт GET /teacher/students (join bookings->lessons по teacherId=я, group by student, кол-во уроков + дата последнего + JLPT) + новая страница /teacher/students + пункт меню для teacher/admin в header-client.tsx.",
+      "description": "Готово 2026-07-05: добавлен GET /teacher/students, страница /teacher/students и навигация для teacher/admin. Ростер агрегирует студентов по урокам учителя: кол-во уроков, дата последнего, JLPT и квиз-уровень.",
       "priority": "later",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
@@ -359,25 +351,25 @@
         "Страница /teacher/students со списком + JLPT + кол-во уроков",
         "Пункт навигации для teacher/admin"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     },
     {
       "id": "R21",
       "epic": "R16",
       "title": "Семантика admin vs teacher",
       "category": "teacher",
-      "description": "Сейчас requireTeacher трактует role=teacher и role=admin ОДИНАКОВО. Отложено — актуально только если нужен обзор через нескольких учителей. Если понадобится: admin = надстройка над teacher-view, убрать фильтр teacherId в запросах когда role==='admin', чтобы видеть уроки/студентов всех учителей.",
+      "description": "Готово 2026-07-05: teacher API теперь учитывает role=admin как надстройку над teacher-view. Учитель видит только свои уроки/студентов, admin видит и может управлять уроками и студентами всех учителей.",
       "priority": "later",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
         "Решить, нужен ли admin-обзор через всех учителей уже в MVP",
         "Если да — убрать teacherId-фильтр для role=admin в соответствующих запросах"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-05"
     }
   ]
 }

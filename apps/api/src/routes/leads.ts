@@ -1,7 +1,9 @@
 import { leads } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
+import { and, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 
@@ -25,6 +27,19 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
   const [lead] = await db.insert(leads).values(data).returning({ id: leads.id });
   void notifyLead(data); // best-effort; never blocks the response
   return c.json({ ok: true, id: lead?.id }, 201);
+});
+
+leadsRoute.post("/link-current", requireAuth, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+
+  const linked = await db
+    .update(leads)
+    .set({ userId: user.id })
+    .where(and(eq(leads.email, user.email), isNull(leads.userId)))
+    .returning({ id: leads.id });
+
+  return c.json({ ok: true, linked: linked.length });
 });
 
 async function notifyLead(l: LeadInput): Promise<void> {

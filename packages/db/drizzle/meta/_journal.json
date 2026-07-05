@@ -50,6 +50,13 @@
       "when": 1783189301645,
       "tag": "0006_vengeful_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783262512923,
+      "tag": "0007_striped_inhumans",
+      "breakpoints": true
     }
   ]
 }

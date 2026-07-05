@@ -151,6 +151,27 @@ interface Question {
   correct: string;
 }
 
+function saveGuestTrainerProgress(activity: "kana", correct: number, total: number) {
+  try {
+    const key = "gojo:guest-trainer-progress";
+    const prev = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown[];
+    localStorage.setItem(
+      key,
+      JSON.stringify([
+        ...prev,
+        {
+          activity,
+          correct,
+          total,
+          completedAt: new Date().toISOString(),
+        },
+      ]),
+    );
+  } catch {
+    // localStorage can be unavailable; the signup CTA still works.
+  }
+}
+
 // ── Section label (matches landing) ──────────────────────────────────────────
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -380,8 +401,18 @@ function SetupScreen({ onStart }: { onStart: (mode: SetupMode, dir: Direction) =
             letterSpacing: "0.01em",
             transition: "opacity 0.15s",
           }}
-          onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
-          onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+          onFocus={(e) => {
+            e.currentTarget.style.opacity = "0.9";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.opacity = "0.9";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
         >
           Начать →
         </button>
@@ -408,6 +439,10 @@ function SummaryScreen({
   const pct = Math.round((correct / total) * 100);
   const rank =
     pct === 100 ? "完璧！" : pct >= 80 ? "よくできました" : pct >= 60 ? "がんばって" : "もう一度";
+
+  useEffect(() => {
+    saveGuestTrainerProgress("kana", correct, total);
+  }, [correct, total]);
 
   return (
     <div
@@ -570,7 +605,7 @@ function SummaryScreen({
             style={{
               padding: "14px",
               borderRadius: 10,
-              border: `1px solid rgba(0,0,0,0.1)`,
+              border: "1px solid rgba(0,0,0,0.1)",
               background: C.white,
               color: C.ink,
               cursor: "pointer",
@@ -581,6 +616,21 @@ function SummaryScreen({
           >
             Начать заново
           </button>
+          <a
+            href="/login?mode=signup"
+            style={{
+              padding: "14px",
+              borderRadius: 10,
+              background: C.ink,
+              color: C.white,
+              textDecoration: "none",
+              fontFamily: "var(--font-manrope), system-ui, sans-serif",
+              fontSize: 14,
+              fontWeight: 800,
+            }}
+          >
+            Сохранить прогресс в аккаунте
+          </a>
         </div>
       </div>
     </div>
@@ -853,12 +903,12 @@ export function KanaGame() {
             const isSelected = selectedChoice === choice;
             const isCorrectChoice = choice === question.correct;
             let bg = C.white;
-            let border = `1px solid rgba(0,0,0,0.08)`;
+            let border = "1px solid rgba(0,0,0,0.08)";
             let color = C.ink;
 
             if (answerState !== "idle" && isSelected) {
               bg = isCorrectChoice ? C.greenBg : C.redBg;
-              border = `1px solid ${isCorrectChoice ? C.green + "50" : C.red + "50"}`;
+              border = `1px solid ${isCorrectChoice ? `${C.green}50` : `${C.red}50`}`;
               color = isCorrectChoice ? C.green : C.red;
             } else if (answerState !== "idle" && isCorrectChoice) {
               bg = C.greenBg;

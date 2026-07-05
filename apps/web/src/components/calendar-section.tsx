@@ -7,6 +7,7 @@ import { toast } from "sonner";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 interface Session {
+  key: string;
   day: string;
   date: string;
   time: string;
@@ -24,6 +25,7 @@ function formatLesson(l: LessonDto): Session {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return {
+    key: `lesson:${l.id}`,
     day: days[start.getDay()],
     date: start.getDate().toString(),
     time: start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
@@ -39,6 +41,7 @@ function formatPersonalEvent(e: PersonalEventDto): Session {
   const h = Math.floor(e.durationMinutes / 60);
   const m = e.durationMinutes % 60;
   return {
+    key: `personal:${e.id}`,
     day: days[start.getDay()],
     date: start.getDate().toString(),
     time: start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
@@ -98,7 +101,11 @@ export function CalendarSection() {
 
   useEffect(() => {
     fetch(`${API_URL}/lessons`, { credentials: "include" })
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) return [];
+        const all: unknown = await r.json();
+        return Array.isArray(all) ? all : [];
+      })
       .then((all: LessonDto[]) => setBookedLessons(all.filter((l) => l.booked)))
       .catch(() => setBookedLessons([]))
       .finally(() => setLoading(false));
@@ -106,7 +113,11 @@ export function CalendarSection() {
 
   const loadPersonalEvents = () => {
     fetch(`${API_URL}/personal-events`, { credentials: "include" })
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) return [];
+        const rows: unknown = await r.json();
+        return Array.isArray(rows) ? rows : [];
+      })
       .then((rows: PersonalEventDto[]) => setPersonalEvents(rows))
       .catch(() => setPersonalEvents([]));
   };
@@ -335,9 +346,9 @@ export function CalendarSection() {
 
         {!loading && sessions.length > 0 && (
           <div className="space-y-2">
-            {sessions.map((s, i) => (
+            {sessions.map((s) => (
               <div
-                key={i}
+                key={s.key}
                 className="flex items-center gap-4 rounded-xl px-4 py-3"
                 style={{ background: "#f8f4ec" }}
               >

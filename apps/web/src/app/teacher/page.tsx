@@ -1,7 +1,8 @@
-import { redirect } from "next/navigation";
 import type { TeacherLessonDto } from "@/lib/api";
 import { fetchTeacherLessons } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { cancelLessonAction } from "./actions";
 import { CreateLessonForm } from "./create-form";
 
@@ -15,9 +16,7 @@ export default async function TeacherPage() {
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
           <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
-            <p className="text-sm font-bold text-gojo-error">
-              Доступ только для учителей.
-            </p>
+            <p className="text-sm font-bold text-gojo-error">Доступ только для учителей.</p>
           </div>
         </div>
       </main>
@@ -41,7 +40,15 @@ export default async function TeacherPage() {
         <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
           Панель учителя
         </div>
-        <h1 className="mt-2 font-serif text-[28px] font-bold">Мои уроки</h1>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-serif text-[28px] font-bold">Мои уроки</h1>
+          <Link
+            href="/teacher/students"
+            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold text-gojo-ink hover:bg-gojo-surface-2"
+          >
+            Мои студенты ▸
+          </Link>
+        </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">
           {/* Lessons list */}
@@ -79,6 +86,12 @@ export default async function TeacherPage() {
                           {l.status} · {l.studentCount} студ.
                         </span>
                       </div>
+                      <Link
+                        href={`/teacher/lessons/${l.id}`}
+                        className="shrink-0 text-xs font-bold text-gojo-orange hover:underline"
+                      >
+                        Управлять ▸
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -117,6 +130,12 @@ function TeacherLessonCard({ lesson }: { lesson: TeacherLessonDto }) {
             <span className="rounded-sm bg-gojo-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-white">
               {lesson.studentCount} студ.
             </span>
+            <a
+              href={`/teacher/lessons/${lesson.id}`}
+              className="text-sm font-bold text-gojo-orange hover:underline"
+            >
+              Управлять ▸
+            </a>
             <a
               href={`/lessons/${lesson.id}/room`}
               className="text-sm font-bold text-gojo-orange hover:underline"

@@ -34,6 +34,27 @@ const DIFFICULTIES: { id: Difficulty; label: string; hint: string }[] = [
 
 const ROUNDS = 10;
 
+function saveGuestTrainerProgress(activity: "kanji", correct: number, total: number) {
+  try {
+    const key = "gojo:guest-trainer-progress";
+    const prev = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown[];
+    localStorage.setItem(
+      key,
+      JSON.stringify([
+        ...prev,
+        {
+          activity,
+          correct,
+          total,
+          completedAt: new Date().toISOString(),
+        },
+      ]),
+    );
+  } catch {
+    // localStorage can be unavailable; the signup CTA still works.
+  }
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -216,6 +237,10 @@ function SummaryScreen({
 }) {
   const pct = Math.round((correct / total) * 100);
 
+  useEffect(() => {
+    saveGuestTrainerProgress("kanji", correct, total);
+  }, [correct, total]);
+
   return (
     <div
       style={{
@@ -355,6 +380,22 @@ function SummaryScreen({
           >
             Начать заново
           </button>
+          <a
+            href="/login?mode=signup"
+            style={{
+              padding: "14px",
+              borderRadius: 10,
+              background: C.ink,
+              color: C.white,
+              textAlign: "center",
+              textDecoration: "none",
+              fontFamily: "var(--font-manrope), system-ui, sans-serif",
+              fontSize: 14,
+              fontWeight: 800,
+            }}
+          >
+            Сохранить прогресс в аккаунте
+          </a>
         </div>
       </div>
     </div>

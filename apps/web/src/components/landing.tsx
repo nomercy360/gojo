@@ -9,6 +9,36 @@ const PHRASES = [
   "учиться и жить в Японии.",
 ];
 
+const REVIEWS = [
+  {
+    name: "Александр",
+    text: "Руслан очень систематизировано и методично даёт материал, который хорошо укладывается в памяти. Владение языком «живое» — мы изучаем не просто учебник, а то, как говорят в реальной жизни. ありがとう, Руслан!",
+  },
+  {
+    name: "Полина",
+    text: "Прошло пять занятий — освоили хирагану, катакану, первые иероглифы. Руслан всегда может рассказать про японскую культуру и историю, это для меня было очень важно при выборе сенсея. どうもありがとう!",
+  },
+  {
+    name: "Зоя",
+    text: "Искала репетитора для сына — он любит аниме. Провели 2 занятия, и я уже уверена, что продолжим. Настолько заинтересованным своего ребёнка я давно не видела. Удивительно, как молодой человек умеет увлечь и замотивировать.",
+  },
+  {
+    name: "Сергей",
+    text: "Умеет заинтересовать в предмете. Сразу был составлен план занятий и программа. Руслан прекрасно понимает особенности мышления нашего поколения и знает к нему подход.",
+  },
+  {
+    name: "Анастасия",
+    text: "На вводном уроке обсудили цели, подготовили план работы. Атмосфера приятная и дружелюбная, материал подаётся доступно и структурировано. Сразу видно — профессионал. Точно рекомендую!",
+  },
+  {
+    name: "Надежда",
+    text: "Понял запрос, подстроился под меня. Доступно объясняет, держит нужный темп. Видно, что преподаёт с удовольствием и работает именно на результат.",
+  },
+];
+
+const REVIEW_LOOP = [...REVIEWS, ...REVIEWS];
+const REVIEW_STAR_KEYS = ["star-1", "star-2", "star-3", "star-4", "star-5"];
+
 /**
  * Hero typewriter. Owns its own state so per-keystroke updates don't re-render
  * the whole landing tree. Calls onAdvance(index) when it rolls to a new phrase
@@ -57,6 +87,7 @@ function CyclingWord({ onAdvance }: { onAdvance: (index: number) => void }) {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const PENDING_LEAD_KEY = "gojo:pending-lead-email";
 
 const readValue = (id: string) =>
   (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
@@ -93,7 +124,7 @@ export function Landing() {
         const start = Date.now();
         const tick = () => {
           const t = Math.min((Date.now() - start) / duration, 1);
-          const ease = 1 - Math.pow(1 - t, 3);
+          const ease = 1 - (1 - t) ** 3;
           setStudentsCount(Math.round(ease * 112));
           if (t < 1) {
             raf = requestAnimationFrame(tick);
@@ -103,10 +134,13 @@ export function Landing() {
         };
         raf = requestAnimationFrame(tick);
       },
-      { threshold: 0.4 }
+      { threshold: 0.4 },
     );
     observer.observe(el);
-    return () => { observer.disconnect(); cancelAnimationFrame(raf); };
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   const openModal = () => setBookingOpen(true);
@@ -137,6 +171,7 @@ export function Landing() {
         }),
       });
       if (!res.ok) throw new Error();
+      localStorage.setItem(PENDING_LEAD_KEY, readValue("f-email"));
       setBookingSubmitted(true);
     } catch {
       toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
@@ -238,11 +273,21 @@ export function Landing() {
           </button>
         </div>
         <div className={`nav-mobile ${navOpen ? "open" : ""}`}>
-          <a href="#mission" onClick={() => setNavOpen(false)}>Команда</a>
-          <a href="#how" onClick={() => setNavOpen(false)}>Как работает</a>
-          <a href="#pricing" onClick={() => setNavOpen(false)}>Цены</a>
-          <a href="#faq" onClick={() => setNavOpen(false)}>Вопросы</a>
-          <a href="/kana" onClick={() => setNavOpen(false)}>Тренажёр</a>
+          <a href="#mission" onClick={() => setNavOpen(false)}>
+            Команда
+          </a>
+          <a href="#how" onClick={() => setNavOpen(false)}>
+            Как работает
+          </a>
+          <a href="#pricing" onClick={() => setNavOpen(false)}>
+            Цены
+          </a>
+          <a href="#faq" onClick={() => setNavOpen(false)}>
+            Вопросы
+          </a>
+          <a href="/kana" onClick={() => setNavOpen(false)}>
+            Тренажёр
+          </a>
         </div>
       </nav>
 
@@ -251,7 +296,11 @@ export function Landing() {
           <div className="hero-brand">
             <img className="hero-brand-logo" src="/landing/logo.png" alt="Gojo Learn" />
             <span className="hero-brand-divider" />
-            <span className="hero-brand-tag">Школа японского языка<br />нового поколения</span>
+            <span className="hero-brand-tag">
+              Школа японского языка
+              <br />
+              нового поколения
+            </span>
           </div>
           <h1 className="hero-title">
             Японский,
@@ -454,7 +503,10 @@ export function Landing() {
           <a
             href="#"
             className="btn-primary"
-            onClick={(e) => { e.preventDefault(); openModal(); }}
+            onClick={(e) => {
+              e.preventDefault();
+              openModal();
+            }}
           >
             Начать по-другому →
           </a>
@@ -471,12 +523,16 @@ export function Landing() {
             <div className="how-card-head">
               <div className="how-card-head-left">
                 <span className="how-card-step">Шаг 01</span>
-                <span className="how-card-head-label"><span className="accent">Старт</span></span>
+                <span className="how-card-head-label">
+                  <span className="accent">Старт</span>
+                </span>
               </div>
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Определи свой уровень</div>
-              <div className="how-card-text">Короткий тест — 10 минут, и мы знаем с чего начать.</div>
+              <div className="how-card-text">
+                Короткий тест — 10 минут, и мы знаем с чего начать.
+              </div>
             </div>
           </div>
 
@@ -489,7 +545,9 @@ export function Landing() {
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Живые занятия от 2×/нед</div>
-              <div className="how-card-text">Индивидуально или в группе до 8 человек — с живым преподавателем.</div>
+              <div className="how-card-text">
+                Индивидуально или в группе до 8 человек — с живым преподавателем.
+              </div>
             </div>
           </div>
 
@@ -502,7 +560,9 @@ export function Landing() {
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Тренировки каждый день</div>
-              <div className="how-card-text">Карточки, диалоги и разбор ошибок — между уроками, каждый день.</div>
+              <div className="how-card-text">
+                Карточки, диалоги и разбор ошибок — между уроками, каждый день.
+              </div>
             </div>
           </div>
 
@@ -510,12 +570,16 @@ export function Landing() {
             <div className="how-card-head">
               <div className="how-card-head-left">
                 <span className="how-card-step">Шаг 04</span>
-                <span className="how-card-head-label"><span className="accent">Результат</span></span>
+                <span className="how-card-head-label">
+                  <span className="accent">Результат</span>
+                </span>
               </div>
             </div>
             <div className="how-card-body">
               <div className="how-card-title">Реальный уровень языка</div>
-              <div className="how-card-text">Ты доходишь до точки, где язык работает на тебя — без скуки.</div>
+              <div className="how-card-text">
+                Ты доходишь до точки, где язык работает на тебя — без скуки.
+              </div>
             </div>
           </div>
         </div>
@@ -533,7 +597,9 @@ export function Landing() {
           <div className="stat-divider" />
           <div className="stat-item">
             <div className="stat-badge">Используем ИИ</div>
-            <div className="stat-label">вас тренируют несколько моделей и агентов между уроками</div>
+            <div className="stat-label">
+              вас тренируют несколько моделей и агентов между уроками
+            </div>
           </div>
           <div className="stat-divider" />
           <div className="stat-item">
@@ -553,25 +619,13 @@ export function Landing() {
         </h2>
         <div className="reviews-marquee">
           <div className="reviews-marquee-track">
-            {[
-              { name: "Александр", text: "Руслан очень систематизировано и методично даёт материал, который хорошо укладывается в памяти. Владение языком «живое» — мы изучаем не просто учебник, а то, как говорят в реальной жизни. ありがとう, Руслан!" },
-              { name: "Полина", text: "Прошло пять занятий — освоили хирагану, катакану, первые иероглифы. Руслан всегда может рассказать про японскую культуру и историю, это для меня было очень важно при выборе сенсея. どうもありがとう!" },
-              { name: "Зоя", text: "Искала репетитора для сына — он любит аниме. Провели 2 занятия, и я уже уверена, что продолжим. Настолько заинтересованным своего ребёнка я давно не видела. Удивительно, как молодой человек умеет увлечь и замотивировать." },
-              { name: "Сергей", text: "Умеет заинтересовать в предмете. Сразу был составлен план занятий и программа. Руслан прекрасно понимает особенности мышления нашего поколения и знает к нему подход." },
-              { name: "Анастасия", text: "На вводном уроке обсудили цели, подготовили план работы. Атмосфера приятная и дружелюбная, материал подаётся доступно и структурировано. Сразу видно — профессионал. Точно рекомендую!" },
-              { name: "Надежда", text: "Понял запрос, подстроился под меня. Доступно объясняет, держит нужный темп. Видно, что преподаёт с удовольствием и работает именно на результат." },
-            ].concat([
-              { name: "Александр", text: "Руслан очень систематизировано и методично даёт материал, который хорошо укладывается в памяти. Владение языком «живое» — мы изучаем не просто учебник, а то, как говорят в реальной жизни. ありがとう, Руслан!" },
-              { name: "Полина", text: "Прошло пять занятий — освоили хирагану, катакану, первые иероглифы. Руслан всегда может рассказать про японскую культуру и историю, это для меня было очень важно при выборе сенсея. どうもありがとう!" },
-              { name: "Зоя", text: "Искала репетитора для сына — он любит аниме. Провели 2 занятия, и я уже уверена, что продолжим. Настолько заинтересованным своего ребёнка я давно не видела. Удивительно, как молодой человек умеет увлечь и замотивировать." },
-              { name: "Сергей", text: "Умеет заинтересовать в предмете. Сразу был составлен план занятий и программа. Руслан прекрасно понимает особенности мышления нашего поколения и знает к нему подход." },
-              { name: "Анастасия", text: "На вводном уроке обсудили цели, подготовили план работы. Атмосфера приятная и дружелюбная, материал подаётся доступно и структурировано. Сразу видно — профессионал. Точно рекомендую!" },
-              { name: "Надежда", text: "Понял запрос, подстроился под меня. Доступно объясняет, держит нужный темп. Видно, что преподаёт с удовольствием и работает именно на результат." },
-            ]).map((r, i) => (
-              <div className="review-card" key={i}>
+            {REVIEW_LOOP.map((r, i) => (
+              <div className="review-card" key={`${r.name}-${i < REVIEWS.length ? "a" : "b"}`}>
                 <div className="review-stars">
-                  {[...Array(5)].map((_, j) => (
-                    <svg key={j} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  {REVIEW_STAR_KEYS.map((key) => (
+                    <svg key={key} viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
                   ))}
                 </div>
                 <div className="review-text">{r.text}</div>
@@ -591,13 +645,16 @@ export function Landing() {
           {/* Left: quote */}
           <div className="mission-merged-left">
             <h2 className="mission-merged-title">
-              Японский — сложный.<br />
-              Но путь до результата<br />
+              Японский — сложный.
+              <br />
+              Но путь до результата
+              <br />
               <em>может быть понятным.</em>
             </h2>
             <p className="mission-body">
               Gojo — школа для тех, кто хочет не просто «учить японский», а{" "}
-              <strong>реально им пользоваться</strong>: переехать, работать, смотреть аниме без субтитров.
+              <strong>реально им пользоваться</strong>: переехать, работать, смотреть аниме без
+              субтитров.
             </p>
             <p className="mission-body mission-body-strong">
               Потому что нам важен ваш результат, а не просто оплата.
@@ -621,7 +678,6 @@ export function Landing() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -649,13 +705,14 @@ export function Landing() {
           {/* Right: message */}
           <div className="mission-merged-left">
             <h2 className="mission-merged-title">
-              Технологии не<br />
+              Технологии не
+              <br />
               заменяют учителя —<br />
               <em>они делают его точнее.</em>
             </h2>
             <p className="mission-body">
-              Мы строим платформу, где прогресс <strong>измерим</strong>,
-              практика адаптивна к вашему темпу, а расписание встраивается в вашу жизнь — а не наоборот.
+              Мы строим платформу, где прогресс <strong>измерим</strong>, практика адаптивна к
+              вашему темпу, а расписание встраивается в вашу жизнь — а не наоборот.
             </p>
             <p className="mission-body mission-body-strong">
               Хорошая технология незаметна. Вы просто учитесь быстрее.
@@ -819,7 +876,6 @@ export function Landing() {
           Цены указаны со скидкой 40% для первой когорты · Записаться — без оплаты и обязательств
         </p>
       </section>
-
 
       <section className="section-faq" id="faq">
         <div className="faq-inner">
@@ -1288,8 +1344,22 @@ export function Landing() {
               Мы получили твою заявку и свяжемся в течение 24 часов, чтобы договориться о времени
               первого урока.
               <br />
-              <br />А пока — присоединяйся к нашему Telegram-сообществу 👇
+              <br />
+              Создай аккаунт с тем же email, чтобы заявка привязалась к личному кабинету.
             </p>
+            <a
+              href="/login?mode=signup&intent=booking"
+              className="form-submit"
+              style={{
+                display: "inline-block",
+                textAlign: "center",
+                textDecoration: "none",
+                marginTop: "18px",
+                borderRadius: "8px",
+              }}
+            >
+              Создать аккаунт
+            </a>
             <a
               href="https://t.me/gojoedu"
               target="_blank"
@@ -1298,7 +1368,7 @@ export function Landing() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "10px",
-                marginTop: "20px",
+                marginTop: "14px",
                 background: "var(--orange)",
                 color: "var(--white)",
                 padding: "13px 24px",
@@ -1328,7 +1398,12 @@ export function Landing() {
           >
             <span className="ico">📝</span> Записаться на урок
           </a>
-          <a href="https://t.me/gojoedu" target="_blank" rel="noopener noreferrer" className="intercom-menu-item">
+          <a
+            href="https://t.me/gojoedu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="intercom-menu-item"
+          >
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06-.01.24-.02.27z"

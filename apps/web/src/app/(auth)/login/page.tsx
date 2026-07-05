@@ -1,17 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type Mode = "signin" | "signup";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const PENDING_LEAD_KEY = "gojo:pending-lead-email";
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      setMode("signup");
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,6 +54,15 @@ export default function LoginPage() {
         // biome-ignore lint/suspicious/noExplicitAny: additional fields
         const u = (res.data as any)?.user;
         isNewStudent = u?.role === "student" && !u?.quizLevel;
+      }
+      const authUser = await authClient.getSession();
+      const id = authUser.data?.user?.id;
+      if (id && migrateGuestTrainerProgress(id)) {
+        toast.success("Прогресс тренажёра сохранён");
+      }
+      const linkedLeads = await linkPendingBookingLead();
+      if (linkedLeads > 0) {
+        toast.success("Заявка привязана к аккаунту");
       }
       router.push(isNewStudent ? "/onboarding/quiz" : "/dashboard");
       router.refresh();
@@ -99,13 +117,7 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <Field
-            label="Email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            required
-          />
+          <Field label="Email" name="email" type="email" placeholder="you@example.com" required />
           <Field
             label="Пароль"
             name="password"
@@ -139,6 +151,42 @@ export default function LoginPage() {
       </div>
     </main>
   );
+}
+
+async function linkPendingBookingLead(): Promise<number> {
+  const intent = new URLSearchParams(window.location.search).get("intent");
+  const hasPendingLead = Boolean(localStorage.getItem(PENDING_LEAD_KEY));
+  if (!hasPendingLead && intent !== "booking") return 0;
+
+  try {
+    const res = await fetch(`${API_URL}/leads/link-current`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { linked?: number };
+    localStorage.removeItem(PENDING_LEAD_KEY);
+    return data.linked ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+function migrateGuestTrainerProgress(userId: string): boolean {
+  try {
+    const guestKey = "gojo:guest-trainer-progress";
+    const raw = localStorage.getItem(guestKey);
+    if (!raw) return false;
+
+    const accountKey = `gojo:trainer-progress:${userId}`;
+    const existing = JSON.parse(localStorage.getItem(accountKey) ?? "[]") as unknown[];
+    const guest = JSON.parse(raw) as unknown[];
+    localStorage.setItem(accountKey, JSON.stringify([...existing, ...guest]));
+    localStorage.removeItem(guestKey);
+    return guest.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 function Field({

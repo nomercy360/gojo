@@ -40,6 +40,61 @@ const updateLessonInput = z.object({
 
 teacherRoute.use("*", requireAuth, requireTeacher);
 
+function canManageLesson(
+  u: NonNullable<AuthContext["Variables"]["user"]>,
+  lesson: typeof lessons.$inferSelect,
+) {
+  return u.role === "admin" || lesson.teacherId === u.id;
+}
+
+function teacherLessonScope(u: NonNullable<AuthContext["Variables"]["user"]>) {
+  return u.role === "admin"
+    ? isNull(lessons.deletedAt)
+    : and(eq(lessons.teacherId, u.id), isNull(lessons.deletedAt));
+}
+
+teacherRoute.get("/students", async (c) => {
+  const u = c.get("user")!;
+
+  const rows = await db
+    .select({
+      studentId: userTable.id,
+      nickname: userTable.nickname,
+      email: userTable.email,
+      avatarUrl: userTable.image,
+      jlptLevel: userTable.jlptLevel,
+      quizLevel: userTable.quizLevel,
+      lessonCount: sql<number>`COUNT(DISTINCT ${bookings.lessonId})`.as("lesson_count"),
+      lastLessonAt: sql<Date>`MAX(${lessons.startsAt})`.as("last_lesson_at"),
+    })
+    .from(bookings)
+    .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
+    .innerJoin(userTable, eq(userTable.id, bookings.studentId))
+    .where(teacherLessonScope(u))
+    .groupBy(
+      userTable.id,
+      userTable.nickname,
+      userTable.email,
+      userTable.image,
+      userTable.jlptLevel,
+      userTable.quizLevel,
+    )
+    .orderBy(desc(sql`MAX(${lessons.startsAt})`));
+
+  return c.json(
+    rows.map((r) => ({
+      studentId: r.studentId,
+      nickname: r.nickname ?? null,
+      email: r.email,
+      avatarUrl: r.avatarUrl ?? null,
+      jlptLevel: r.jlptLevel ?? null,
+      quizLevel: r.quizLevel ?? null,
+      lessonCount: Number(r.lessonCount),
+      lastLessonAt: r.lastLessonAt ? new Date(r.lastLessonAt).toISOString() : null,
+    })),
+  );
+});
+
 teacherRoute.get("/lessons", async (c) => {
   const u = c.get("user")!;
   const now = new Date();
@@ -53,7 +108,7 @@ teacherRoute.get("/lessons", async (c) => {
         ),
     })
     .from(lessons)
-    .where(and(eq(lessons.teacherId, u.id), isNull(lessons.deletedAt)))
+    .where(teacherLessonScope(u))
     .orderBy(desc(lessons.startsAt))
     .limit(100);
 
@@ -95,7 +150,7 @@ teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async 
 
   const [existing] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
   if (!existing) throw new HTTPException(404, { message: "lesson not found" });
-  if (existing.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, existing)) throw new HTTPException(403, { message: "not your lesson" });
 
   const patch: Partial<typeof lessons.$inferInsert> = { updatedAt: new Date() };
   if (body.title !== undefined) patch.title = body.title;
@@ -114,7 +169,7 @@ teacherRoute.delete("/lessons/:id", async (c) => {
 
   const [existing] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
   if (!existing) throw new HTTPException(404, { message: "lesson not found" });
-  if (existing.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, existing)) throw new HTTPException(403, { message: "not your lesson" });
 
   await db
     .update(lessons)
@@ -129,7 +184,7 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
   const rows = await db
     .select({
@@ -179,7 +234,7 @@ teacherRoute.patch(
 
     const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
     if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-    if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+    if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
     const [booking] = await db
       .select()
@@ -210,7 +265,7 @@ teacherRoute.patch(
 
     const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
     if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-    if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+    if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
     const [booking] = await db
       .select()
@@ -246,7 +301,7 @@ teacherRoute.post("/lessons/:id/materials", async (c) => {
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
   const form = await c.req.formData();
   const file = form.get("file");
@@ -293,7 +348,7 @@ teacherRoute.get("/lessons/:id/cards", async (c) => {
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
   const rows = await db
     .select()
@@ -310,7 +365,7 @@ teacherRoute.post("/lessons/:id/cards", zValidator("json", addLessonCardInput), 
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
   const [maxPos] = await db
     .select({
@@ -343,7 +398,7 @@ teacherRoute.delete("/lessons/:id/cards/:cardId", async (c) => {
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
   if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.teacherId !== u.id) throw new HTTPException(403, { message: "not your lesson" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
 
   await db
     .delete(lessonCards)

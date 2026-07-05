@@ -73,6 +73,23 @@ export function fetchLessonMaterials(lessonId: string) {
   return apiFetch<LessonMaterialDto[]>(`/lessons/${lessonId}/materials`);
 }
 
+export async function uploadLessonMaterial(
+  lessonId: string,
+  formData: FormData,
+): Promise<LessonMaterialDto> {
+  const cookie = await getCookieHeader();
+  const res = await fetch(`${API_URL}/teacher/lessons/${lessonId}/materials`, {
+    method: "POST",
+    headers: cookie ? { Cookie: cookie } : {},
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new ApiError(res.status, body || `api error ${res.status}`);
+  }
+  return (await res.json()) as LessonMaterialDto;
+}
+
 export function fetchLivekitToken(lessonId: string) {
   return apiFetch<LivekitTokenResponse>(`/livekit/token/${lessonId}`, {
     method: "POST",
@@ -193,6 +210,21 @@ export type LessonStudentDto = {
   jlptLevel: string | null;
   quizLevel: string | null;
 };
+
+export type TeacherStudentDto = {
+  studentId: string;
+  nickname: string | null;
+  email: string;
+  avatarUrl: string | null;
+  jlptLevel: string | null;
+  quizLevel: string | null;
+  lessonCount: number;
+  lastLessonAt: string | null;
+};
+
+export function fetchTeacherStudents(): Promise<TeacherStudentDto[]> {
+  return apiFetch("/teacher/students");
+}
 
 export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {
   return apiFetch(`/teacher/lessons/${lessonId}/students`);
