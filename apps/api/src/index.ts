@@ -7,7 +7,6 @@ import { type AuthContext, loadSession } from "./auth/middleware.ts";
 import { env } from "./env.ts";
 import { startReminderLoop } from "./reminders.ts";
 import { authRoute } from "./routes/auth.ts";
-import { calendarRoute } from "./routes/calendar.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
 import { leadsRoute } from "./routes/leads.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
@@ -59,7 +58,6 @@ app.route("/onboarding", onboardingRoute);
 app.route("/personal-events", personalEventsRoute);
 app.route("/review", reviewRoute);
 app.route("/kanji", kanjiRoute);
-app.route("/calendar", calendarRoute);
 app.route("/training", trainingRoute);
 
 startReminderLoop();

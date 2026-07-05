@@ -52,17 +52,6 @@ export const auth = betterAuth({
       },
     },
   },
-  socialProviders: {
-    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-      ? {
-          google: {
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-            scope: ["https://www.googleapis.com/auth/calendar.readonly"],
-          },
-        }
-      : {}),
-  },
   trustedOrigins: [
     ...(env.TRUSTED_ORIGINS?.split(",").map((s) => s.trim()) ?? []),
     ...(env.NODE_ENV === "development"

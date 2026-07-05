@@ -34,8 +34,6 @@ const schema = z.object({
     .string()
     .default("true")
     .transform((v) => v === "true" || v === "1"),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
