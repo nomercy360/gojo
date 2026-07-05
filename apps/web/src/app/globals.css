@@ -257,7 +257,7 @@ html:has(.landing-root) {
   text-transform: uppercase;
   font-weight: 600;
   padding-left: 14px;
-  border-left: 1px solid rgba(17,17,17,0.15);
+  border-left: 1px solid rgba(17, 17, 17, 0.15);
   margin-left: 2px;
   line-height: 1;
 }
@@ -802,7 +802,7 @@ html:has(.landing-root) {
 }
 .landing-root .how-card {
   background: var(--cream-soft);
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 14px;
   overflow: hidden;
   position: relative;
@@ -1006,7 +1006,7 @@ html:has(.landing-root) {
 .landing-root .mteam-card {
   background: var(--white);
   border-radius: 14px;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 .landing-root .mteam-card.mteam-featured {
@@ -1076,12 +1076,12 @@ html:has(.landing-root) {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-2);
-  background: rgba(0,0,0,0.04);
+  background: rgba(0, 0, 0, 0.04);
   padding: 3px 8px;
   border-radius: 4px;
 }
 .landing-root .mteam-cred-highlight {
-  background: rgba(247,107,0,0.1) !important;
+  background: rgba(247, 107, 0, 0.1) !important;
   color: var(--orange) !important;
 }
 .landing-root .mteam-row {
@@ -1432,7 +1432,7 @@ html:has(.landing-root) {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: rgba(247, 107, 0, 0.10);
+  background: rgba(247, 107, 0, 0.1);
   padding: 6px 14px 6px 10px;
   border-radius: 999px;
 }
@@ -1521,7 +1521,7 @@ html:has(.landing-root) {
 }
 .landing-root .pricing-card {
   background: var(--cream);
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 16px;
   padding: 32px 28px;
   position: relative;
@@ -1905,7 +1905,8 @@ html:has(.landing-root) {
   backdrop-filter: blur(6px);
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
+  overflow-y: auto;
 }
 .landing-root .modal-overlay.open {
   display: flex;
@@ -1913,10 +1914,13 @@ html:has(.landing-root) {
 .landing-root .modal-box {
   background: var(--white);
   border-radius: 20px;
-  padding: 48px 44px;
+  padding: 36px 44px 30px;
   max-width: 520px;
+  max-height: calc(100dvh - 32px);
   width: 100%;
   position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 6px 6px 0 var(--orange);
   animation: modal-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1958,7 +1962,7 @@ html:has(.landing-root) {
   text-transform: uppercase;
   padding: 6px 14px;
   border-radius: 4px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   border: 1px solid rgba(247, 107, 0, 0.25);
 }
 .landing-root .modal-title {
@@ -1978,12 +1982,12 @@ html:has(.landing-root) {
   font-size: 15px;
   color: var(--ink-2);
   line-height: 1.55;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 .landing-root .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .landing-root .form-group {
   display: flex;
@@ -2003,7 +2007,7 @@ html:has(.landing-root) {
   background: var(--cream);
   border: 1.5px solid rgba(17, 17, 17, 0.15);
   border-radius: 8px;
-  padding: 13px 16px;
+  padding: 11px 16px;
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--ink);
@@ -2028,7 +2032,7 @@ html:has(.landing-root) {
   background: var(--orange);
   color: var(--white);
   border: none;
-  padding: 16px;
+  padding: 14px 16px;
   border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-body);
@@ -2046,7 +2050,7 @@ html:has(.landing-root) {
   font-size: 12px;
   color: var(--ink-3);
   text-align: center;
-  margin-top: 4px;
+  margin-top: 0;
   line-height: 1.5;
 }
 .landing-root .form-success {
@@ -2343,10 +2347,18 @@ html:has(.landing-root) {
   animation: stat-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 @keyframes stat-pop {
-  0%   { transform: scale(1);    }
-  45%  { transform: scale(1.22); }
-  75%  { transform: scale(0.96); }
-  100% { transform: scale(1);    }
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  75% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 @media (max-width: 640px) {
   .landing-root .stats-strip-inner {
@@ -2478,7 +2490,7 @@ html:has(.landing-root) {
   background: var(--white);
   border-radius: 14px;
   padding: 28px 24px;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   height: 100%;
   box-sizing: border-box;
 }
@@ -2525,7 +2537,7 @@ html:has(.landing-root) {
   background: var(--cream);
   border-radius: 16px;
   padding: 28px 24px;
-  border: 1px solid rgba(0,0,0,0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
   transition: transform 0.2s;
   height: 100%;
   box-sizing: border-box;
@@ -2651,11 +2663,11 @@ html:has(.landing-root) {
 }
 .landing-root .reviews-marquee::before {
   left: 0;
-  background: linear-gradient(to right, var(--cream-soft), rgba(251,248,242,0));
+  background: linear-gradient(to right, var(--cream-soft), rgba(251, 248, 242, 0));
 }
 .landing-root .reviews-marquee::after {
   right: 0;
-  background: linear-gradient(to left, var(--cream-soft), rgba(251,248,242,0));
+  background: linear-gradient(to left, var(--cream-soft), rgba(251, 248, 242, 0));
 }
 .landing-root .reviews-marquee-track {
   display: flex;
@@ -2670,14 +2682,18 @@ html:has(.landing-root) {
   animation-play-state: running !important;
 }
 @keyframes reviews-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 .landing-root .review-card {
   background: var(--white);
   border-radius: 14px;
   padding: 22px 22px;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: none;
   display: flex;
   flex-direction: column;
@@ -2710,7 +2726,7 @@ html:has(.landing-root) {
   align-items: center;
   gap: 12px;
   padding-top: 4px;
-  border-top: 1px solid rgba(0,0,0,0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 .landing-root .review-name {
   font-family: var(--font-body);
@@ -2939,7 +2955,7 @@ html:has(.landing-root) {
     grid-template-columns: 1fr 1fr;
   }
   .landing-root .modal-box {
-    padding: 36px 28px;
+    padding: 32px 28px 26px;
   }
 }
 @media (max-width: 600px) {
@@ -2998,8 +3014,23 @@ html:has(.landing-root) {
   .landing-root .form-row {
     grid-template-columns: 1fr;
   }
+  .landing-root .modal-overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
   .landing-root .modal-box {
-    padding: 28px 20px;
+    border-radius: 14px;
+    max-height: calc(100dvh - 20px);
+    padding: 26px 18px 22px;
+  }
+  .landing-root .modal-title {
+    font-size: 26px;
+  }
+  .landing-root .modal-sub {
+    margin-bottom: 16px;
+  }
+  .landing-root .modal-form {
+    gap: 10px;
   }
   .landing-root .platform-aio {
     padding: 24px 22px;
