@@ -40,6 +40,7 @@ export function QuizClient({
   const [submittedAnswers, setSubmittedAnswers] = useState<QuizSubmitInput["answers"] | null>(null);
   const [result, setResult] = useState<QuizResultDto | null>(null);
   const [leadSent, setLeadSent] = useState(false);
+  const [leadEmailSent, setLeadEmailSent] = useState(true);
   const [pending, startTransition] = useTransition();
   const [leadPending, startLeadTransition] = useTransition();
 
@@ -87,11 +88,8 @@ export function QuizClient({
           ...(contact ? { contact } : {}),
         });
         setLeadSent(true);
-        toast.success(
-          r.emailSent
-            ? "Подробный результат отправлен на email"
-            : "Заявка сохранена, но email сейчас не отправился",
-        );
+        setLeadEmailSent(r.emailSent);
+        toast.success(r.emailSent ? "Подробный результат отправлен на email" : "Заявка сохранена");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не удалось отправить результат");
       }
@@ -129,8 +127,9 @@ export function QuizClient({
             </p>
             {leadSent ? (
               <div className="mt-4 rounded-md bg-gojo-success-soft px-4 py-3 text-sm font-bold text-gojo-success">
-                Готово. Проверь почту, а если хочешь быстрее договориться о времени — напиши в
-                Telegram.
+                {leadEmailSent
+                  ? "Готово. Проверь почту, а если хочешь быстрее договориться о времени — напиши в Telegram."
+                  : "Готово. Заявка сохранена, преподаватель увидит твой результат и сможет связаться с тобой."}
               </div>
             ) : (
               <form onSubmit={submitLead} className="mt-4 grid gap-3">
@@ -192,6 +191,7 @@ export function QuizClient({
               setSubmittedAnswers(null);
               setResult(null);
               setLeadSent(false);
+              setLeadEmailSent(true);
             }}
             className="g-body mt-3 text-[12px] font-bold text-gojo-ink-muted hover:text-gojo-ink"
           >

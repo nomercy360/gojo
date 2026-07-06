@@ -24,16 +24,16 @@ export function ProfileForm({ user }: { user: UserDto }) {
   }, [user.avatarUrl]);
 
   useEffect(() => {
-    if (profileState.ok) toast.success("Профиль сохранён");
-    if (profileState.error) toast.error(profileState.error);
+    if (profileState?.ok) toast.success("Профиль сохранён");
+    if (profileState?.error) toast.error(profileState.error);
   }, [profileState]);
 
   useEffect(() => {
-    if (uploadState.ok) {
+    if (uploadState?.ok) {
       toast.success("Аватар загружен");
       setAvatarTab("preset");
     }
-    if (uploadState.error) toast.error(uploadState.error);
+    if (uploadState?.error) toast.error(uploadState.error);
   }, [uploadState]);
 
   return (
@@ -168,11 +168,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
         </div>
 
         {avatarTab === "preset" ? (
-          <button
-            type="submit"
-            disabled={profilePending}
-            className="g-btn-primary w-full text-sm"
-          >
+          <button type="submit" disabled={profilePending} className="g-btn-primary w-full text-sm">
             {profilePending ? "Сохраняем..." : "Сохранить изменения"}
           </button>
         ) : null}
@@ -197,11 +193,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
               required
             />
           </label>
-          <button
-            type="submit"
-            disabled={uploadPending}
-            className="g-btn-primary w-full text-sm"
-          >
+          <button type="submit" disabled={uploadPending} className="g-btn-primary w-full text-sm">
             {uploadPending ? "Загружаем..." : "Загрузить аватар"}
           </button>
         </form>
