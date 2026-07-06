@@ -7,3 +7,4 @@ export * from "./kanji.ts";
 export * from "./flashcards.ts";
 export * from "./progress.ts";
 export * from "./payments.ts";
+export * from "./notifications.ts";

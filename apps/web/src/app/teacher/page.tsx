@@ -39,6 +39,12 @@ export default async function TeacherPage() {
           >
             Мои студенты ▸
           </Link>
+          <Link
+            href="/teacher/leads"
+            className="rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white hover:bg-gojo-orange-hover"
+          >
+            Заявки ▸
+          </Link>
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">

@@ -208,10 +208,39 @@ export type LessonStudentDto = {
   email: string;
   avatarUrl: string | null;
   bookedAt: string;
+  attendanceStatus: AttendanceStatus;
+  postLessonNote: string | null;
+  recommendation: string | null;
   homeworkStatus: HomeworkStatus;
   homeworkMarkedAt: string | null;
   jlptLevel: string | null;
   quizLevel: string | null;
+};
+
+export type AttendanceStatus =
+  | "scheduled"
+  | "attended"
+  | "no_show"
+  | "cancelled_by_student"
+  | "cancelled_by_teacher";
+
+export type TeacherLeadDto = {
+  id: string;
+  userId: string | null;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  trialLessonId: string | null;
+  kind: string;
+  status: string;
+  name: string;
+  email: string;
+  contact: string | null;
+  level: string | null;
+  goal: string | null;
+  notes: string | null;
+  nextFollowUpAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type TeacherStudentDto = {
@@ -225,8 +254,83 @@ export type TeacherStudentDto = {
   lastLessonAt: string | null;
 };
 
+export type TeacherStudentProfileDto = {
+  student: {
+    id: string;
+    nickname: string | null;
+    email: string;
+    avatarUrl: string | null;
+    jlptLevel: string | null;
+    quizLevel: string | null;
+    telegramId: number | null;
+    createdAt: string;
+  };
+  lessons: Array<{
+    lessonId: string;
+    title: string;
+    startsAt: string;
+    status: string;
+    attendanceStatus: AttendanceStatus;
+    postLessonNote: string | null;
+    recommendation: string | null;
+    homeworkStatus: HomeworkStatus;
+    homeworkMarkedAt: string | null;
+  }>;
+  leads: Array<{
+    id: string;
+    status: string;
+    kind: string;
+    name: string;
+    email: string;
+    contact: string | null;
+    level: string | null;
+    goal: string | null;
+    notes: string | null;
+    createdAt: string;
+  }>;
+};
+
+export type AdminSummaryDto = {
+  leadPipeline: Array<{ status: string; count: number }>;
+  revenueRub: number;
+  activeStudents: number;
+  upcomingLessons: number;
+  retentionRisks: Array<{
+    studentId: string;
+    email: string;
+    nickname: string | null;
+    lastLessonAt: string | null;
+    reasons: string[];
+  }>;
+  teacherWorkload: Array<{
+    teacherId: string;
+    email: string;
+    nickname: string | null;
+    lessonCount: number;
+    attendedCount: number;
+    hours: number;
+  }>;
+  recentNotifications: Array<{
+    id: string;
+    event: string;
+    channel: string;
+    recipient: string;
+    status: string;
+    error: string | null;
+    createdAt: string;
+  }>;
+};
+
 export function fetchTeacherStudents(): Promise<TeacherStudentDto[]> {
   return apiFetch("/teacher/students");
+}
+
+export function fetchTeacherStudentProfile(studentId: string): Promise<TeacherStudentProfileDto> {
+  return apiFetch(`/teacher/students/${studentId}`);
+}
+
+export function fetchAdminSummary(): Promise<AdminSummaryDto> {
+  return apiFetch("/admin/summary");
 }
 
 export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {
@@ -245,6 +349,56 @@ export function setStudentLevel(lessonId: string, studentId: string, jlptLevel: 
     `/teacher/lessons/${lessonId}/students/${studentId}/level`,
     { method: "PATCH", body: JSON.stringify({ jlptLevel }) },
   );
+}
+
+export function updatePostLesson(
+  lessonId: string,
+  studentId: string,
+  body: {
+    attendanceStatus?: AttendanceStatus;
+    postLessonNote?: string | null;
+    recommendation?: string | null;
+  },
+) {
+  return apiFetch<{
+    studentId: string;
+    attendanceStatus: AttendanceStatus;
+    postLessonNote: string | null;
+    recommendation: string | null;
+  }>(`/teacher/lessons/${lessonId}/students/${studentId}/post-lesson`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchTeacherLeads(status?: string): Promise<TeacherLeadDto[]> {
+  const q = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch(`/teacher/leads${q}`);
+}
+
+export function updateTeacherLead(
+  leadId: string,
+  body: {
+    status?: string;
+    assigneeId?: string | null;
+    notes?: string | null;
+    nextFollowUpAt?: string | null;
+  },
+) {
+  return apiFetch<{ ok: boolean }>(`/teacher/leads/${leadId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function createTrialLessonForLead(
+  leadId: string,
+  body: { title: string; startsAt: string; endsAt: string },
+) {
+  return apiFetch<LessonDto>(`/teacher/leads/${leadId}/trial-lesson`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function trackTraining(body: TrackTrainingInput) {

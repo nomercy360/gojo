@@ -14,6 +14,7 @@ import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { AUTO_COMPLETE_AFTER_END_MS } from "../lib/lesson-state.ts";
 import { materializeCardsForBooking } from "../lib/materialize.ts";
+import { sendTelegramMessage } from "../reminders.ts";
 import { toLessonDto } from "./mappers.ts";
 
 /**
@@ -223,12 +224,13 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
     .values({ lessonId, studentId: user.id })
     .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
     .returning();
+  if (!booking) throw new HTTPException(500, { message: "booking failed" });
 
   await materializeCardsForBooking(user.id, lessonId);
   await consumeBookingAccess(user.id, accessUse.mode);
+  await sendBookingConfirmation(booking.id, user.id, lesson.title, lesson.startsAt);
 
-  if (booking) return c.json(booking, 201);
-  throw new HTTPException(500, { message: "booking failed" });
+  return c.json(booking, 201);
 });
 
 type BookingAccessUse =
@@ -252,6 +254,40 @@ async function resolveBookingAccess(userId: string): Promise<BookingAccessUse> {
     return { allowed: true, mode: "trial" };
   }
   return { allowed: false };
+}
+
+async function sendBookingConfirmation(
+  bookingId: string,
+  userId: string,
+  title: string,
+  startsAt: Date,
+) {
+  const [student] = await db
+    .select({ telegramId: userTable.telegramId })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+  if (student?.telegramId == null) return;
+  try {
+    const when = startsAt.toLocaleString("ru-RU", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    await sendTelegramMessage(
+      student.telegramId,
+      `✅ Ты записан на урок «${title}» — ${when}`,
+      "lesson.booking_confirmation",
+      userId,
+    );
+    await db
+      .update(bookings)
+      .set({ bookingConfirmedAt: new Date() })
+      .where(eq(bookings.id, bookingId));
+  } catch (err) {
+    console.error(`booking confirmation failed for ${bookingId}:`, err);
+  }
 }
 
 async function consumeBookingAccess(userId: string, mode: "subscription" | "credit" | "trial") {

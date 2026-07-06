@@ -1,9 +1,11 @@
 import {
   bookings,
   homework,
+  leads,
   lessonCards,
   lessonMaterials,
   lessons,
+  studentAccess,
   user as userTable,
 } from "@gojo/db";
 import { addLessonCardInput, setHomeworkStatusInput, setStudentLevelInput } from "@gojo/shared";
@@ -38,6 +40,29 @@ const updateLessonInput = z.object({
   status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
 });
 
+const leadStatusInput = z.object({
+  status: z
+    .enum(["new", "contacted", "trial_booked", "trial_done", "converted", "lost"])
+    .optional(),
+  assigneeId: z.string().min(1).nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  nextFollowUpAt: z.string().datetime().nullable().optional(),
+});
+
+const createTrialLessonInput = z.object({
+  title: z.string().min(1).max(200),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+});
+
+const postLessonInput = z.object({
+  attendanceStatus: z
+    .enum(["scheduled", "attended", "no_show", "cancelled_by_student", "cancelled_by_teacher"])
+    .optional(),
+  postLessonNote: z.string().max(2000).nullable().optional(),
+  recommendation: z.string().max(1000).nullable().optional(),
+});
+
 teacherRoute.use("*", requireAuth, requireTeacher);
 
 function canManageLesson(
@@ -52,6 +77,111 @@ function teacherLessonScope(u: NonNullable<AuthContext["Variables"]["user"]>) {
     ? isNull(lessons.deletedAt)
     : and(eq(lessons.teacherId, u.id), isNull(lessons.deletedAt));
 }
+
+teacherRoute.get("/leads", async (c) => {
+  const status = c.req.query("status");
+  const where = status ? eq(leads.status, status) : undefined;
+  const rows = await db
+    .select({
+      lead: leads,
+      assigneeNickname: userTable.nickname,
+      assigneeEmail: userTable.email,
+    })
+    .from(leads)
+    .leftJoin(userTable, eq(userTable.id, leads.assigneeId))
+    .where(where)
+    .orderBy(desc(leads.createdAt))
+    .limit(200);
+
+  return c.json(
+    rows.map((r) => ({
+      id: r.lead.id,
+      userId: r.lead.userId,
+      assigneeId: r.lead.assigneeId,
+      assigneeName: r.assigneeNickname ?? r.assigneeEmail ?? null,
+      trialLessonId: r.lead.trialLessonId,
+      kind: r.lead.kind,
+      status: r.lead.status,
+      name: r.lead.name,
+      email: r.lead.email,
+      contact: r.lead.contact,
+      level: r.lead.level,
+      goal: r.lead.goal,
+      notes: r.lead.notes,
+      nextFollowUpAt: r.lead.nextFollowUpAt ? r.lead.nextFollowUpAt.toISOString() : null,
+      createdAt: r.lead.createdAt.toISOString(),
+      updatedAt: r.lead.updatedAt.toISOString(),
+    })),
+  );
+});
+
+teacherRoute.patch("/leads/:id", zValidator("json", leadStatusInput), async (c) => {
+  const id = c.req.param("id");
+  const body = c.req.valid("json");
+  const patch: Partial<typeof leads.$inferInsert> = { updatedAt: new Date() };
+  if (body.status !== undefined) patch.status = body.status;
+  if (body.assigneeId !== undefined) patch.assigneeId = body.assigneeId;
+  if (body.notes !== undefined) patch.notes = body.notes;
+  if (body.nextFollowUpAt !== undefined) {
+    patch.nextFollowUpAt = body.nextFollowUpAt ? new Date(body.nextFollowUpAt) : null;
+  }
+
+  const [row] = await db.update(leads).set(patch).where(eq(leads.id, id)).returning();
+  if (!row) throw new HTTPException(404, { message: "lead not found" });
+  return c.json({ ok: true });
+});
+
+teacherRoute.post(
+  "/leads/:id/trial-lesson",
+  zValidator("json", createTrialLessonInput),
+  async (c) => {
+    const u = c.get("user")!;
+    const id = c.req.param("id");
+    const body = c.req.valid("json");
+
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+    if (!lead) throw new HTTPException(404, { message: "lead not found" });
+
+    const [lesson] = await db
+      .insert(lessons)
+      .values({
+        teacherId: u.id,
+        title: body.title,
+        startsAt: new Date(body.startsAt),
+        endsAt: new Date(body.endsAt),
+        maxStudents: 1,
+        metadata: { topic: `trial:${lead.id}` },
+      })
+      .returning();
+    if (!lesson) throw new HTTPException(500, { message: "failed to create trial lesson" });
+
+    await db
+      .update(leads)
+      .set({
+        trialLessonId: lesson.id,
+        assigneeId: lead.assigneeId ?? u.id,
+        status: "trial_booked",
+        updatedAt: new Date(),
+      })
+      .where(eq(leads.id, id));
+
+    if (lead.userId) {
+      await db
+        .insert(bookings)
+        .values({ lessonId: lesson.id, studentId: lead.userId })
+        .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] });
+      await db
+        .insert(studentAccess)
+        .values({ userId: lead.userId, trialUsed: true, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: studentAccess.userId,
+          set: { trialUsed: true, updatedAt: new Date() },
+        });
+    }
+
+    return c.json(toLessonDto(lesson, null), 201);
+  },
+);
 
 teacherRoute.get("/students", async (c) => {
   const u = c.get("user")!;
@@ -93,6 +223,78 @@ teacherRoute.get("/students", async (c) => {
       lastLessonAt: r.lastLessonAt ? new Date(r.lastLessonAt).toISOString() : null,
     })),
   );
+});
+
+teacherRoute.get("/students/:studentId", async (c) => {
+  const u = c.get("user")!;
+  const studentId = c.req.param("studentId");
+
+  const lessonScope = teacherLessonScope(u);
+  const rows = await db
+    .select({
+      booking: bookings,
+      lesson: lessons,
+      homeworkStatus: homework.status,
+      homeworkMarkedAt: homework.markedAt,
+    })
+    .from(bookings)
+    .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
+    .leftJoin(
+      homework,
+      and(eq(homework.lessonId, bookings.lessonId), eq(homework.studentId, bookings.studentId)),
+    )
+    .where(and(eq(bookings.studentId, studentId), lessonScope))
+    .orderBy(desc(lessons.startsAt));
+
+  if (rows.length === 0 && u.role !== "admin") {
+    throw new HTTPException(404, { message: "student not found in your lessons" });
+  }
+
+  const [student] = await db.select().from(userTable).where(eq(userTable.id, studentId)).limit(1);
+  if (!student) throw new HTTPException(404, { message: "student not found" });
+
+  const leadRows = await db
+    .select()
+    .from(leads)
+    .where(eq(leads.userId, studentId))
+    .orderBy(desc(leads.createdAt))
+    .limit(10);
+
+  return c.json({
+    student: {
+      id: student.id,
+      nickname: student.nickname ?? student.name ?? null,
+      email: student.email,
+      avatarUrl: student.image ?? null,
+      jlptLevel: student.jlptLevel ?? null,
+      quizLevel: student.quizLevel ?? null,
+      telegramId: student.telegramId ?? null,
+      createdAt: student.createdAt.toISOString(),
+    },
+    lessons: rows.map((r) => ({
+      lessonId: r.lesson.id,
+      title: r.lesson.title,
+      startsAt: r.lesson.startsAt.toISOString(),
+      status: r.lesson.status,
+      attendanceStatus: r.booking.attendanceStatus,
+      postLessonNote: r.booking.postLessonNote,
+      recommendation: r.booking.recommendation,
+      homeworkStatus: r.homeworkStatus ?? "pending",
+      homeworkMarkedAt: r.homeworkMarkedAt ? r.homeworkMarkedAt.toISOString() : null,
+    })),
+    leads: leadRows.map((l) => ({
+      id: l.id,
+      status: l.status,
+      kind: l.kind,
+      name: l.name,
+      email: l.email,
+      contact: l.contact,
+      level: l.level,
+      goal: l.goal,
+      notes: l.notes,
+      createdAt: l.createdAt.toISOString(),
+    })),
+  });
 });
 
 teacherRoute.get("/lessons", async (c) => {
@@ -194,6 +396,9 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
       email: userTable.email,
       avatarUrl: userTable.image,
       bookedAt: bookings.createdAt,
+      attendanceStatus: bookings.attendanceStatus,
+      postLessonNote: bookings.postLessonNote,
+      recommendation: bookings.recommendation,
       homeworkStatus: homework.status,
       homeworkMarkedAt: homework.markedAt,
       jlptLevel: userTable.jlptLevel,
@@ -215,6 +420,9 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
       email: r.email,
       avatarUrl: r.avatarUrl,
       bookedAt: r.bookedAt,
+      attendanceStatus: r.attendanceStatus,
+      postLessonNote: r.postLessonNote,
+      recommendation: r.recommendation,
       homeworkStatus: r.homeworkStatus ?? "pending",
       homeworkMarkedAt: r.homeworkMarkedAt ? r.homeworkMarkedAt.toISOString() : null,
       jlptLevel: r.jlptLevel ?? null,
@@ -289,6 +497,40 @@ teacherRoute.patch(
       studentId: row.studentId,
       status: row.status,
       markedAt: row.markedAt ? row.markedAt.toISOString() : null,
+    });
+  },
+);
+
+teacherRoute.patch(
+  "/lessons/:id/students/:studentId/post-lesson",
+  zValidator("json", postLessonInput),
+  async (c) => {
+    const u = c.get("user")!;
+    const lessonId = c.req.param("id");
+    const studentId = c.req.param("studentId");
+    const body = c.req.valid("json");
+
+    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+    if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
+
+    const patch: Partial<typeof bookings.$inferInsert> = {};
+    if (body.attendanceStatus !== undefined) patch.attendanceStatus = body.attendanceStatus;
+    if (body.postLessonNote !== undefined) patch.postLessonNote = body.postLessonNote;
+    if (body.recommendation !== undefined) patch.recommendation = body.recommendation;
+
+    const [row] = await db
+      .update(bookings)
+      .set(patch)
+      .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, studentId)))
+      .returning();
+    if (!row) throw new HTTPException(404, { message: "student not booked on this lesson" });
+
+    return c.json({
+      studentId: row.studentId,
+      attendanceStatus: row.attendanceStatus,
+      postLessonNote: row.postLessonNote,
+      recommendation: row.recommendation,
     });
   },
 );

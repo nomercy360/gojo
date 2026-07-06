@@ -64,6 +64,20 @@
       "when": 1783296592358,
       "tag": "0008_lively_wolf_cub",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783298256865,
+      "tag": "0009_marvelous_hedge_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783298516824,
+      "tag": "0010_foamy_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

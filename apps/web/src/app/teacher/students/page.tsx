@@ -57,7 +57,12 @@ export default async function TeacherStudentsPage() {
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar value={s.avatarUrl} size={42} fallback={s.nickname ?? s.email} />
                   <div className="min-w-0">
-                    <div className="truncate font-bold">{s.nickname ?? s.email}</div>
+                    <Link
+                      href={`/teacher/students/${s.studentId}`}
+                      className="truncate font-bold hover:text-gojo-orange"
+                    >
+                      {s.nickname ?? s.email}
+                    </Link>
                     <div className="truncate text-[12px] text-gojo-ink-muted">{s.email}</div>
                   </div>
                 </div>

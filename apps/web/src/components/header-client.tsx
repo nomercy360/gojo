@@ -92,6 +92,14 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
             <>
               {teacherUser ? (
                 <>
+                  {user.role === "admin" ? (
+                    <Link
+                      href="/admin"
+                      className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                    >
+                      Админ
+                    </Link>
+                  ) : null}
                   <Link
                     href="/teacher"
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
@@ -103,6 +111,12 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                   >
                     Студенты
+                  </Link>
+                  <Link
+                    href="/teacher/leads"
+                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                  >
+                    Заявки
                   </Link>
                 </>
               ) : (

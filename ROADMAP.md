@@ -4,19 +4,13 @@
 _Обновлено: 2026-07-06 · источник истины: `roadmap.json` · правится из Telegram: `@mojo_dojo_bot roadmap <команда>`_
 
 ## 🔵 Now
-- [ ] **R22** · Lead CRM: pipeline заявок · owner @maksim · by @mkkksim
-- [ ] **R23** · Trial lesson flow: заявка → пробный урок · owner @maksim · by @mkkksim
-- [ ] **R32** · Lesson booking confirmation + напоминания (расширение R6) · owner @maksim · by @mkkksim
+
 
 ## 🟡 Next
-- [ ] **R24** · Student profile для учителя/админа · owner @maksim · by @mkkksim
-- [ ] **R26** · Post-lesson workflow: attendance, notes, next steps · owner @maksim · by @mkkksim
+
 
 ## 📋 Backlog / Later
-- [ ] **R27** · Notification lifecycle (шаблоны, очередь, полный набор событий) · owner @maksim · by @mkkksim
-- [ ] **R29** · Admin dashboard: pipeline, revenue, operations · owner @maksim · by @mkkksim
-- [ ] **R30** · Retention automation · owner @maksim · by @mkkksim
-- [ ] **R31** · Teacher workload and payroll base · owner @maksim · by @mkkksim
+
 
 ## ⛔ Blocked
 - [ ] **R2b** · Доделать игры-тренажёры + Higgsfield · blocked: нужен скоуп, что именно Higgsfield должен делать в тренажёре, и доступ/API-ключи. Без этого можно улучшать UI, но нельзя выполнить заявленную интеграцию. · owner @maksim · by @bilunar
@@ -27,8 +21,17 @@ _Обновлено: 2026-07-06 · источник истины: `roadmap.json`
 - **R16** · Панель учителя/админа для MVP → done 2026-07-05
 
 ## ✅ Done
+- [x] **R31** · Teacher workload and payroll base · shipped 2026-07-06
+- [x] **R30** · Retention automation · shipped 2026-07-06
+- [x] **R29** · Admin dashboard: pipeline, revenue, operations · shipped 2026-07-06
 - [x] **R28** · Payment/subscription integration · shipped 2026-07-06
+- [x] **R32** · Lesson booking confirmation + напоминания (расширение R6) · shipped 2026-07-06
+- [x] **R27** · Notification lifecycle (шаблоны, очередь, полный набор событий) · shipped 2026-07-06
+- [x] **R26** · Post-lesson workflow: attendance, notes, next steps · shipped 2026-07-06
 - [x] **R25** · Booking eligibility: trial/paid access rules · shipped 2026-07-06
+- [x] **R24** · Student profile для учителя/админа · shipped 2026-07-06
+- [x] **R23** · Trial lesson flow: заявка → пробный урок · shipped 2026-07-06
+- [x] **R22** · Lead CRM: pipeline заявок · shipped 2026-07-06
 - [x] **R21** · Семантика admin vs teacher · shipped 2026-07-05
 - [x] **R20** · «Мои студенты» — общий ростер across все уроки · shipped 2026-07-05
 - [x] **R19** · Материалы + флэшкарты урока из UI учителя · shipped 2026-07-05

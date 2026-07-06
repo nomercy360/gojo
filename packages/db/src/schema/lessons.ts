@@ -46,6 +46,12 @@ export const bookings = pgTable(
     studentId: text()
       .notNull()
       .references(() => user.id),
+    attendanceStatus: text().notNull().default("scheduled"),
+    postLessonNote: text(),
+    recommendation: text(),
+    bookingConfirmedAt: timestamp({ withTimezone: true }),
+    reminder24hSentAt: timestamp({ withTimezone: true }),
+    reminder15mSentAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("bookings_lesson_student_uniq").on(t.lessonId, t.studentId)],

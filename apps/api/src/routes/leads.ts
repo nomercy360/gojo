@@ -1,4 +1,4 @@
-import { leads } from "@gojo/db";
+import { bookings, leads, studentAccess } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
 import { and, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
@@ -35,9 +35,24 @@ leadsRoute.post("/link-current", requireAuth, async (c) => {
 
   const linked = await db
     .update(leads)
-    .set({ userId: user.id })
+    .set({ userId: user.id, updatedAt: new Date() })
     .where(and(eq(leads.email, user.email), isNull(leads.userId)))
-    .returning({ id: leads.id });
+    .returning({ id: leads.id, trialLessonId: leads.trialLessonId });
+
+  for (const lead of linked) {
+    if (!lead.trialLessonId) continue;
+    await db
+      .insert(bookings)
+      .values({ lessonId: lead.trialLessonId, studentId: user.id })
+      .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] });
+    await db
+      .insert(studentAccess)
+      .values({ userId: user.id, trialUsed: true, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: studentAccess.userId,
+        set: { trialUsed: true, updatedAt: new Date() },
+      });
+  }
 
   return c.json({ ok: true, linked: linked.length });
 });

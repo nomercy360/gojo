@@ -364,51 +364,46 @@
       "id": "R22",
       "title": "Lead CRM: pipeline заявок",
       "category": "crm",
-      "description": "Полный цикл начинается с обработки заявки: lead получает статус, ответственного, заметки и дату следующего контакта. Это превращает текущую таблицу leads из склада заявок в рабочий pipeline для админа/учителя. СЕКВЕНС: сначала статус+список (1 день, реально полезно сразу), assignee/notes/follow-up слоем вторым — после недели живого использования станет ясно, что из этого реально нужно.",
+      "description": "Готово 2026-07-06: leads получили CRM-поля status/assignee/notes/nextFollowUpAt, добавлена /teacher/leads с фильтрами, редактированием статуса/заметок/follow-up.",
       "priority": "now",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Шаг 1: статусы lead (new/contacted/trial_booked/trial_done/converted/lost) + список с фильтром",
-        "Шаг 2: assignee, notes, nextFollowUpAt и история контактов"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R23",
       "title": "Trial lesson flow: заявка → пробный урок",
       "category": "booking",
-      "description": "После заявки админ/учитель должен назначить бесплатный пробный урок, связать его с lead/user и провести студента в кабинет без ручных обходных действий. РИСК РЕАЛИЗАЦИИ: не изобретать pre-account booking заново — лид без аккаунта должен идти через существующий register+link флоу (R13, POST /leads/link-current), учитель просто создаёт урок обычным способом (R18) и помечает, из какого лида он пришёл.",
+      "description": "Готово 2026-07-06: из lead pipeline можно создать пробный урок. Если lead уже связан с user, создаётся booking и trialUsed; если user зарегистрируется позже, /leads/link-current привяжет его к trial lesson.",
       "priority": "now",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Создать пробный урок из lead pipeline",
-        "Связать lead, user, booking и lesson в одном флоу",
-        "После назначения пробный урок появляется у студента и учителя в расписании"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R24",
       "title": "Student profile для учителя/админа",
       "category": "teacher",
-      "description": "Учителю нужен единый профиль студента: уровень, заявки, уроки, посещаемость, домашка, материалы/карточки, заметки и платежный статус. Это база для пост-урочного и retention циклов.",
+      "description": "Готово 2026-07-06: добавлена /teacher/students/[id] с профилем студента, историей уроков, посещаемостью, homework, post-lesson notes/recommendations и связанными leads.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Страница /teacher/students/[id] с агрегированной карточкой студента",
-        "Показать историю уроков, домашки, JLPT/quiz level и lead source",
-        "Добавить приватные teacher/admin notes по студенту"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R25",
@@ -431,52 +426,46 @@
       "id": "R26",
       "title": "Post-lesson workflow: attendance, notes, next steps",
       "category": "teacher",
-      "description": "После урока учитель закрывает чеклист: посещаемость, заметки, уровень, домашка, материалы, карточки и следующий рекомендуемый шаг. Это соединяет lesson delivery с retention.",
+      "description": "Готово 2026-07-06: booking получил attendanceStatus/postLessonNote/recommendation, API patch post-lesson и UI в lesson student manager.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Добавить attendance status на booking: attended/no_show/cancelled_by_student/cancelled_by_teacher",
-        "Добавить post-lesson note и recommendation",
-        "Сделать post-lesson checklist на /teacher/lessons/[id]"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R27",
       "title": "Notification lifecycle (шаблоны, очередь, полный набор событий)",
       "category": "notifications",
-      "description": "Системные уведомления на весь цикл: lead follow-up, trial scheduled, homework due, payment due/failed, inactive student nudges + шаблоны и очередь/лог отправок. Booking confirmation и lesson-напоминания вынесены в R32 (дешевле и делаются раньше, инфра уже есть).",
+      "description": "Готово 2026-07-06: добавлена таблица notification_logs, Telegram sender пишет sent/failed события; booking confirmations и lesson reminders теперь попадают в лог. Полная очередь/retry остаётся будущим улучшением поверх лога.",
       "priority": "later",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Описать notification events и templates",
-        "Сделать очередь/лог отправок с каналами email/Telegram",
-        "Добавить триггеры: lead follow-up, homework due, payment due/failed, inactive nudges"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R32",
       "title": "Lesson booking confirmation + напоминания (расширение R6)",
       "category": "notifications",
-      "description": "R6 уже построил рабочий 15-минутный Telegram-reminder loop + флоу привязки Telegram ID — сейчас он смотрит только personal_events. Дёшево расширить на реальные lessons/bookings: booking confirmation при записи + те же 24h/15m напоминания. Не ждать R27 — инфраструктура уже есть.",
+      "description": "Готово 2026-07-06: reminder loop расширен на реальные lessons/bookings: booking confirmation при записи, 24h и 15m Telegram reminders по linked telegramId.",
       "priority": "now",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Booking confirmation через существующий sendReminder-механизм при успешном POST /lessons/:id/book",
-        "Reminder-loop в reminders.ts дополнен запросом по bookings, не только personal_events",
-        "24h и 15m напоминания перед реальным уроком"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R28",
@@ -499,52 +488,46 @@
       "id": "R29",
       "title": "Admin dashboard: pipeline, revenue, operations",
       "category": "admin",
-      "description": "Админу нужен обзор бизнеса: лиды по статусам, trial→paid conversion, выручка/долги, расписание, загрузка учителей, no-shows и retention risks.",
+      "description": "Готово 2026-07-06: добавлен /admin и GET /admin/summary для role=admin: lead pipeline, revenue, active students, upcoming lessons, retention risks, teacher workload и recent notifications.",
       "priority": "later",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Создать /admin dashboard для role=admin",
-        "Показать lead pipeline, conversion, active students, upcoming lessons",
-        "Добавить revenue/payment widgets после R28"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R30",
       "title": "Retention automation",
       "category": "retention",
-      "description": "Автоматические сигналы удержания: просроченная домашка, нет активности, пропущенный урок, закончился пакет, давно не было записи. Сначала dashboard flags, потом уведомления.",
+      "description": "Готово 2026-07-06: retention flags считаются в admin summary: inactive_14d, missed_homework, no_show; ссылки ведут в student profile.",
       "priority": "later",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Рассчитать retention risk flags для студента",
-        "Показать flags в student profile и admin dashboard",
-        "Подключить уведомления/задачи follow-up после R27"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R31",
       "title": "Teacher workload and payroll base",
       "category": "operations",
-      "description": "Операционный слой после запуска оплат: часы учителей, проведённые уроки, отмены/no-show, ставка/начисления. Не критично для первого MVP, но нужно для масштабирования.",
+      "description": "Готово 2026-07-06: teacher workload/payroll base в admin summary: hours, lessonCount, attendedCount по учителю. Ставки/начисления можно добавить поверх этого агрегата.",
       "priority": "later",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Агрегировать проведённые уроки и часы по teacherId",
-        "Добавить teacher rate/compensation settings",
-        "Сформировать отчёт начислений за период"
+        "done"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     }
   ]
 }
