@@ -7,11 +7,23 @@ import { checkoutAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaymentsPage() {
+const ERROR_COPY: Record<string, string> = {
+  payment_provider_not_configured:
+    "Оплата через ЮKassa ещё не настроена: не заданы shop id или secret key.",
+  payment_forbidden: "Оплата доступна только студентскому аккаунту.",
+  checkout_failed: "Не удалось создать платёж. Попробуй ещё раз или напиши администратору.",
+};
+
+export default async function PaymentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (isTeacherUser(user)) redirect("/teacher");
 
+  const { error } = await searchParams;
   const [plans, account] = await Promise.all([fetchPaymentPlans(), fetchMyPayments()]);
 
   return (
@@ -25,6 +37,12 @@ export default async function PaymentsPage() {
           Оплата проходит через ЮKassa. После успешного платежа доступ обновится автоматически по
           webhook; если ты уже вернулся с оплаты, обнови страницу через несколько секунд.
         </p>
+
+        {error ? (
+          <div className="mt-6 rounded-lg border-2 border-gojo-error bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
+            {ERROR_COPY[error] ?? ERROR_COPY.checkout_failed}
+          </div>
+        ) : null}
 
         <section className="mt-8 rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5 shadow-pop">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
