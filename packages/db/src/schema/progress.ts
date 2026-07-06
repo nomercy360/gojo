@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { date, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
 import { lessons } from "./lessons.ts";
 
@@ -41,6 +41,9 @@ export const trainingTotals = pgTable("training_totals", {
   reviewSeconds: integer().notNull().default(0),
   kanaSeconds: integer().notNull().default(0),
   kanjiSeconds: integer().notNull().default(0),
+  // Consecutive days with training activity, bumped by /training/track.
+  currentStreak: integer().notNull().default(0),
+  lastActiveDate: date(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 

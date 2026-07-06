@@ -61,6 +61,7 @@ export const studentStatsDto = z.object({
   homeworkDone: z.number(),
   homeworkTotal: z.number(),
   trainingSeconds: z.number(),
+  currentStreak: z.number(),
 });
 export type StudentStatsDto = z.infer<typeof studentStatsDto>;
 
