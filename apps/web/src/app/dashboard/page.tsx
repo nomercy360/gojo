@@ -73,128 +73,85 @@ export default async function DashboardPage() {
   ].filter(Boolean);
 
   return (
-    <main className="min-h-screen" style={{ background: "#f8f4ec" }}>
+    <main className="min-h-screen bg-gojo-paper">
       <div className="mx-auto max-w-4xl px-10 py-14">
         {/* ── Greeting ── */}
         <div className="mb-10">
-          <div
-            className="g-mono mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "#e8420a" }}
-          >
-            <span
-              style={{ display: "inline-block", width: 24, height: 2, background: "#e8420a" }}
-            />
+          <div className="g-mono mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gojo-orange">
+            <span className="inline-block h-0.5 w-6 bg-gojo-orange" />
             {greeting}
           </div>
-          <h1
-            className="g-display text-[42px] font-extrabold leading-tight"
-            style={{ color: "#252525", letterSpacing: "-0.025em" }}
-          >
+          <h1 className="g-display text-[42px] font-extrabold leading-tight tracking-[-0.025em] text-gojo-ink">
             Твой личный кабинет
           </h1>
-          <p className="g-body mt-2 text-[16px] font-medium" style={{ color: "#6b6b6b" }}>
+          <p className="g-body mt-2 text-[16px] font-medium text-gojo-ink-muted">
             Индивидуальные занятия · японский язык
-            <span className="g-jp ml-2" style={{ color: "#a0a0a0", fontSize: 14 }}>
-              いらっしゃい
-            </span>
+            <span className="g-jp ml-2 text-[14px] text-gojo-ink-ghost">いらっしゃい</span>
           </p>
         </div>
 
         {/* ── Profile card ── */}
-        <div
-          className="mb-6 flex items-center gap-5 rounded-2xl bg-white px-7 py-5"
-          style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-        >
+        <div className="g-card mb-6 flex items-center gap-5 px-7 py-5">
           <Avatar value={user.avatarUrl} size={64} fallback={user.nickname ?? user.email} />
-          <div className="flex-1 min-w-0">
-            <div
-              className="g-display truncate text-[18px] font-extrabold leading-tight"
-              style={{ color: "#252525" }}
-            >
+          <div className="min-w-0 flex-1">
+            <div className="g-display truncate text-[18px] font-extrabold leading-tight text-gojo-ink">
               {user.nickname ?? user.email}
             </div>
-            <div className="g-mono mt-0.5 truncate text-[12px]" style={{ color: "#a0a0a0" }}>
+            <div className="g-mono mt-0.5 truncate text-[12px] text-gojo-ink-ghost">
               @{user.nickname ?? user.email.split("@")[0]} · {ROLE_LABEL[user.role] ?? user.role}
             </div>
           </div>
           <Link
             href="/profile"
-            className="g-body shrink-0 rounded-lg border px-4 py-2 text-[13px] font-bold transition-colors hover:border-[#e8420a] hover:text-[#e8420a]"
-            style={{ color: "#6b6b6b", borderColor: "rgba(0,0,0,0.12)" }}
+            className="g-body shrink-0 rounded-md border border-black/10 px-4 py-2 text-[13px] font-bold text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
           >
             Редактировать
           </Link>
         </div>
 
-        <div
-          className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-7 py-5"
-          style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-        >
+        {/* ── Access / payment banner ── */}
+        <div className="g-card mb-6 flex flex-wrap items-center justify-between gap-4 px-7 py-5">
           <div>
-            <div
-              className="g-mono text-[11px] font-bold uppercase tracking-[0.16em]"
-              style={{ color: "#e8420a" }}
-            >
+            <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
               Доступ
             </div>
-            <p className="g-body mt-1 text-[14px]" style={{ color: "#6b6b6b" }}>
+            <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
               Первый урок можно попробовать бесплатно. Для регулярных занятий подключи оплату.
             </p>
           </div>
-          <Link
-            href="/payments"
-            className="btn-pop rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white"
-          >
+          <Link href="/payments" className="g-btn-primary text-sm">
             Оплата и доступ
           </Link>
         </div>
 
         {/* ── Progress ── */}
-        <div
-          className="mb-6 rounded-2xl bg-white p-7"
-          style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-        >
+        <div className="g-card mb-6 p-7">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div
-                className="g-mono text-[11px] font-bold uppercase tracking-[0.16em]"
-                style={{ color: "#e8420a" }}
-              >
+              <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
                 Прогресс
               </div>
-              <h2
-                className="g-display mt-2 text-[24px] font-extrabold"
-                style={{ color: "#252525" }}
-              >
+              <h2 className="g-display mt-2 text-[24px] font-extrabold text-gojo-ink">
                 {hasAnyProgress ? "Продолжай серию" : "Начни первую серию"}
               </h2>
             </div>
-            <div
-              className="rounded-full px-3 py-1.5 text-[11px] font-bold"
-              style={{ background: "#f8f4ec", color: "#6b6b6b" }}
-            >
+            <div className="rounded-full bg-gojo-paper px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted">
               {hasAnyProgress ? `${activeModules.length} активн. направления` : "0 активн. дней"}
             </div>
           </div>
 
           <div className="mb-3 flex items-center justify-between">
-            <span
-              className="g-mono text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "#a0a0a0" }}
-            >
+            <span className="g-mono text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
               MVP-прогресс
             </span>
-            <span className="g-mono text-[11px] font-bold" style={{ color: "#252525" }}>
+            <span className="g-mono text-[11px] font-bold text-gojo-ink">
               {progressPercent} / 100
             </span>
           </div>
-          <div
-            className="h-3 w-full overflow-hidden rounded-full"
-            style={{ background: "#efe7d8" }}
-          >
+          <div className="h-3 w-full overflow-hidden rounded-full bg-gojo-paper-2">
             <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${progressPercent}%`, background: "#e8420a" }}
+              className="h-full rounded-full bg-gojo-orange transition-all"
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
 
@@ -214,7 +171,7 @@ export default async function DashboardPage() {
               ) : null}
             </div>
           ) : (
-            <p className="g-body mt-5 text-[13px]" style={{ color: "#6b6b6b" }}>
+            <p className="g-body mt-5 text-[13px] text-gojo-ink-muted">
               Здесь появятся реальные уроки, тренировки и домашние задания после первой активности.
             </p>
           )}
@@ -222,67 +179,49 @@ export default async function DashboardPage() {
 
         {/* ── Main grid ── */}
         <div className="grid gap-4 lg:grid-cols-3">
-          {/* Calendar — wide (live Google Calendar integration) */}
+          {/* Calendar — wide */}
           <CalendarSection />
 
           {/* Level card */}
-          <div
-            className="rounded-2xl bg-white p-7"
-            style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-          >
-            <div
-              className="g-mono mb-4 text-[11px] font-bold uppercase tracking-[0.16em]"
-              style={{ color: "#e8420a" }}
-            >
+          <div className="g-card p-7">
+            <div className="g-mono mb-4 text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
               Уровень
             </div>
             {user.jlptLevel ? (
               <>
-                <div
-                  className="g-display text-[72px] font-extrabold leading-none"
-                  style={{ color: "#252525", letterSpacing: "-0.04em" }}
-                >
+                <div className="g-display text-[72px] font-extrabold leading-none tracking-[-0.04em] text-gojo-ink">
                   {user.jlptLevel}
                 </div>
-                <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
+                <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
                   {LEVEL_BLURB[user.jlptLevel] ?? "Уровень подтверждён преподавателем"}
                 </p>
               </>
             ) : user.quizLevel ? (
               <>
-                <div
-                  className="g-display text-[56px] font-extrabold leading-none"
-                  style={{ color: "#252525", letterSpacing: "-0.04em" }}
-                >
+                <div className="g-display text-[56px] font-extrabold leading-none tracking-[-0.04em] text-gojo-ink">
                   ~{user.quizLevel}
                 </div>
-                <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
+                <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
                   Предварительная оценка по квизу. Финальный уровень выставит преподаватель на
                   бесплатной консультации.
                 </p>
               </>
             ) : (
               <>
-                <div
-                  className="g-display text-[32px] font-extrabold leading-tight"
-                  style={{ color: "#252525" }}
-                >
+                <div className="g-display text-[32px] font-extrabold leading-tight text-gojo-ink">
                   Пока не определён
                 </div>
-                <p className="g-body mt-3 text-[13px]" style={{ color: "#6b6b6b" }}>
+                <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
                   Пройди короткий квиз или запишись на бесплатную консультацию с преподавателем.
                 </p>
               </>
             )}
 
-            <div className="mt-6 rounded-xl p-4" style={{ background: "#f8f4ec" }}>
-              <div
-                className="g-mono mb-1 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: "#e8420a" }}
-              >
+            <div className="mt-6 rounded-xl bg-gojo-paper p-4">
+              <div className="g-mono mb-1 text-[10px] font-bold uppercase tracking-wider text-gojo-orange">
                 Индивидуальный план
               </div>
-              <div className="g-body text-[12px]" style={{ color: "#6b6b6b" }}>
+              <div className="g-body text-[12px] text-gojo-ink-muted">
                 Программа подобрана под ваши цели и темп обучения
               </div>
             </div>
@@ -291,74 +230,44 @@ export default async function DashboardPage() {
 
         {/* ── Tools ── */}
         <div className="mt-10">
-          <div
-            className="g-mono mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "#6b6b6b" }}
-          >
-            <span
-              style={{ display: "inline-block", width: 24, height: 2, background: "#6b6b6b" }}
-            />
+          <div className="g-mono mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gojo-ink-muted">
+            <span className="inline-block h-0.5 w-6 bg-gojo-ink-muted" />
             Тренировки
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Link
-              href="/review"
-              className="group flex items-center gap-4 rounded-xl bg-white p-5 transition-all hover:shadow-sm"
-              style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-            >
-              <div
-                className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[24px] font-bold"
-                style={{ background: "#f8f4ec", color: "#e8420a" }}
-              >
+            <Link href="/review" className="g-card group flex items-center gap-4 p-5">
+              <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
                 単
               </div>
               <div>
-                <div className="g-display text-[15px] font-bold" style={{ color: "#252525" }}>
-                  Карточки
-                </div>
-                <div className="g-body mt-0.5 text-[12px]" style={{ color: "#6b6b6b" }}>
+                <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
+                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
                   Повторение слов
                 </div>
               </div>
             </Link>
 
-            <Link
-              href="/kana"
-              className="group flex items-center gap-4 rounded-xl bg-white p-5 transition-all hover:shadow-sm"
-              style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-            >
-              <div
-                className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[24px] font-bold"
-                style={{ background: "#f8f4ec", color: "#e8420a" }}
-              >
+            <Link href="/kana" className="g-card group flex items-center gap-4 p-5">
+              <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
                 あ
               </div>
               <div>
-                <div className="g-display text-[15px] font-bold" style={{ color: "#252525" }}>
+                <div className="g-display text-[15px] font-bold text-gojo-ink">
                   Хирагана · Катакана
                 </div>
-                <div className="g-body mt-0.5 text-[12px]" style={{ color: "#6b6b6b" }}>
+                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
                   Тренажёр символов
                 </div>
               </div>
             </Link>
 
-            <Link
-              href="/kanji"
-              className="group flex items-center gap-4 rounded-xl bg-white p-5 transition-all hover:shadow-sm"
-              style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-            >
-              <div
-                className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[24px] font-bold"
-                style={{ background: "#f8f4ec", color: "#e8420a" }}
-              >
+            <Link href="/kanji" className="g-card group flex items-center gap-4 p-5">
+              <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
                 漢
               </div>
               <div>
-                <div className="g-display text-[15px] font-bold" style={{ color: "#252525" }}>
-                  Кандзи
-                </div>
-                <div className="g-body mt-0.5 text-[12px]" style={{ color: "#6b6b6b" }}>
+                <div className="g-display text-[15px] font-bold text-gojo-ink">Кандзи</div>
+                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
                   Тренажёр иероглифов
                 </div>
               </div>
@@ -367,15 +276,12 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Contact ── */}
-        <div
-          className="mt-4 flex items-center justify-between rounded-2xl bg-white px-7 py-5"
-          style={{ border: "1px solid rgba(0,0,0,0.06)" }}
-        >
+        <div className="g-card mt-4 flex items-center justify-between px-7 py-5">
           <div>
-            <div className="g-display text-[15px] font-bold" style={{ color: "#252525" }}>
+            <div className="g-display text-[15px] font-bold text-gojo-ink">
               Связаться с учителем
             </div>
-            <div className="g-body mt-0.5 text-[13px]" style={{ color: "#6b6b6b" }}>
+            <div className="g-body mt-0.5 text-[13px] text-gojo-ink-muted">
               Руслан · вопросы по обучению, материалы, индивидуальный план
             </div>
           </div>
@@ -383,8 +289,7 @@ export default async function DashboardPage() {
             href="https://t.me/gojoedu"
             target="_blank"
             rel="noopener noreferrer"
-            className="g-body shrink-0 rounded-lg px-5 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90"
-            style={{ background: "#e8420a" }}
+            className="g-btn-primary shrink-0 text-[13px]"
           >
             Telegram →
           </a>
@@ -396,13 +301,9 @@ export default async function DashboardPage() {
 
 function ProgressTile({ value, label }: { value: number | string; label: string }) {
   return (
-    <div className="rounded-xl px-4 py-3" style={{ background: "#f8f4ec" }}>
-      <div className="g-display text-[24px] font-extrabold" style={{ color: "#252525" }}>
-        {value}
-      </div>
-      <div className="g-body mt-1 text-[12px]" style={{ color: "#6b6b6b" }}>
-        {label}
-      </div>
+    <div className="rounded-xl bg-gojo-paper px-4 py-3">
+      <div className="g-display text-[24px] font-extrabold text-gojo-ink">{value}</div>
+      <div className="g-body mt-1 text-[12px] text-gojo-ink-muted">{label}</div>
     </div>
   );
 }

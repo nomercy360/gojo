@@ -33,16 +33,10 @@ export default async function TeacherPage() {
         </div>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <h1 className="font-serif text-[28px] font-bold">Мои уроки</h1>
-          <Link
-            href="/teacher/students"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold text-gojo-ink hover:bg-gojo-surface-2"
-          >
+          <Link href="/teacher/students" className="g-btn-secondary text-sm">
             Мои студенты ▸
           </Link>
-          <Link
-            href="/teacher/leads"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white hover:bg-gojo-orange-hover"
-          >
+          <Link href="/teacher/leads" className="g-btn-primary text-sm">
             Заявки ▸
           </Link>
         </div>
@@ -51,11 +45,11 @@ export default async function TeacherPage() {
           {/* Lessons list */}
           <div>
             {error ? (
-              <div className="rounded-lg border-2 border-gojo-error bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
+              <div className="rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
                 {error}
               </div>
             ) : scheduled.length === 0 ? (
-              <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-5 py-10 text-center text-gojo-ink-muted">
+              <div className="g-card px-5 py-10 text-center text-gojo-ink-muted">
                 Нет запланированных уроков. Создай первый →
               </div>
             ) : (
@@ -116,7 +110,7 @@ function TeacherLessonCard({ lesson }: { lesson: TeacherLessonDto }) {
   });
 
   return (
-    <li className="card-pop relative overflow-hidden rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
+    <li className="g-card relative overflow-hidden p-5">
       <div className="flex items-start justify-between">
         <div>
           <span className="text-[11px] font-bold text-gojo-ink-muted">
@@ -145,7 +139,7 @@ function TeacherLessonCard({ lesson }: { lesson: TeacherLessonDto }) {
           <input type="hidden" name="lessonId" value={lesson.id} />
           <button
             type="submit"
-            className="rounded-md border-2 border-gojo-ink px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted hover:bg-gojo-error-soft hover:text-gojo-error"
+            className="rounded-md border border-black/10 px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted hover:bg-gojo-error-soft hover:text-gojo-error"
           >
             Отменить
           </button>

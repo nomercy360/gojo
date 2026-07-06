@@ -48,8 +48,8 @@ export function CalendarView({
         return (
           <div
             key={i}
-            className={`rounded-lg border-2 transition ${
-              isToday ? "border-gojo-orange bg-gojo-orange-soft" : "border-gojo-ink/15 bg-gojo-surface"
+            className={`rounded-lg border transition ${
+              isToday ? "border-gojo-orange bg-gojo-orange-soft" : "border-black/10 bg-gojo-surface"
             } ${isEmpty ? "py-3 px-4" : "p-4"}`}
           >
             <div className="flex items-center gap-3">
@@ -83,10 +83,10 @@ export function CalendarView({
                     <Link
                       key={l.id}
                       href={`/lessons/${l.id}`}
-                      className={`flex items-center justify-between rounded-md border-2 p-3 transition hover:shadow-pop-sm ${
+                      className={`flex items-center justify-between rounded-md border p-3 transition hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${
                         l.booked
                           ? "border-gojo-orange bg-gojo-surface"
-                          : "border-gojo-ink/20 bg-gojo-surface hover:border-gojo-ink"
+                          : "border-black/10 bg-gojo-surface hover:border-black/20"
                       }`}
                     >
                       <div className="flex items-center gap-3">

@@ -11,7 +11,7 @@ export function MaterialUploadForm({ lessonId }: { lessonId: string }) {
   return (
     <form
       action={formAction}
-      className="mt-5 rounded-md border-2 border-gojo-ink bg-gojo-surface p-4 shadow-[3px_3px_0_var(--color-gojo-ink)]"
+      className="g-card mt-5 p-4"
     >
       <input type="hidden" name="lessonId" value={lessonId} />
       <div className="grid gap-3 sm:grid-cols-[1fr_1.2fr]">
@@ -23,7 +23,7 @@ export function MaterialUploadForm({ lessonId }: { lessonId: string }) {
             id="title"
             name="title"
             placeholder="Домашнее задание"
-            className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+            className="w-full rounded-md border border-black/10 bg-gojo-surface-2 px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
           />
         </div>
         <div>
@@ -35,7 +35,7 @@ export function MaterialUploadForm({ lessonId }: { lessonId: string }) {
             name="file"
             type="file"
             required
-            className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-3 py-2 text-sm outline-none file:mr-3 file:rounded file:border-0 file:bg-gojo-ink file:px-3 file:py-1 file:text-xs file:font-bold file:text-white focus:outline-2 focus:outline-gojo-orange-soft"
+            className="w-full rounded-md border border-black/10 bg-gojo-surface-2 px-3 py-2 text-sm outline-none file:mr-3 file:rounded file:border-0 file:bg-gojo-ink file:px-3 file:py-1 file:text-xs file:font-bold file:text-white focus:outline-2 focus:outline-gojo-orange-soft"
           />
         </div>
       </div>
@@ -48,7 +48,7 @@ export function MaterialUploadForm({ lessonId }: { lessonId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="btn-pop mt-3 rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-[12px] font-bold text-white disabled:opacity-50"
+        className="g-btn-primary mt-3 text-[12px]"
       >
         {pending ? "Загружаем..." : "+ Загрузить материал"}
       </button>

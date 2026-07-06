@@ -40,7 +40,7 @@ export default async function TeacherLessonPage({ params }: Props) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
+          <div className="g-card px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `Не удалось открыть урок (${e.status})` : "Ошибка загрузки"}
             </p>
@@ -67,7 +67,7 @@ export default async function TeacherLessonPage({ params }: Props) {
           ← К панели учителя
         </Link>
 
-        <div className="mt-6 rounded-lg border-2 border-gojo-ink bg-gojo-surface p-6 shadow-pop">
+        <div className="g-card mt-6 p-6">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
             Урок учителя
           </div>
@@ -86,7 +86,7 @@ export default async function TeacherLessonPage({ params }: Props) {
             </div>
             <Link
               href={`/lessons/${id}/room`}
-              className="btn-pop rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white"
+              className="g-btn-primary text-sm"
             >
               Войти в комнату ▸
             </Link>
@@ -96,7 +96,7 @@ export default async function TeacherLessonPage({ params }: Props) {
         <section className="mt-10">
           <h2 className="font-serif text-[22px] font-bold">Студенты</h2>
           {students.length === 0 ? (
-            <p className="mt-3 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-5 text-sm text-gojo-ink-muted">
+            <p className="mt-3 rounded-md border border-black/10 bg-gojo-surface px-4 py-5 text-sm text-gojo-ink-muted">
               На урок пока никто не записался.
             </p>
           ) : (
@@ -121,7 +121,7 @@ export default async function TeacherLessonPage({ params }: Props) {
               {materials.map((m) => (
                 <li
                   key={m.id}
-                  className="flex items-center justify-between rounded-lg border-2 border-gojo-ink bg-gojo-surface p-4"
+                  className="g-card flex items-center justify-between p-4"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-bold">{m.title}</p>
@@ -133,7 +133,7 @@ export default async function TeacherLessonPage({ params }: Props) {
                     href={m.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-pop ml-3 shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-1.5 text-[11px] font-bold hover:bg-gojo-surface-2"
+                    className="ml-3 shrink-0 rounded-md border border-black/10 bg-gojo-surface px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-gojo-orange hover:text-gojo-orange"
                   >
                     Открыть
                   </a>

@@ -64,11 +64,11 @@ export default async function TeacherLeadsPage({
         </div>
 
         {error ? (
-          <div className="mt-8 rounded-lg border-2 border-gojo-error bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
+          <div className="mt-8 rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
             {error}
           </div>
         ) : leads.length === 0 ? (
-          <div className="card-pop mt-8 rounded-lg border-2 border-gojo-ink bg-gojo-surface px-5 py-10 text-center text-gojo-ink-muted">
+          <div className="g-card mt-8 px-5 py-10 text-center text-gojo-ink-muted">
             Заявок в этом статусе нет.
           </div>
         ) : (
@@ -87,10 +87,10 @@ function Filter({ href, active, children }: { href: string; active: boolean; chi
   return (
     <Link
       href={href}
-      className={`rounded-md border-2 px-3 py-1.5 text-[12px] font-bold ${
+      className={`rounded-md border px-3 py-1.5 text-[12px] font-bold ${
         active
-          ? "border-gojo-ink bg-gojo-ink text-white"
-          : "border-gojo-ink/20 bg-gojo-surface text-gojo-ink-muted hover:border-gojo-ink"
+          ? "border-transparent bg-gojo-ink text-white"
+          : "border-black/10 bg-gojo-surface text-gojo-ink-muted hover:border-black/20"
       }`}
     >
       {children}
@@ -101,7 +101,7 @@ function Filter({ href, active, children }: { href: string; active: boolean; chi
 function LeadCard({ lead }: { lead: TeacherLeadDto }) {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   return (
-    <li className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
+    <li className="g-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +136,7 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
           <select
             name="status"
             defaultValue={lead.status}
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm font-bold"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm font-bold"
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -148,17 +148,17 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
             name="nextFollowUpAt"
             type="datetime-local"
             defaultValue={lead.nextFollowUpAt ? lead.nextFollowUpAt.slice(0, 16) : ""}
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
           />
           <textarea
             name="notes"
             defaultValue={lead.notes ?? ""}
             placeholder="Заметки / следующий шаг"
-            className="min-h-20 rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm"
+            className="min-h-20 rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
           />
           <button
             type="submit"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-3 py-2 text-sm font-bold hover:bg-gojo-surface"
+            className="rounded-md border border-black/10 bg-gojo-surface-2 px-3 py-2 text-sm font-bold hover:bg-gojo-surface"
           >
             Сохранить
           </button>
@@ -174,24 +174,24 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
           <input
             name="title"
             defaultValue={`Пробный урок · ${lead.name}`}
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm md:col-span-2"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm md:col-span-2"
           />
           <input
             name="date"
             type="date"
             defaultValue={tomorrow}
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
           />
           <input
             name="time"
             type="time"
             defaultValue="19:00"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
           />
           <select
             name="duration"
             defaultValue="50"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2 text-sm"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
           >
             <option value="30">30 мин</option>
             <option value="50">50 мин</option>
@@ -199,7 +199,7 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
           </select>
           <button
             type="submit"
-            className="btn-pop rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white md:col-span-5"
+            className="g-btn-primary text-sm md:col-span-5"
           >
             Создать пробный урок
           </button>

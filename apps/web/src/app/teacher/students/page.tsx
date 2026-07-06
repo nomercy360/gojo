@@ -34,17 +34,17 @@ export default async function TeacherStudentsPage() {
             </div>
             <h1 className="mt-2 font-serif text-[28px] font-bold">Мои студенты</h1>
           </div>
-          <div className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold">
+          <div className="rounded-md border border-black/10 bg-gojo-surface px-4 py-2 text-sm font-bold">
             {students.length} всего
           </div>
         </div>
 
         {error ? (
-          <div className="mt-8 rounded-lg border-2 border-gojo-error bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
+          <div className="mt-8 rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
             {error}
           </div>
         ) : students.length === 0 ? (
-          <div className="card-pop mt-8 rounded-lg border-2 border-gojo-ink bg-gojo-surface px-5 py-10 text-center text-gojo-ink-muted">
+          <div className="g-card mt-8 px-5 py-10 text-center text-gojo-ink-muted">
             Студенты появятся здесь после первой брони урока.
           </div>
         ) : (
@@ -52,7 +52,7 @@ export default async function TeacherStudentsPage() {
             {students.map((s) => (
               <li
                 key={s.studentId}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-gojo-ink bg-gojo-surface p-4"
+                className="g-card flex flex-wrap items-center justify-between gap-4 p-4"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar value={s.avatarUrl} size={42} fallback={s.nickname ?? s.email} />
@@ -71,15 +71,15 @@ export default async function TeacherStudentsPage() {
                   <span className="rounded-sm bg-gojo-ink px-2 py-1 text-white">
                     {s.lessonCount} уроков
                   </span>
-                  <span className="rounded-sm border border-gojo-ink/20 px-2 py-1 text-gojo-ink-muted">
+                  <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
                     JLPT: {s.jlptLevel ?? "не выставлен"}
                   </span>
                   {s.quizLevel ? (
-                    <span className="rounded-sm border border-gojo-ink/20 px-2 py-1 text-gojo-ink-muted">
+                    <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
                       Квиз: {s.quizLevel}
                     </span>
                   ) : null}
-                  <span className="rounded-sm border border-gojo-ink/20 px-2 py-1 text-gojo-ink-muted">
+                  <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
                     {s.lastLessonAt
                       ? `Последний: ${new Date(s.lastLessonAt).toLocaleDateString("ru-RU")}`
                       : "Без уроков"}

@@ -91,7 +91,7 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
             </div>
           </div>
 
-          <div className="mt-6 rounded-md border-2 border-gojo-ink bg-gojo-surface p-10 shadow-[3px_3px_0_var(--color-gojo-ink)]">
+          <div className="g-card p-10">
             <div className="text-center">
               <button
                 type="button"
@@ -104,7 +104,7 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
             </div>
 
             {flipped || mode === "unlearned" ? (
-              <div className="mt-6 border-t-2 border-gojo-ink/10 pt-5 text-center">
+              <div className="mt-6 border-t border-black/10 pt-5 text-center">
                 <div className="font-jp-serif text-[24px] font-bold text-gojo-orange-ink">
                   {current.reading}
                 </div>
@@ -115,19 +115,14 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
 
           <div className="mt-6">
             {mode === "unlearned" ? (
-              <button
-                type="button"
-                disabled={pending}
-                onClick={learn}
-                className="btn-pop w-full rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
-              >
+              <button type="button" disabled={pending} onClick={learn} className="g-btn-primary w-full text-sm">
                 Понял, в оборот
               </button>
             ) : !flipped ? (
               <button
                 type="button"
                 onClick={() => setFlipped(true)}
-                className="btn-pop w-full rounded-md border-2 border-gojo-ink bg-gojo-ink px-5 py-3 text-sm font-bold text-white"
+                className="w-full rounded-md bg-gojo-ink px-5 py-3 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
               >
                 Показать ответ
               </button>
@@ -137,16 +132,11 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
                   type="button"
                   disabled={pending}
                   onClick={() => answer(false)}
-                  className="btn-pop rounded-md border-2 border-gojo-ink bg-gojo-error-soft px-5 py-3 text-sm font-bold text-gojo-error disabled:opacity-50"
+                  className="rounded-md bg-gojo-error-soft px-5 py-3 text-sm font-bold text-gojo-error transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 >
                   Забыл
                 </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => answer(true)}
-                  className="btn-pop rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
-                >
+                <button type="button" disabled={pending} onClick={() => answer(true)} className="g-btn-primary text-sm">
                   Помню
                 </button>
               </div>

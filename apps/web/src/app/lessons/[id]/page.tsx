@@ -31,7 +31,7 @@ export default async function LessonDetailPage({ params }: Props) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
+          <div className="g-card px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `Урок не найден (${e.status})` : "Ошибка загрузки"}
             </p>
@@ -102,7 +102,7 @@ export default async function LessonDetailPage({ params }: Props) {
         {lesson.recordingUrl ? (
           <section className="mt-10">
             <h2 className="font-serif text-[22px] font-bold">Запись урока</h2>
-            <div className="mt-4 overflow-hidden rounded-lg border-2 border-gojo-ink bg-gojo-ink shadow-pop">
+            <div className="mt-4 overflow-hidden rounded-lg bg-gojo-ink shadow-[0_2px_16px_rgba(0,0,0,0.15)]">
               <video
                 src={lesson.recordingUrl}
                 controls
@@ -115,7 +115,7 @@ export default async function LessonDetailPage({ params }: Props) {
             </div>
           </section>
         ) : lesson.status === "completed" ? (
-          <div className="mt-10 rounded-lg border-2 border-gojo-ink bg-gojo-surface-2 px-5 py-6 text-center text-sm text-gojo-ink-muted">
+          <div className="mt-10 rounded-lg border border-black/10 bg-gojo-paper-2 px-5 py-6 text-center text-sm text-gojo-ink-muted">
             Запись обрабатывается. Обычно это занимает до 30 минут.
           </div>
         ) : null}
@@ -123,15 +123,12 @@ export default async function LessonDetailPage({ params }: Props) {
         {/* Join room — gated by joinState */}
         {user && lesson.joinState === "joinable" ? (
           <div className="mt-8">
-            <Link
-              href={`/lessons/${id}/room`}
-              className="btn-pop inline-flex rounded-md border-2 border-gojo-ink bg-gojo-orange px-6 py-3 text-sm font-bold text-white"
-            >
+            <Link href={`/lessons/${id}/room`} className="g-btn-primary inline-flex text-sm">
               Войти в урок ▸
             </Link>
           </div>
         ) : user && lesson.joinState === "waiting" && lesson.joinOpensAt ? (
-          <div className="mt-8 rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-5 py-4">
+          <div className="mt-8 rounded-md border border-black/10 bg-gojo-paper-2 px-5 py-4">
             <div className="text-[13px] font-bold text-gojo-ink">
               Вход откроется за 15 минут до начала
             </div>
@@ -161,7 +158,7 @@ export default async function LessonDetailPage({ params }: Props) {
               {materials.map((m) => (
                 <li
                   key={m.id}
-                  className="flex items-center justify-between rounded-lg border-2 border-gojo-ink bg-gojo-surface p-4"
+                  className="g-card flex items-center justify-between p-4"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-bold">{m.title}</p>
@@ -173,7 +170,7 @@ export default async function LessonDetailPage({ params }: Props) {
                     href={m.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-pop ml-3 shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-1.5 text-[11px] font-bold hover:bg-gojo-surface-2"
+                    className="ml-3 shrink-0 rounded-md border border-black/10 bg-gojo-surface px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-gojo-orange hover:text-gojo-orange"
                   >
                     Открыть
                   </a>

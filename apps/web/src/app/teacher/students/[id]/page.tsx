@@ -22,7 +22,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
+          <div className="g-card px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `API ${e.status}: ${e.message}` : "Ошибка загрузки"}
             </p>
@@ -50,7 +50,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
           ← К студентам
         </Link>
 
-        <section className="mt-6 rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5 shadow-pop">
+        <section className="g-card mt-6 p-5">
           <div className="flex flex-wrap items-center gap-4">
             <Avatar
               value={student.avatarUrl}
@@ -82,7 +82,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
                 {profile.lessons.map((lesson) => (
                   <li
                     key={lesson.lessonId}
-                    className="rounded-lg border-2 border-gojo-ink bg-gojo-surface p-4"
+                    className="rounded-lg border border-black/10 bg-gojo-surface p-4"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>

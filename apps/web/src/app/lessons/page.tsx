@@ -45,11 +45,11 @@ export default async function LessonsPage({
         </div>
 
         {error ? (
-          <div className="mt-10 rounded-lg border-2 border-gojo-error bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
+          <div className="mt-10 rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
             API недоступен: {error}
           </div>
         ) : lessons.length === 0 ? (
-          <div className="mt-10 rounded-lg border-2 border-gojo-ink bg-gojo-surface px-5 py-10 text-center text-gojo-ink-muted shadow-pop">
+          <div className="g-card mt-10 px-5 py-10 text-center text-gojo-ink-muted">
             Пока нет запланированных уроков.
           </div>
         ) : view === "calendar" ? (
@@ -89,7 +89,7 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
   const isFull = seats >= max;
 
   return (
-    <li className="card-pop relative overflow-hidden rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
+    <li className="g-card relative overflow-hidden p-5">
       <div
         className="absolute right-0 top-0 h-12 w-12 bg-gojo-orange"
         style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
@@ -151,10 +151,7 @@ function LessonAction({
 }) {
   if (!authenticated) {
     return (
-      <Link
-        href="/login"
-        className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold"
-      >
+      <Link href="/login" className="g-btn-secondary shrink-0 text-sm">
         Войти
       </Link>
     );
@@ -164,7 +161,7 @@ function LessonAction({
 
   if (state === "cancelled") {
     return (
-      <span className="shrink-0 rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
+      <span className="shrink-0 rounded-md border border-black/10 bg-gojo-paper-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
         Отменён
       </span>
     );
@@ -174,7 +171,7 @@ function LessonAction({
     return (
       <Link
         href={`/lessons/${lesson.id}`}
-        className="shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-muted hover:bg-gojo-surface"
+        className="shrink-0 rounded-md border border-black/10 bg-gojo-paper-2 px-4 py-2 text-sm font-bold text-gojo-ink-muted hover:bg-gojo-surface"
       >
         Завершён
       </Link>
@@ -183,10 +180,7 @@ function LessonAction({
 
   if (state === "joinable") {
     return (
-      <Link
-        href={`/lessons/${lesson.id}/room`}
-        className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-sm font-bold text-white"
-      >
+      <Link href={`/lessons/${lesson.id}/room`} className="g-btn-primary shrink-0 text-sm">
         Войти ▸
       </Link>
     );
@@ -196,7 +190,7 @@ function LessonAction({
     return (
       <span
         aria-disabled
-        className="shrink-0 cursor-not-allowed rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost"
+        className="shrink-0 cursor-not-allowed rounded-md border border-black/10 bg-gojo-paper-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost"
         title="Вход откроется за 15 минут до начала"
       >
         Готовится
@@ -207,7 +201,7 @@ function LessonAction({
   // state is "full" / "bookable" / undefined — fall back to booking controls.
   if (state === "full" || (state === undefined && isFull)) {
     return (
-      <span className="shrink-0 rounded-md border-2 border-gojo-ink/30 bg-gojo-surface-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
+      <span className="shrink-0 rounded-md border border-black/10 bg-gojo-paper-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
         Мест нет
       </span>
     );
@@ -216,10 +210,7 @@ function LessonAction({
   return (
     <form action={bookLessonAction}>
       <input type="hidden" name="lessonId" value={lesson.id} />
-      <button
-        type="submit"
-        className="btn-pop shrink-0 rounded-md border-2 border-gojo-ink bg-gojo-surface px-4 py-2 text-sm font-bold hover:bg-gojo-surface-2"
-      >
+      <button type="submit" className="g-btn-secondary shrink-0 text-sm">
         Записаться
       </button>
     </form>
