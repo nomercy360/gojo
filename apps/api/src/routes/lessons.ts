@@ -129,6 +129,7 @@ lessonsRoute.get("/my-stats", requireAuth, async (c) => {
     homeworkTotal: Number(homeworkCounts?.marked ?? 0),
     trainingSeconds:
       (training?.reviewSeconds ?? 0) + (training?.kanaSeconds ?? 0) + (training?.kanjiSeconds ?? 0),
+    currentStreak: training?.currentStreak ?? 0,
   });
 });
 

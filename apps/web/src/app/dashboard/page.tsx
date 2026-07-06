@@ -48,6 +48,7 @@ export default async function DashboardPage() {
       homeworkDone: 0,
       homeworkTotal: 0,
       trainingSeconds: 0,
+      currentStreak: 0,
     }),
   );
 
@@ -66,11 +67,10 @@ export default async function DashboardPage() {
   const progressPercent = Math.min(score.total, 100);
   const hasAnyProgress =
     stats.lessonsCompleted > 0 || stats.homeworkSubmitted > 0 || apiStats.trainingSeconds > 0;
-  const activeModules = [
-    stats.lessonsCompleted > 0 ? "уроки" : null,
-    stats.homeworkSubmitted > 0 ? "домашка" : null,
-    apiStats.trainingSeconds > 0 ? "тренировки" : null,
-  ].filter(Boolean);
+  const streakLabel =
+    apiStats.currentStreak > 0
+      ? `${apiStats.currentStreak} ${pluralizeDays(apiStats.currentStreak)} подряд`
+      : "начни серию";
 
   return (
     <main className="min-h-screen bg-gojo-paper">
@@ -136,7 +136,7 @@ export default async function DashboardPage() {
               </h2>
             </div>
             <div className="rounded-full bg-gojo-paper px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted">
-              {hasAnyProgress ? `${activeModules.length} активн. направления` : "0 активн. дней"}
+              {streakLabel}
             </div>
           </div>
 
@@ -323,4 +323,12 @@ function getGreeting(): string {
   if (h < 12) return "Доброе утро";
   if (h < 17) return "Добрый день";
   return "Добрый вечер";
+}
+
+function pluralizeDays(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "день";
+  if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return "дня";
+  return "дней";
 }
