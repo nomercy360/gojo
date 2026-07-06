@@ -1,0 +1,27 @@
+name: Cleanup GHCR Images
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [gojo-api, gojo-web]
+    steps:
+      - name: Keep last 10 ${{ matrix.package }} images
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ github.repository_owner }}
+          package-name: ${{ matrix.package }}
+          package-type: container
+          min-versions-to-keep: 10
+          ignore-versions: "^latest$"
