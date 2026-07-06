@@ -1,11 +1,12 @@
 "use client";
 
-import type { QuizQuestionDto, QuizResultDto } from "@gojo/shared";
+import type { QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { submitQuizAction } from "./actions";
+import { submitQuizAction, submitQuizLeadAction } from "./actions";
 
 const LEVEL_BLURB: Record<QuizResultDto["level"], { headline: string; body: string }> = {
   N5: {
@@ -36,8 +37,11 @@ export function QuizClient({
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [submittedAnswers, setSubmittedAnswers] = useState<QuizSubmitInput["answers"] | null>(null);
   const [result, setResult] = useState<QuizResultDto | null>(null);
+  const [leadSent, setLeadSent] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [leadPending, startLeadTransition] = useTransition();
 
   const total = questions.length;
   const current = questions[index];
@@ -54,18 +58,42 @@ export function QuizClient({
   }
 
   function submit(final: Record<string, number>) {
-    const payload = {
-      answers: questions.map((q) => ({
-        questionId: q.id,
-        choiceIndex: final[q.id] ?? 0,
-      })),
-    };
+    const payload = buildQuizPayload(final, questions);
     startTransition(async () => {
       try {
         const r = await submitQuizAction(payload);
+        setSubmittedAnswers(payload.answers);
         setResult(r);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");
+      }
+    });
+  }
+
+  function submitLead(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!submittedAnswers) return;
+    const form = new FormData(e.currentTarget);
+    const name = String(form.get("name") ?? "").trim();
+    const email = String(form.get("email") ?? "").trim();
+    const contact = String(form.get("contact") ?? "").trim();
+
+    startLeadTransition(async () => {
+      try {
+        const r = await submitQuizLeadAction({
+          answers: submittedAnswers,
+          name,
+          email,
+          ...(contact ? { contact } : {}),
+        });
+        setLeadSent(true);
+        toast.success(
+          r.emailSent
+            ? "Подробный результат отправлен на email"
+            : "Заявка сохранена, но email сейчас не отправился",
+        );
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Не удалось отправить результат");
       }
     });
   }
@@ -94,26 +122,47 @@ export function QuizClient({
 
           <div className="mt-6 rounded-xl border border-dashed border-black/15 bg-gojo-paper-2 p-5">
             <p className="g-body text-[14px] font-bold text-gojo-ink">
-              Теперь проведём бесплатную консультацию с преподавателем
+              Получи подробный разбор и план на email
             </p>
             <p className="g-body mt-1.5 text-[13px] leading-relaxed text-gojo-ink-muted">
-              Точный уровень и программу обучения преподаватель определит на живом занятии — квиз
-              лишь ориентир, чтобы вам обоим было проще начать разговор.
+              Пришлём результат, что подтянуть дальше, и сохраним заявку для преподавателя.
             </p>
+            {leadSent ? (
+              <div className="mt-4 rounded-md bg-gojo-success-soft px-4 py-3 text-sm font-bold text-gojo-success">
+                Готово. Проверь почту, а если хочешь быстрее договориться о времени — напиши в
+                Telegram.
+              </div>
+            ) : (
+              <form onSubmit={submitLead} className="mt-4 grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    name="name"
+                    required
+                    maxLength={200}
+                    placeholder="Имя"
+                    className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+                  />
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    maxLength={200}
+                    placeholder="Email"
+                    className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+                  />
+                </div>
+                <input
+                  name="contact"
+                  maxLength={200}
+                  placeholder="Telegram или телефон, если удобно"
+                  className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+                />
+                <button type="submit" disabled={leadPending} className="g-btn-primary text-sm">
+                  {leadPending ? "Отправляем..." : "Получить подробный результат →"}
+                </button>
+              </form>
+            )}
           </div>
-
-          {!isLoggedIn ? (
-            <p className="g-body mt-6 text-[12px] text-gojo-ink-muted">
-              Результат нигде не сохранён.{" "}
-              <Link
-                href="/login?mode=signup"
-                className="font-bold text-gojo-orange hover:underline"
-              >
-                Зарегистрируйся
-              </Link>
-              , чтобы он остался в личном кабинете.
-            </p>
-          ) : null}
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
@@ -138,7 +187,9 @@ export function QuizClient({
             onClick={() => {
               setIndex(0);
               setAnswers({});
+              setSubmittedAnswers(null);
               setResult(null);
+              setLeadSent(false);
             }}
             className="g-body mt-3 text-[12px] font-bold text-gojo-ink-muted hover:text-gojo-ink"
           >
@@ -195,4 +246,16 @@ export function QuizClient({
       </div>
     </main>
   );
+}
+
+function buildQuizPayload(
+  answers: Record<string, number>,
+  questions: QuizQuestionDto[],
+): QuizSubmitInput {
+  return {
+    answers: questions.map((q) => ({
+      questionId: q.id,
+      choiceIndex: answers[q.id] ?? 0,
+    })),
+  };
 }

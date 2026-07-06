@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
-import { env } from "../env.ts";
+import { notifyLead } from "../lead-notifications.ts";
 
 const leadInput = z.object({
   kind: z.enum(["booking", "guide"]).default("booking"),
@@ -56,27 +56,3 @@ leadsRoute.post("/link-current", requireAuth, async (c) => {
 
   return c.json({ ok: true, linked: linked.length });
 });
-
-async function notifyLead(l: LeadInput): Promise<void> {
-  const token = env.TELEGRAM_BOT_TOKEN;
-  const chatId = env.TELEGRAM_LEAD_CHAT_ID;
-  if (!token || !chatId) return;
-  const lines = [
-    `🎯 Новая заявка (${l.kind})`,
-    `Имя: ${l.name}`,
-    `Email: ${l.email}`,
-    ...(l.contact ? [`Контакт: ${l.contact}`] : []),
-    ...(l.level ? [`Уровень: ${l.level}`] : []),
-    ...(l.goal ? [`Цель: ${l.goal}`] : []),
-  ];
-  const text = lines.join("\n");
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
-    });
-  } catch {
-    // notification is best-effort — the lead is already persisted
-  }
-}

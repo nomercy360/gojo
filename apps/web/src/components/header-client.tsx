@@ -2,7 +2,7 @@
 
 import { Avatar } from "@/components/avatar";
 import { authClient } from "@/lib/auth-client";
-import { homePathForUser, isTeacherUser } from "@/lib/roles";
+import { isTeacherUser } from "@/lib/roles";
 import type { UserDto } from "@gojo/shared";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -32,9 +32,8 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [overlayRoute]);
 
-  // Anonymous landing has its own nav built into the Landing component —
-  // suppress the shared SiteHeader on that route.
-  if (overlayRoute) return null;
+  // Landing has its own nav built into the Landing component.
+  if (pathname === "/") return null;
 
   const overlay = overlayRoute && !scrolled;
   const frosted = overlayRoute && scrolled;
@@ -49,7 +48,6 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
   const teacherUser = isTeacherUser(user);
-  const homeHref = user ? homePathForUser(user) : "/";
 
   async function handleLogout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -72,7 +70,7 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
   return (
     <header className={wrapperClass}>
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-        <Link href={homeHref} className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <img
             src="/landing/logo.png"
             alt="Gojo"

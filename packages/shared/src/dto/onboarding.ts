@@ -17,12 +17,25 @@ export const quizSubmitInput = z.object({
 });
 export type QuizSubmitInput = z.infer<typeof quizSubmitInput>;
 
+export const quizLeadInput = quizSubmitInput.extend({
+  name: z.string().trim().min(1).max(200),
+  email: z.string().trim().email().max(200),
+  contact: z.string().trim().max(200).optional(),
+});
+export type QuizLeadInput = z.infer<typeof quizLeadInput>;
+
 export const quizResultDto = z.object({
   level: jlptLevelSchema,
   correct: z.number().int().min(0),
   total: z.number().int().min(1),
 });
 export type QuizResultDto = z.infer<typeof quizResultDto>;
+
+export const quizLeadResultDto = quizResultDto.extend({
+  leadId: z.string().uuid().optional(),
+  emailSent: z.boolean(),
+});
+export type QuizLeadResultDto = z.infer<typeof quizLeadResultDto>;
 
 /** Teacher sets the official level for a student after the free consultation lesson. */
 export const setStudentLevelInput = z.object({

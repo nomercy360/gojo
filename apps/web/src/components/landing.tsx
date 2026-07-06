@@ -330,8 +330,8 @@ export function Landing() {
             >
               Начать учить японский →
             </a>
-            <a href="#how" className="btn-secondary-dark">
-              Как это работает
+            <a href="/onboarding/quiz" className="btn-secondary-dark">
+              Пройти тест уровня
             </a>
           </div>
           <a href="/kana" className="hero-trainer-link">

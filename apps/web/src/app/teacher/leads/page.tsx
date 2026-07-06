@@ -121,6 +121,11 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
           <p className="mt-2 text-sm text-gojo-ink-soft">
             {[lead.level, lead.goal].filter(Boolean).join(" · ") || "Без деталей"}
           </p>
+          {lead.notes ? (
+            <pre className="mt-3 max-w-xl whitespace-pre-wrap rounded-md bg-gojo-paper px-3 py-2 text-[12px] leading-relaxed text-gojo-ink-muted">
+              {lead.notes}
+            </pre>
+          ) : null}
           {lead.trialLessonId ? (
             <Link
               href={`/teacher/lessons/${lead.trialLessonId}`}
@@ -197,10 +202,7 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
             <option value="50">50 мин</option>
             <option value="60">60 мин</option>
           </select>
-          <button
-            type="submit"
-            className="g-btn-primary text-sm md:col-span-5"
-          >
+          <button type="submit" className="g-btn-primary text-sm md:col-span-5">
             Создать пробный урок
           </button>
         </form>

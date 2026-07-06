@@ -65,8 +65,9 @@ export default async function DashboardPage() {
 
   const score = calcScore(stats);
   const progressPercent = Math.min(score.total, 100);
+  const hasMeaningfulTraining = apiStats.trainingSeconds >= 60;
   const hasAnyProgress =
-    stats.lessonsCompleted > 0 || stats.homeworkSubmitted > 0 || apiStats.trainingSeconds > 0;
+    stats.lessonsCompleted > 0 || stats.homeworkSubmitted > 0 || hasMeaningfulTraining;
   const streakLabel =
     apiStats.currentStreak > 0
       ? `${apiStats.currentStreak} ${pluralizeDays(apiStats.currentStreak)} подряд`
@@ -132,7 +133,7 @@ export default async function DashboardPage() {
                 Прогресс
               </div>
               <h2 className="g-display mt-2 text-[24px] font-extrabold text-gojo-ink">
-                {hasAnyProgress ? "Продолжай серию" : "Начни первую серию"}
+                {hasAnyProgress ? "Продолжай серию" : "С чего начать"}
               </h2>
             </div>
             <div className="rounded-full bg-gojo-paper px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted">
@@ -140,40 +141,55 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="mb-3 flex items-center justify-between">
-            <span className="g-mono text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
-              MVP-прогресс
-            </span>
-            <span className="g-mono text-[11px] font-bold text-gojo-ink">
-              {progressPercent} / 100
-            </span>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-gojo-paper-2">
-            <div
-              className="h-full rounded-full bg-gojo-orange transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
           {hasAnyProgress ? (
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {stats.lessonsCompleted > 0 ? (
-                <ProgressTile value={stats.lessonsCompleted} label="уроков пройдено" />
-              ) : null}
-              {apiStats.trainingSeconds > 0 ? (
-                <ProgressTile
-                  value={`${stats.trainingHoursWhole}ч ${stats.trainingMinutes}м`}
-                  label="в тренировках"
+            <>
+              <div className="mb-3 flex items-center justify-between">
+                <span className="g-mono text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
+                  MVP-прогресс
+                </span>
+                <span className="g-mono text-[11px] font-bold text-gojo-ink">
+                  {progressPercent} / 100
+                </span>
+              </div>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-gojo-paper-2">
+                <div
+                  className="h-full rounded-full bg-gojo-orange transition-all"
+                  style={{ width: `${progressPercent}%` }}
                 />
-              ) : null}
-              {stats.homeworkSubmitted > 0 ? (
-                <ProgressTile value={stats.homeworkSubmitted} label="домашних заданий" />
-              ) : null}
-            </div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {stats.lessonsCompleted > 0 ? (
+                  <ProgressTile value={stats.lessonsCompleted} label="уроков пройдено" />
+                ) : null}
+                {hasMeaningfulTraining ? (
+                  <ProgressTile
+                    value={`${stats.trainingHoursWhole}ч ${stats.trainingMinutes}м`}
+                    label="в тренировках"
+                  />
+                ) : null}
+                {stats.homeworkSubmitted > 0 ? (
+                  <ProgressTile value={stats.homeworkSubmitted} label="домашних заданий" />
+                ) : null}
+              </div>
+            </>
           ) : (
-            <p className="g-body mt-5 text-[13px] text-gojo-ink-muted">
-              Здесь появятся реальные уроки, тренировки и домашние задания после первой активности.
-            </p>
+            <div className="mt-5 rounded-xl bg-gojo-paper p-5">
+              <div className="g-display text-[22px] font-extrabold text-gojo-ink">
+                Определи уровень и запишись на первый урок
+              </div>
+              <p className="g-body mt-2 max-w-2xl text-[13px] text-gojo-ink-muted">
+                Здесь появятся часы практики, уроки и домашние задания после реальной активности.
+                Пока лучше начать с короткого теста или бесплатной консультации.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link href="/onboarding/quiz" className="g-btn-primary text-sm">
+                  Пройти тест уровня →
+                </Link>
+                <Link href="/lessons" className="g-btn-secondary text-sm">
+                  Посмотреть уроки
+                </Link>
+              </div>
+            </div>
           )}
         </div>
 

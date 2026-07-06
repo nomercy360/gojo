@@ -12,6 +12,8 @@ import type {
   LivekitTokenResponse,
   PaymentPlanDto,
   PaymentsMeDto,
+  QuizLeadInput,
+  QuizLeadResultDto,
   QuizQuestionDto,
   QuizResultDto,
   QuizSubmitInput,
@@ -196,6 +198,13 @@ export function fetchQuizQuestions() {
 
 export function submitQuiz(body: QuizSubmitInput) {
   return apiFetch<QuizResultDto>("/onboarding/quiz", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function submitQuizLead(body: QuizLeadInput) {
+  return apiFetch<QuizLeadResultDto>("/onboarding/quiz/lead", {
     method: "POST",
     body: JSON.stringify(body),
   });
