@@ -111,23 +111,6 @@
       "done_at": "2026-07-05"
     },
     {
-      "id": "R2b",
-      "title": "Доделать игры-тренажёры + Higgsfield",
-      "category": "trainer",
-      "description": "BLOCKED 2026-07-05: нужен скоуп, что именно Higgsfield должен делать в тренажёре, и доступ/API-ключи. Без этого можно улучшать UI, но нельзя выполнить заявленную интеграцию.",
-      "priority": "later",
-      "status": "blocked",
-      "owner": "maksim",
-      "requested_by": "bilunar",
-      "steps": [
-        "Определён скоуп: какая именно фича от Higgsfield в геймплее",
-        "Тренажёры доведены до готового состояния",
-        "Higgsfield-элемент интегрирован в тренажёр"
-      ],
-      "passes": false,
-      "done_at": null
-    },
-    {
       "id": "R4",
       "title": "Единый инбокс с админом/учителем (WhatsApp/Instagram/Max)",
       "category": "integrations",
