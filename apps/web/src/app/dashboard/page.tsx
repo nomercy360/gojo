@@ -220,7 +220,10 @@ export default async function DashboardPage() {
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
                   Пройди короткий квиз или запишись на бесплатную консультацию с преподавателем.
                 </p>
-                <Link href="/onboarding/quiz" className="g-btn-secondary mt-4 inline-block text-[13px]">
+                <Link
+                  href="/onboarding/quiz"
+                  className="g-btn-secondary mt-4 inline-block text-[13px]"
+                >
                   Пройти квиз уровня →
                 </Link>
               </>
@@ -250,9 +253,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
-                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                  Повторение слов
-                </div>
+                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">Повторение слов</div>
               </div>
             </Link>
 

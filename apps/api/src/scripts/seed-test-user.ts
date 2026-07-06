@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
 import { user as userTable } from "@gojo/db";
+import { eq } from "drizzle-orm";
 import { auth } from "../auth.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
@@ -18,7 +18,11 @@ if (env.NODE_ENV === "production") {
   process.exit(1);
 }
 
-const [existing] = await db.select().from(userTable).where(eq(userTable.email, TEST_EMAIL)).limit(1);
+const [existing] = await db
+  .select()
+  .from(userTable)
+  .where(eq(userTable.email, TEST_EMAIL))
+  .limit(1);
 
 if (existing) {
   console.log(`Test account already exists: ${TEST_EMAIL} / ${TEST_PASSWORD}`);

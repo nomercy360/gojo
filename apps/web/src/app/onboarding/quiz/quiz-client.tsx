@@ -97,15 +97,18 @@ export function QuizClient({
               Теперь проведём бесплатную консультацию с преподавателем
             </p>
             <p className="g-body mt-1.5 text-[13px] leading-relaxed text-gojo-ink-muted">
-              Точный уровень и программу обучения преподаватель определит на живом занятии —
-              квиз лишь ориентир, чтобы вам обоим было проще начать разговор.
+              Точный уровень и программу обучения преподаватель определит на живом занятии — квиз
+              лишь ориентир, чтобы вам обоим было проще начать разговор.
             </p>
           </div>
 
           {!isLoggedIn ? (
             <p className="g-body mt-6 text-[12px] text-gojo-ink-muted">
               Результат нигде не сохранён.{" "}
-              <Link href="/login?mode=signup" className="font-bold text-gojo-orange hover:underline">
+              <Link
+                href="/login?mode=signup"
+                className="font-bold text-gojo-orange hover:underline"
+              >
                 Зарегистрируйся
               </Link>
               , чтобы он остался в личном кабинете.

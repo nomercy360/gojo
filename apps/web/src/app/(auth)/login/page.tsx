@@ -134,11 +134,7 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="g-btn-primary w-full text-sm"
-          >
+          <button type="submit" disabled={pending} className="g-btn-primary w-full text-sm">
             {pending ? "..." : mode === "signin" ? "Войти" : "Создать аккаунт"}
           </button>
         </form>
