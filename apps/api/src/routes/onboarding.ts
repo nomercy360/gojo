@@ -4,7 +4,7 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { type AuthContext, requireAuth } from "../auth/middleware.ts";
+import type { AuthContext } from "../auth/middleware.ts";
 import { QUIZ_QUESTIONS, scoreToLevel } from "../data/quiz-questions.ts";
 import { db } from "../db.ts";
 
@@ -19,37 +19,37 @@ onboardingRoute.get("/quiz/questions", (c) => {
   return c.json(questions);
 });
 
-onboardingRoute.post(
-  "/quiz",
-  requireAuth,
-  zValidator("json", quizSubmitInput),
-  async (c) => {
-    const u = c.get("user")!;
-    const { answers } = c.req.valid("json");
+// No requireAuth — the quiz is a public lead-magnet, not part of any signup
+// gate. Logged-in users additionally get quizLevel persisted; guests just get
+// the indicative result back (nothing to persist without an account).
+onboardingRoute.post("/quiz", zValidator("json", quizSubmitInput), async (c) => {
+  const u = c.get("user");
+  const { answers } = c.req.valid("json");
 
-    const byId = new Map(QUIZ_QUESTIONS.map((q) => [q.id, q]));
-    let correct = 0;
-    for (const a of answers) {
-      const q = byId.get(a.questionId);
-      if (q && a.choiceIndex === q.correctIndex) correct += 1;
-    }
+  const byId = new Map(QUIZ_QUESTIONS.map((q) => [q.id, q]));
+  let correct = 0;
+  for (const a of answers) {
+    const q = byId.get(a.questionId);
+    if (q && a.choiceIndex === q.correctIndex) correct += 1;
+  }
 
-    const level = scoreToLevel(correct);
+  const level = scoreToLevel(correct);
 
-    // Indicative only — the official jlptLevel is set by a teacher after the
-    // free consultation lesson (see PATCH /teacher/lessons/:id/students/:studentId/level).
+  // Indicative only — the official jlptLevel is set by a teacher after the
+  // free consultation lesson (see PATCH /teacher/lessons/:id/students/:studentId/level).
+  if (u) {
     const [row] = await db
       .update(userTable)
       .set({ quizLevel: level, updatedAt: new Date() })
       .where(eq(userTable.id, u.id))
       .returning();
     if (!row) throw new HTTPException(404, { message: "user not found" });
+  }
 
-    const result: QuizResultDto = {
-      level,
-      correct,
-      total: QUIZ_QUESTIONS.length,
-    };
-    return c.json(result);
-  },
-);
+  const result: QuizResultDto = {
+    level,
+    correct,
+    total: QUIZ_QUESTIONS.length,
+  };
+  return c.json(result);
+});

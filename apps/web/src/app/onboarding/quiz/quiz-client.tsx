@@ -26,7 +26,13 @@ const LEVEL_BLURB: Record<QuizResultDto["level"], { headline: string; body: stri
   },
 };
 
-export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
+export function QuizClient({
+  questions,
+  isLoggedIn,
+}: {
+  questions: QuizQuestionDto[];
+  isLoggedIn: boolean;
+}) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -96,6 +102,16 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
             </p>
           </div>
 
+          {!isLoggedIn ? (
+            <p className="g-body mt-6 text-[12px] text-gojo-ink-muted">
+              Результат нигде не сохранён.{" "}
+              <Link href="/login?mode=signup" className="font-bold text-gojo-orange hover:underline">
+                Зарегистрируйся
+              </Link>
+              , чтобы он остался в личном кабинете.
+            </p>
+          ) : null}
+
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
               href="https://t.me/gojoedu"
@@ -105,8 +121,12 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
             >
               Записаться на консультацию →
             </a>
-            <Link href="/lessons" className="g-btn-secondary flex-1 text-sm" onClick={() => router.refresh()}>
-              Посмотреть уроки
+            <Link
+              href={isLoggedIn ? "/lessons" : "/login?mode=signup"}
+              className="g-btn-secondary flex-1 text-sm"
+              onClick={() => router.refresh()}
+            >
+              {isLoggedIn ? "Посмотреть уроки" : "Зарегистрироваться"}
             </Link>
           </div>
 

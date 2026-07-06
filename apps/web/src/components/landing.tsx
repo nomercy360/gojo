@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -519,7 +520,7 @@ export function Landing() {
         <h2 className="section-title">Как это работает</h2>
 
         <div className="how-grid">
-          <div className="how-card">
+          <Link href="/onboarding/quiz" className="how-card">
             <div className="how-card-head">
               <div className="how-card-head-left">
                 <span className="how-card-step">Шаг 01</span>
@@ -533,8 +534,9 @@ export function Landing() {
               <div className="how-card-text">
                 Короткий тест — 10 минут, и мы знаем с чего начать.
               </div>
+              <div className="how-card-cta">Пройти тест →</div>
             </div>
-          </div>
+          </Link>
 
           <div className="how-card">
             <div className="how-card-head">

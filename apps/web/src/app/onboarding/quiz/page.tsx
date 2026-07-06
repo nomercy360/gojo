@@ -4,18 +4,12 @@ import { getCurrentUser } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { QuizClient } from "./quiz-client";
 
-export default async function OnboardingQuizPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ retake?: string }>;
-}) {
+// Public lead-magnet: works for guests and logged-in students alike, and can
+// be revisited/retaken any time — it's a suggestion, not a signup gate.
+export default async function OnboardingQuizPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
   if (isTeacherUser(user)) redirect("/teacher");
 
-  const { retake } = await searchParams;
-  if (user.quizLevel && retake !== "1") redirect("/lessons");
-
   const questions = await fetchQuizQuestions();
-  return <QuizClient questions={questions} />;
+  return <QuizClient questions={questions} isLoggedIn={!!user} />;
 }

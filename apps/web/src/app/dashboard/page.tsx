@@ -205,6 +205,12 @@ export default async function DashboardPage() {
                   Предварительная оценка по квизу. Финальный уровень выставит преподаватель на
                   бесплатной консультации.
                 </p>
+                <Link
+                  href="/onboarding/quiz"
+                  className="g-body mt-3 inline-block text-[12px] font-bold text-gojo-orange hover:underline"
+                >
+                  Пройти квиз ещё раз →
+                </Link>
               </>
             ) : (
               <>
@@ -214,6 +220,9 @@ export default async function DashboardPage() {
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
                   Пройди короткий квиз или запишись на бесплатную консультацию с преподавателем.
                 </p>
+                <Link href="/onboarding/quiz" className="g-btn-secondary mt-4 inline-block text-[13px]">
+                  Пройти квиз уровня →
+                </Link>
               </>
             )}
 

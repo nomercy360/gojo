@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { homePathForUser, isTeacherUser } from "@/lib/roles";
+import { homePathForUser } from "@/lib/roles";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,7 +36,6 @@ export default function LoginPage() {
     const role = "student" as const;
 
     try {
-      let isNewStudent = false;
       if (mode === "signup") {
         const res = await authClient.signUp.email({
           email,
@@ -47,14 +46,10 @@ export default function LoginPage() {
         });
         if (res.error) throw new Error(res.error.message ?? "Signup failed");
         toast.success("Аккаунт создан");
-        isNewStudent = role === "student";
       } else {
         const res = await authClient.signIn.email({ email, password });
         if (res.error) throw new Error(res.error.message ?? "Invalid credentials");
         toast.success("С возвращением!");
-        // biome-ignore lint/suspicious/noExplicitAny: additional fields
-        const u = (res.data as any)?.user;
-        isNewStudent = u?.role === "student" && !u?.quizLevel;
       }
       const authUser = await authClient.getSession();
       const sessionUser = authUser.data?.user;
@@ -66,12 +61,7 @@ export default function LoginPage() {
       if (linkedLeads > 0) {
         toast.success("Заявка привязана к аккаунту");
       }
-      const destination =
-        isNewStudent && sessionUser && !isTeacherUser(sessionUser)
-          ? "/onboarding/quiz"
-          : sessionUser
-            ? homePathForUser(sessionUser)
-            : "/dashboard";
+      const destination = sessionUser ? homePathForUser(sessionUser) : "/dashboard";
       router.push(destination);
       router.refresh();
     } catch (err) {

@@ -932,6 +932,12 @@ html:has(.landing-root) {
   color: var(--ink-2);
   line-height: 1.6;
 }
+.landing-root .how-card-cta {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--orange);
+}
 .landing-root .how-card-visual {
   margin: 16px 0 4px;
   padding: 14px 0 4px;
