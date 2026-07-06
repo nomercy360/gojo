@@ -173,13 +173,15 @@ export function QuizClient({
             >
               Записаться на консультацию →
             </a>
-            <Link
-              href={isLoggedIn ? "/lessons" : "/login?mode=signup"}
-              className="g-btn-secondary flex-1 text-sm"
-              onClick={() => router.refresh()}
-            >
-              {isLoggedIn ? "Посмотреть уроки" : "Зарегистрироваться"}
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/lessons"
+                className="g-btn-secondary flex-1 text-sm"
+                onClick={() => router.refresh()}
+              >
+                Посмотреть уроки
+              </Link>
+            ) : null}
           </div>
 
           <button
