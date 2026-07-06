@@ -18,7 +18,7 @@ export default async function AdminPage() {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
+          <div className="g-card px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `API ${e.status}: ${e.message}` : "Ошибка загрузки"}
             </p>
@@ -106,7 +106,7 @@ export default async function AdminPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5 shadow-pop">
+    <div className="g-card p-5">
       <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-gojo-orange">
         {label}
       </div>
@@ -117,7 +117,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border-2 border-gojo-ink bg-gojo-surface p-5">
+    <section className="g-card p-5">
       <h2 className="font-serif text-[22px] font-bold">{title}</h2>
       <div className="mt-4 space-y-2">{children}</div>
     </section>

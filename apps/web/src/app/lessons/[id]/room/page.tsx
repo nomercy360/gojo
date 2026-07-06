@@ -70,7 +70,7 @@ function ErrorView({ message }: { message: string }) {
   return (
     <main className="min-h-screen bg-gojo-paper">
       <div className="mx-auto max-w-md px-6 py-24 text-center">
-        <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface px-6 py-8">
+        <div className="g-card px-6 py-8">
           <p className="text-sm font-bold text-gojo-error">{message}</p>
           <Link
             href="/lessons"

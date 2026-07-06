@@ -26,10 +26,7 @@ export default async function ReviewPage() {
             Карточки появятся, когда запишешься на урок — преподаватель добавляет слова к уроку, и
             они автоматически попадают в твой пул для повторения.
           </p>
-          <Link
-            href="/lessons"
-            className="btn-pop mt-6 inline-flex rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white"
-          >
+          <Link href="/lessons" className="g-btn-primary mt-6 inline-flex text-sm">
             Посмотреть уроки
           </Link>
         </div>

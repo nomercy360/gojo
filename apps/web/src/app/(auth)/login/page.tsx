@@ -93,7 +93,7 @@ export default function LoginPage() {
         </h1>
 
         {/* Tab switcher */}
-        <div className="mt-6 flex gap-1 rounded-md border-2 border-gojo-ink p-1">
+        <div className="mt-6 flex gap-1 rounded-md border border-black/10 bg-gojo-paper p-1">
           <button
             type="button"
             onClick={() => {
@@ -139,7 +139,7 @@ export default function LoginPage() {
           ) : null}
 
           {error ? (
-            <div className="rounded-md border-2 border-gojo-error bg-gojo-error-soft px-4 py-3 text-sm font-bold text-gojo-error">
+            <div className="rounded-md border border-gojo-error/40 bg-gojo-error-soft px-4 py-3 text-sm font-bold text-gojo-error">
               {error}
             </div>
           ) : null}
@@ -147,7 +147,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="btn-pop w-full rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="g-btn-primary w-full text-sm"
           >
             {pending ? "..." : mode === "signin" ? "Войти" : "Создать аккаунт"}
           </button>
@@ -224,7 +224,7 @@ function Field({
         placeholder={placeholder}
         required={required}
         minLength={minLength}
-        className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+        className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
       />
     </div>
   );

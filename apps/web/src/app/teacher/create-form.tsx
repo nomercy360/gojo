@@ -11,7 +11,7 @@ export function CreateLessonForm() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 
   return (
-    <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface p-6">
+    <div className="g-card p-6">
       <h2 className="font-serif text-[22px] font-bold">Новый урок</h2>
       <form action={formAction} className="mt-5 space-y-4">
         <div>
@@ -23,7 +23,7 @@ export function CreateLessonForm() {
             name="title"
             required
             placeholder="Грамматика ～ばかり"
-            className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -37,7 +37,7 @@ export function CreateLessonForm() {
               type="date"
               required
               defaultValue={tomorrow}
-              className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
             />
           </div>
           <div>
@@ -50,7 +50,7 @@ export function CreateLessonForm() {
               type="time"
               required
               defaultValue="19:00"
-              className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
             />
           </div>
           <div>
@@ -64,7 +64,7 @@ export function CreateLessonForm() {
               id="duration"
               name="duration"
               defaultValue="50"
-              className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
             >
               <option value="30">30</option>
               <option value="50">50</option>
@@ -84,7 +84,7 @@ export function CreateLessonForm() {
         <button
           type="submit"
           disabled={pending}
-          className="btn-pop w-full rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          className="g-btn-primary w-full text-sm"
         >
           {pending ? "Создаём..." : "Создать урок"}
         </button>

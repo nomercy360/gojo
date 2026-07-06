@@ -62,33 +62,29 @@ export function LessonCardsManager({
 
       <form
         onSubmit={submit}
-        className="mt-5 rounded-md border-2 border-gojo-ink bg-gojo-surface p-4 shadow-[3px_3px_0_var(--color-gojo-ink)]"
+        className="g-card mt-5 p-4"
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <input
             value={word}
             onChange={(e) => setWord(e.target.value)}
             placeholder="勉強"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-3 py-2 font-jp-serif text-[16px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+            className="rounded-md border border-black/10 bg-gojo-paper px-3 py-2 font-jp-serif text-[16px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
           />
           <input
             value={reading}
             onChange={(e) => setReading(e.target.value)}
             placeholder="べんきょう"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-3 py-2 font-jp-serif text-[16px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+            className="rounded-md border border-black/10 bg-gojo-paper px-3 py-2 font-jp-serif text-[16px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
           />
           <input
             value={meaning}
             onChange={(e) => setMeaning(e.target.value)}
             placeholder="учёба"
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-3 py-2 text-[15px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
+            className="rounded-md border border-black/10 bg-gojo-paper px-3 py-2 text-[15px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
           />
         </div>
-        <button
-          type="submit"
-          disabled={pending}
-          className="btn-pop mt-3 rounded-md border-2 border-gojo-ink bg-gojo-orange px-4 py-2 text-[12px] font-bold text-white disabled:opacity-50"
-        >
+        <button type="submit" disabled={pending} className="g-btn-primary mt-3 text-[12px]">
           + Добавить карточку
         </button>
       </form>
@@ -100,7 +96,7 @@ export function LessonCardsManager({
           {cards.map((c) => (
             <li
               key={c.id}
-              className="flex items-center justify-between rounded-md border-2 border-gojo-ink bg-gojo-surface p-3"
+              className="flex items-center justify-between rounded-md border border-black/10 bg-gojo-surface p-3"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-3">
@@ -115,7 +111,7 @@ export function LessonCardsManager({
                 type="button"
                 onClick={() => remove(c.id)}
                 disabled={pending}
-                className="ml-3 shrink-0 rounded-md border-2 border-gojo-ink px-2.5 py-1 text-[11px] font-bold text-gojo-ink-muted hover:bg-gojo-error-soft hover:text-gojo-error disabled:opacity-50"
+                className="ml-3 shrink-0 rounded-md border border-black/10 px-2.5 py-1 text-[11px] font-bold text-gojo-ink-muted hover:bg-gojo-error-soft hover:text-gojo-error disabled:opacity-50"
               >
                 Удалить
               </button>

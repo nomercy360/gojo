@@ -15,7 +15,7 @@ export function ViewToggle() {
   };
 
   return (
-    <div className="flex gap-1 rounded-md border-2 border-gojo-ink p-1">
+    <div className="flex gap-1 rounded-md border border-black/10 bg-gojo-paper p-1">
       <button
         type="button"
         onClick={() => set("list")}

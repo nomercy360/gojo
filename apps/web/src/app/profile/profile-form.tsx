@@ -37,9 +37,9 @@ export function ProfileForm({ user }: { user: UserDto }) {
   }, [uploadState]);
 
   return (
-    <div className="card-pop rounded-lg border-2 border-gojo-ink bg-gojo-surface p-6">
+    <div className="g-card p-6">
       {/* Header */}
-      <div className="flex items-center gap-5 border-b border-gojo-ink/10 pb-6">
+      <div className="flex items-center gap-5 border-b border-black/10 pb-6">
         <Avatar value={selected} size={72} fallback={nickname || user.email} />
         <div>
           <p className="font-serif text-xl font-bold">{nickname || user.email}</p>
@@ -70,7 +70,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
             onChange={(e) => setNickname(e.target.value)}
             placeholder="Как к тебе обращаться?"
             maxLength={40}
-            className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
         </div>
 
@@ -90,7 +90,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
             value={telegramId}
             onChange={(e) => setTelegramId(e.target.value.replace(/[^0-9]/g, ""))}
             placeholder="Например, 412587349"
-            className="w-full rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
           <p className="mt-1.5 text-[11px] text-gojo-ink-muted">
             Узнать свой ID — напиши{" "}
@@ -112,7 +112,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
           <p className="mb-3 text-[12px] font-bold text-gojo-ink-soft">Аватар</p>
 
           {/* Tabs */}
-          <div className="mb-4 flex gap-1 rounded-md border-2 border-gojo-ink p-1">
+          <div className="mb-4 flex gap-1 rounded-md border border-black/10 bg-gojo-paper p-1">
             <button
               type="button"
               onClick={() => setAvatarTab("preset")}
@@ -149,10 +149,10 @@ export function ProfileForm({ user }: { user: UserDto }) {
                       type="button"
                       key={id}
                       onClick={() => setSelected(value)}
-                      className={`flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition ${
+                      className={`flex flex-col items-center gap-2 rounded-lg border p-3 transition ${
                         isActive
                           ? "border-gojo-orange bg-gojo-orange-soft"
-                          : "border-gojo-ink/20 bg-gojo-surface hover:border-gojo-ink"
+                          : "border-black/10 bg-gojo-surface hover:border-black/20"
                       }`}
                     >
                       <Avatar value={value} size={44} />
@@ -171,7 +171,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
           <button
             type="submit"
             disabled={profilePending}
-            className="btn-pop w-full rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="g-btn-primary w-full text-sm"
           >
             {profilePending ? "Сохраняем..." : "Сохранить изменения"}
           </button>
@@ -182,7 +182,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
       {avatarTab === "upload" ? (
         <form action={uploadAction} className="mt-4 space-y-4">
           <p className="text-sm text-gojo-ink-muted">PNG / JPEG / WebP / GIF, до 2 МБ.</p>
-          <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gojo-ink/30 bg-gojo-surface-2 px-6 py-8 text-center transition hover:border-gojo-orange">
+          <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-black/15 bg-gojo-paper-2 px-6 py-8 text-center transition hover:border-gojo-orange">
             <div>
               <p className="text-sm font-bold text-gojo-ink-soft">
                 Перетащи файл или нажми для выбора
@@ -200,7 +200,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
           <button
             type="submit"
             disabled={uploadPending}
-            className="btn-pop w-full rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="g-btn-primary w-full text-sm"
           >
             {uploadPending ? "Загружаем..." : "Загрузить аватар"}
           </button>

@@ -71,7 +71,7 @@ export function KanjiModal({
       tabIndex={-1}
     >
       <div
-        className="w-full max-w-lg rounded-lg border-2 border-gojo-ink bg-gojo-paper p-6 shadow-[3px_3px_0_var(--color-gojo-ink)]"
+        className="g-card w-full max-w-lg p-6"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
@@ -86,7 +86,7 @@ export function KanjiModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border-2 border-gojo-ink bg-gojo-surface px-3 py-1 text-xs font-bold hover:bg-gojo-surface-2"
+            className="rounded-md border border-black/10 bg-gojo-surface px-3 py-1 text-xs font-bold hover:bg-gojo-paper-2"
           >
             ✕
           </button>
@@ -106,7 +106,7 @@ export function KanjiModal({
               e.found && e.kanji ? (
                 <div
                   key={e.character}
-                  className="rounded-md border-2 border-gojo-ink bg-gojo-surface p-4"
+                  className="rounded-md border border-black/10 bg-gojo-surface p-4"
                 >
                   <div className="flex items-baseline gap-4">
                     <div className="font-jp-serif text-[44px] leading-none">
@@ -176,7 +176,7 @@ export function KanjiModal({
               ) : (
                 <div
                   key={e.character}
-                  className="rounded-md border-2 border-dashed border-gojo-ink/30 bg-gojo-surface-2 p-3 text-sm text-gojo-ink-muted"
+                  className="rounded-md border border-dashed border-black/15 bg-gojo-paper-2 p-3 text-sm text-gojo-ink-muted"
                 >
                   <span className="font-jp-serif text-xl">{e.character}</span> — нет
                   данных в справочнике

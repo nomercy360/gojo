@@ -147,6 +147,62 @@ h4 {
   transform: translate(3px, 3px);
 }
 
+/* Soft UI (v14-derived) — used across the logged-in app, matching the
+ * landing page's refined look. Replaces .card-pop / .btn-pop / border-2. */
+.g-card {
+  background: var(--color-gojo-surface);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.g-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.g-btn-primary {
+  background: var(--color-gojo-orange);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.g-btn-primary:hover {
+  transform: translateY(-2px);
+  opacity: 0.92;
+}
+.g-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.g-btn-secondary {
+  background: transparent;
+  color: var(--color-gojo-ink);
+  border: 1.5px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 12px 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.g-btn-secondary:hover {
+  border-color: var(--color-gojo-orange);
+  color: var(--color-gojo-orange);
+  background: rgba(232, 66, 10, 0.04);
+}
+
 /* ===================================================================== *
  * Landing-page styles (v14 — ported 1:1 from manager prototype gojo_v14).
  *

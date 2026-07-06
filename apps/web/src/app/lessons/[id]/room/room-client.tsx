@@ -141,7 +141,7 @@ function ParticipantsList() {
           key={p.identity}
           className="flex items-center gap-3 rounded-md bg-white/5 px-3 py-2"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gojo-orange bg-gojo-orange text-[11px] font-bold text-white">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gojo-orange text-[11px] font-bold text-white">
             {(p.name ?? p.identity).slice(0, 2).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">

@@ -69,26 +69,28 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-xl px-6 py-16">
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+          <div className="g-mono text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
             Интересно!
           </div>
-          <h1 className="mt-2 font-serif text-[36px] font-bold leading-tight">
+          <h1 className="g-display mt-2 text-[36px] font-bold leading-tight text-gojo-ink">
             Похоже, твой уровень — примерно {result.level}
           </h1>
-          <p className="mt-2 text-sm text-gojo-ink-muted">
+          <p className="g-body mt-2 text-sm text-gojo-ink-muted">
             {result.correct} из {result.total} правильных ответов · это лишь предварительная оценка
           </p>
 
-          <div className="mt-8 rounded-md border-2 border-gojo-ink bg-gojo-surface p-6 shadow-[3px_3px_0_var(--color-gojo-ink)]">
-            <div className="font-serif text-[22px] font-bold">{blurb.headline}</div>
-            <p className="mt-2 text-[15px] leading-relaxed text-gojo-ink-soft">{blurb.body}</p>
+          <div className="g-card mt-8 p-6">
+            <div className="g-display text-[22px] font-bold text-gojo-ink">{blurb.headline}</div>
+            <p className="g-body mt-2 text-[15px] leading-relaxed text-gojo-ink-muted">
+              {blurb.body}
+            </p>
           </div>
 
-          <div className="mt-6 rounded-md border-2 border-dashed border-gojo-ink/30 bg-gojo-surface-2 p-5">
-            <p className="text-[14px] font-bold text-gojo-ink">
+          <div className="mt-6 rounded-xl border border-dashed border-black/15 bg-gojo-paper-2 p-5">
+            <p className="g-body text-[14px] font-bold text-gojo-ink">
               Теперь проведём бесплатную консультацию с преподавателем
             </p>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-gojo-ink-muted">
+            <p className="g-body mt-1.5 text-[13px] leading-relaxed text-gojo-ink-muted">
               Точный уровень и программу обучения преподаватель определит на живом занятии —
               квиз лишь ориентир, чтобы вам обоим было проще начать разговор.
             </p>
@@ -99,15 +101,11 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
               href="https://t.me/gojoedu"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-pop flex-1 rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-3 text-center text-sm font-bold text-white"
+              className="g-btn-primary flex-1 text-sm"
             >
               Записаться на консультацию →
             </a>
-            <Link
-              href="/lessons"
-              className="rounded-md border-2 border-gojo-ink bg-transparent px-5 py-3 text-center text-sm font-bold text-gojo-ink hover:bg-gojo-surface-2"
-              onClick={() => router.refresh()}
-            >
+            <Link href="/lessons" className="g-btn-secondary flex-1 text-sm" onClick={() => router.refresh()}>
               Посмотреть уроки
             </Link>
           </div>
@@ -119,7 +117,7 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
               setAnswers({});
               setResult(null);
             }}
-            className="mt-3 text-[12px] font-bold text-gojo-ink-muted hover:text-gojo-ink"
+            className="g-body mt-3 text-[12px] font-bold text-gojo-ink-muted hover:text-gojo-ink"
           >
             Пройти заново
           </button>
@@ -134,22 +132,24 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
   return (
     <main className="min-h-screen bg-gojo-paper">
       <div className="mx-auto max-w-xl px-6 py-16">
-        <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+        <div className="g-mono text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
           Квиз уровня · {index + 1} / {total}
         </div>
-        <h1 className="mt-2 font-serif text-[28px] font-bold leading-tight">
+        <h1 className="g-display mt-2 text-[28px] font-bold leading-tight text-gojo-ink">
           Прикинем твой уровень JLPT за 2 минуты
         </h1>
 
-        <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full border border-gojo-ink bg-gojo-surface-2">
+        <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-gojo-paper-2">
           <div
             className="h-full bg-gojo-orange transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        <div className="mt-8 rounded-md border-2 border-gojo-ink bg-gojo-surface p-6 shadow-[3px_3px_0_var(--color-gojo-ink)]">
-          <p className="font-serif text-[20px] font-bold leading-snug">{current.prompt}</p>
+        <div className="g-card mt-8 p-6">
+          <p className="g-display text-[20px] font-bold leading-snug text-gojo-ink">
+            {current.prompt}
+          </p>
           <div className="mt-5 space-y-2.5">
             {current.choices.map((choice, i) => (
               <button
@@ -157,7 +157,7 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
                 type="button"
                 disabled={pending}
                 onClick={() => pick(i)}
-                className="btn-pop block w-full rounded-md border-2 border-gojo-ink bg-gojo-surface-2 px-4 py-3 text-left text-[15px] font-bold text-gojo-ink hover:bg-gojo-orange-soft disabled:opacity-50"
+                className="g-body block w-full rounded-md border border-black/10 bg-gojo-paper px-4 py-3 text-left text-[15px] font-bold text-gojo-ink transition-all hover:border-gojo-orange hover:bg-gojo-orange-soft disabled:opacity-50"
               >
                 {choice}
               </button>
@@ -165,8 +165,9 @@ export function QuizClient({ questions }: { questions: QuizQuestionDto[] }) {
           </div>
         </div>
 
-        <p className="mt-6 text-[11px] text-gojo-ink-muted">
-          Не угадываешь — жми любой вариант. Это лишь ориентир: финальный уровень определит преподаватель на бесплатной консультации.
+        <p className="g-body mt-6 text-[11px] text-gojo-ink-muted">
+          Не угадываешь — жми любой вариант. Это лишь ориентир: финальный уровень определит
+          преподаватель на бесплатной консультации.
         </p>
       </div>
     </main>
