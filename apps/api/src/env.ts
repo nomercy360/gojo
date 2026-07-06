@@ -6,6 +6,7 @@ const schema = z.object({
   REDIS_URL: z.string().url().optional(),
   API_PORT: z.coerce.number().default(3001),
   API_ORIGIN: z.string().url().default("http://localhost:3001"),
+  WEB_ORIGIN: z.string().url().default("http://localhost:3000"),
   TRUSTED_ORIGINS: z.string().optional(),
   JWT_SECRET: z.string().min(16).default("dev-secret-change-me-in-production-please"),
   ALLOW_DEV_LOGIN: z
@@ -45,6 +46,8 @@ const schema = z.object({
   // Error monitoring. Unset = Sentry.init() no-ops (documented behavior),
   // so this is safe to ship before a Sentry project/DSN exists.
   SENTRY_DSN: z.string().optional(),
+  YOOKASSA_SHOP_ID: z.string().optional(),
+  YOOKASSA_SECRET_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);

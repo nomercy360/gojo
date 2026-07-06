@@ -1,5 +1,6 @@
 import type {
   AddLessonCardInput,
+  CheckoutResponseDto,
   FlashcardDto,
   HomeworkStatus,
   JlptLevel,
@@ -9,6 +10,8 @@ import type {
   LessonDto,
   LessonMaterialDto,
   LivekitTokenResponse,
+  PaymentPlanDto,
+  PaymentsMeDto,
   QuizQuestionDto,
   QuizResultDto,
   QuizSubmitInput,
@@ -253,4 +256,19 @@ export function trackTraining(body: TrackTrainingInput) {
 
 export function fetchTrainingTotals() {
   return apiFetch<TrainingTotalsDto>("/training/me");
+}
+
+export function fetchPaymentPlans() {
+  return apiFetch<PaymentPlanDto[]>("/payments/plans", { withAuth: false });
+}
+
+export function fetchMyPayments() {
+  return apiFetch<PaymentsMeDto>("/payments/me");
+}
+
+export function createCheckout(planId: string) {
+  return apiFetch<CheckoutResponseDto>("/payments/checkout", {
+    method: "POST",
+    body: JSON.stringify({ planId }),
+  });
 }

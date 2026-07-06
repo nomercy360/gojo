@@ -25,7 +25,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-04"
     },
@@ -38,7 +40,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-04"
     },
@@ -46,18 +50,18 @@
       "id": "R8",
       "title": "Оплата / подписка",
       "category": "payments",
-      "description": "BLOCKED 2026-07-06: стратегически входит в full-cycle roadmap, но реализация вынесена в R28 и зависит от выбора платёжного провайдера и правил тарифов/доступа.",
+      "description": "Готово 2026-07-06: выбран YooKassa. Добавлены payment tables, тарифы, checkout redirect, webhook payment.succeeded/payment.canceled, статус доступа студента и интеграция с booking eligibility.",
       "priority": "now",
-      "status": "blocked",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
       "steps": [
-        "Выбран платёжный провайдер",
-        "Пользователь может оформить подписку и оплатить",
-        "Статус подписки хранится и проверяется на доступ"
+        "YooKassa provider selected",
+        "Checkout redirect works through /payments",
+        "Payment status updates student access"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R3",
@@ -68,7 +72,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -98,7 +104,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "bilunar",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -161,7 +169,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -174,7 +184,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -187,7 +199,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -200,7 +214,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -213,7 +229,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -226,7 +244,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -239,7 +259,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -252,7 +274,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -266,7 +290,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -280,7 +306,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -294,7 +322,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -308,7 +338,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -322,7 +354,9 @@
       "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
-      "steps": ["done"],
+      "steps": [
+        "done"
+      ],
       "passes": true,
       "done_at": "2026-07-05"
     },
@@ -380,18 +414,18 @@
       "id": "R25",
       "title": "Booking eligibility: trial/paid access rules",
       "category": "booking",
-      "description": "Бронирование должно учитывать жизненный цикл: новый lead может получить только trial, активный платящий студент — регулярные уроки, unpaid/expired — видит CTA на оплату или контакт с админом. ЖДЁТ R28: схема доступа должна опираться на реальную форму subscription/payment данных, иначе придётся переделывать после выбора провайдера.",
+      "description": "Готово 2026-07-06: booking API теперь разрешает запись только student-пользователям с активным доступом, lesson credits или первым trial. При отсутствии доступа web action отправляет студента на /payments.",
       "priority": "next",
-      "status": "backlog",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Добавить типы уроков trial/regular/group/private",
-        "Ограничить booking API по роли, trialUsed и payment/subscription status",
-        "Показать понятные CTA: записаться на trial, оплатить, продлить, связаться"
+        "Student-only booking API",
+        "Trial/paid access rules via student_access",
+        "Payment CTA redirect on 402"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R26",
@@ -448,18 +482,18 @@
       "id": "R28",
       "title": "Payment/subscription integration",
       "category": "payments",
-      "description": "Реальная монетизация: тарифы/пакеты, checkout, webhooks, subscription/payment status, receipts and access gating. Блокер (выбор провайдера) решается вами напрямую, не зависит от внешней стороны — в отличие от R1/R4. RU-варианты: ЮKassa, CloudPayments. Приоритет поднят: R25/R29/R30 каскадно зависят от этого.",
+      "description": "Готово 2026-07-06: YooKassa интегрирована по официальному redirect payment flow: Basic Auth + Idempotence-Key, capture=true, return_url, webhook с проверкой текущего статуса платежа через GET /payments/{id}. Добавлены /payments/plans, /payments/me, /payments/checkout и /payments/yookassa/webhook.",
       "priority": "now",
-      "status": "blocked",
+      "status": "done",
       "owner": "maksim",
       "requested_by": "mkkksim",
       "steps": [
-        "Выбрать провайдера оплаты для РФ/международных карт",
-        "Добавить plans/packages и payment/subscription tables",
-        "Подключить checkout + webhooks + access gating"
+        "YooKassa selected",
+        "plans/payments/student_access schema",
+        "checkout + webhook + access gating"
       ],
-      "passes": false,
-      "done_at": null
+      "passes": true,
+      "done_at": "2026-07-06"
     },
     {
       "id": "R29",

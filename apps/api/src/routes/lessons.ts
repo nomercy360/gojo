@@ -3,6 +3,7 @@ import {
   homework,
   lessonMaterials,
   lessons,
+  studentAccess,
   trainingTotals,
   user as userTable,
 } from "@gojo/db";
@@ -205,6 +206,18 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
     throw new HTTPException(400, { message: "lesson is not bookable" });
   }
 
+  const [existing] = await db
+    .select()
+    .from(bookings)
+    .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, user.id)))
+    .limit(1);
+  if (existing) return c.json(existing, 200);
+
+  const accessUse = await resolveBookingAccess(user.id);
+  if (!accessUse.allowed) {
+    throw new HTTPException(402, { message: "payment required" });
+  }
+
   const [booking] = await db
     .insert(bookings)
     .values({ lessonId, studentId: user.id })
@@ -212,13 +225,55 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
     .returning();
 
   await materializeCardsForBooking(user.id, lessonId);
+  await consumeBookingAccess(user.id, accessUse.mode);
 
   if (booking) return c.json(booking, 201);
-
-  const [existing] = await db
-    .select()
-    .from(bookings)
-    .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, user.id)))
-    .limit(1);
-  return c.json(existing, 200);
+  throw new HTTPException(500, { message: "booking failed" });
 });
+
+type BookingAccessUse =
+  | { allowed: true; mode: "subscription" | "credit" | "trial" }
+  | { allowed: false };
+
+async function resolveBookingAccess(userId: string): Promise<BookingAccessUse> {
+  const [access] = await db
+    .select()
+    .from(studentAccess)
+    .where(eq(studentAccess.userId, userId))
+    .limit(1);
+  const now = Date.now();
+  if (access?.activeUntil && access.activeUntil.getTime() > now) {
+    return { allowed: true, mode: "subscription" };
+  }
+  if ((access?.lessonCredits ?? 0) > 0) {
+    return { allowed: true, mode: "credit" };
+  }
+  if (!access?.trialUsed) {
+    return { allowed: true, mode: "trial" };
+  }
+  return { allowed: false };
+}
+
+async function consumeBookingAccess(userId: string, mode: "subscription" | "credit" | "trial") {
+  const now = new Date();
+  if (mode === "subscription") return;
+  const [access] = await db
+    .select()
+    .from(studentAccess)
+    .where(eq(studentAccess.userId, userId))
+    .limit(1);
+  if (mode === "credit") {
+    await db
+      .update(studentAccess)
+      .set({ lessonCredits: Math.max((access?.lessonCredits ?? 0) - 1, 0), updatedAt: now })
+      .where(eq(studentAccess.userId, userId));
+    return;
+  }
+  await db
+    .insert(studentAccess)
+    .values({ userId, trialUsed: true, updatedAt: now })
+    .onConflictDoUpdate({
+      target: studentAccess.userId,
+      set: { trialUsed: true, updatedAt: now },
+    });
+}

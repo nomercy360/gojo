@@ -120,6 +120,12 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
                     Уроки
                   </Link>
                   <Link
+                    href="/payments"
+                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                  >
+                    Оплата
+                  </Link>
+                  <Link
                     href="/kana"
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                   >

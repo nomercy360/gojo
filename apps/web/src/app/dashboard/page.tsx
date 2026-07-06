@@ -126,6 +126,29 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
+        <div
+          className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-7 py-5"
+          style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+        >
+          <div>
+            <div
+              className="g-mono text-[11px] font-bold uppercase tracking-[0.16em]"
+              style={{ color: "#e8420a" }}
+            >
+              Доступ
+            </div>
+            <p className="g-body mt-1 text-[14px]" style={{ color: "#6b6b6b" }}>
+              Первый урок можно попробовать бесплатно. Для регулярных занятий подключи оплату.
+            </p>
+          </div>
+          <Link
+            href="/payments"
+            className="btn-pop rounded-md border-2 border-gojo-ink bg-gojo-orange px-5 py-2.5 text-sm font-bold text-white"
+          >
+            Оплата и доступ
+          </Link>
+        </div>
+
         {/* ── Progress ── */}
         <div
           className="mb-6 rounded-2xl bg-white p-7"
