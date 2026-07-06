@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema/index.ts";
@@ -201,6 +202,6 @@ export async function runSeed(dataDir: string): Promise<void> {
 }
 
 if (import.meta.main) {
-  const dataDir = new URL("../data", import.meta.url).pathname;
+  const dataDir = fileURLToPath(new URL("../data", import.meta.url));
   await runSeed(dataDir);
 }
