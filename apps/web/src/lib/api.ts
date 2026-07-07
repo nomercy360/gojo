@@ -342,6 +342,13 @@ export function fetchAdminSummary(): Promise<AdminSummaryDto> {
   return apiFetch("/admin/summary");
 }
 
+export function createStudent(body: { email: string; name: string; nickname?: string }) {
+  return apiFetch<{ ok: boolean; userId: string }>("/admin/students", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {
   return apiFetch(`/teacher/lessons/${lessonId}/students`);
 }

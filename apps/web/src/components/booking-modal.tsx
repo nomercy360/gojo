@@ -147,21 +147,8 @@ export function BookingModal({ open, onClose }: { open: boolean; onClose: () => 
               первого урока.
               <br />
               <br />
-              Создай аккаунт с тем же email, чтобы заявка привязалась к личному кабинету.
+              Доступ в личный кабинет пришлём на email после того, как договоримся о времени.
             </p>
-            <a
-              href="/login?mode=signup&intent=booking"
-              className="form-submit"
-              style={{
-                display: "inline-block",
-                textAlign: "center",
-                textDecoration: "none",
-                marginTop: "18px",
-                borderRadius: "8px",
-              }}
-            >
-              Создать аккаунт
-            </a>
             <a
               href="https://t.me/gojoedu"
               target="_blank"

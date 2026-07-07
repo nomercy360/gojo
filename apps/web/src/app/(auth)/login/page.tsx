@@ -2,26 +2,23 @@
 
 import { authClient } from "@/lib/auth-client";
 import { homePathForUser } from "@/lib/roles";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-
-type Mode = "signin" | "signup";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
 
+// Accounts are admin-provisioned only (see /admin/students) — there is no
+// public self-signup. New users get an activation email; this page is
+// sign-in only, with a link to /forgot-password for both "I forgot my
+// password" and "I need to set my first password" (same flow, see
+// apps/api/src/auth.ts sendResetPassword).
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("signin");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
-      setMode("signup");
-    }
-  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,26 +28,12 @@ export default function LoginPage() {
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
-    const nickname = String(form.get("nickname") ?? "").trim() || undefined;
-    // Public sign-up always creates a student; teachers are provisioned separately.
-    const role = "student" as const;
 
     try {
-      if (mode === "signup") {
-        const res = await authClient.signUp.email({
-          email,
-          password,
-          name: nickname || email.split("@")[0]!,
-          // biome-ignore lint/suspicious/noExplicitAny: additional fields
-          ...({ nickname, role } as any),
-        });
-        if (res.error) throw new Error(res.error.message ?? "Signup failed");
-        toast.success("Аккаунт создан");
-      } else {
-        const res = await authClient.signIn.email({ email, password });
-        if (res.error) throw new Error(res.error.message ?? "Invalid credentials");
-        toast.success("С возвращением!");
-      }
+      const res = await authClient.signIn.email({ email, password });
+      if (res.error) throw new Error(res.error.message ?? "Invalid credentials");
+      toast.success("С возвращением!");
+
       const authUser = await authClient.getSession();
       const sessionUser = authUser.data?.user;
       const id = sessionUser?.id;
@@ -78,41 +61,7 @@ export default function LoginPage() {
         <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
           Gojo Learn
         </div>
-        <h1 className="mt-2 font-serif text-[28px] font-bold">
-          {mode === "signin" ? "Войти" : "Регистрация"}
-        </h1>
-
-        {/* Tab switcher */}
-        <div className="mt-6 flex gap-1 rounded-md border border-black/10 bg-gojo-paper p-1">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("signin");
-              setError(null);
-            }}
-            className={`flex-1 rounded px-3 py-1.5 text-[11px] font-bold ${
-              mode === "signin"
-                ? "bg-gojo-ink text-white"
-                : "text-gojo-ink-muted hover:text-gojo-ink"
-            }`}
-          >
-            Вход
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("signup");
-              setError(null);
-            }}
-            className={`flex-1 rounded px-3 py-1.5 text-[11px] font-bold ${
-              mode === "signup"
-                ? "bg-gojo-ink text-white"
-                : "text-gojo-ink-muted hover:text-gojo-ink"
-            }`}
-          >
-            Регистрация
-          </button>
-        </div>
+        <h1 className="mt-2 font-serif text-[28px] font-bold">Войти</h1>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <Field label="Email" name="email" type="email" placeholder="you@example.com" required />
@@ -120,13 +69,9 @@ export default function LoginPage() {
             label="Пароль"
             name="password"
             type="password"
-            placeholder="минимум 8 символов"
-            minLength={8}
+            placeholder="Пароль"
             required
           />
-          {mode === "signup" ? (
-            <Field label="Никнейм" name="nickname" placeholder="Maksim" />
-          ) : null}
 
           {error ? (
             <div className="rounded-md border border-gojo-error/40 bg-gojo-error-soft px-4 py-3 text-sm font-bold text-gojo-error">
@@ -135,12 +80,17 @@ export default function LoginPage() {
           ) : null}
 
           <button type="submit" disabled={pending} className="g-btn-primary w-full text-sm">
-            {pending ? "..." : mode === "signin" ? "Войти" : "Создать аккаунт"}
+            {pending ? "..." : "Войти"}
           </button>
         </form>
 
-        <p className="mt-6 text-[11px] text-gojo-ink-muted">
-          Регистрация нужна для записи на уроки и видеосвязи.
+        <p className="mt-6 text-[13px] text-gojo-ink-muted">
+          <Link href="/forgot-password" className="font-bold text-gojo-orange hover:underline">
+            Забыли пароль или впервые здесь?
+          </Link>
+        </p>
+        <p className="mt-2 text-[11px] text-gojo-ink-muted">
+          Аккаунт создаётся администратором после консультации.
         </p>
       </div>
     </main>
@@ -189,14 +139,12 @@ function Field({
   type = "text",
   placeholder,
   required,
-  minLength,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
   required?: boolean;
-  minLength?: number;
 }) {
   return (
     <div>
@@ -209,7 +157,6 @@ function Field({
         type={type}
         placeholder={placeholder}
         required={required}
-        minLength={minLength}
         className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
       />
     </div>

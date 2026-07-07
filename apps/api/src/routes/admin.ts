@@ -7,11 +7,15 @@ import {
   payments,
   user as userTable,
 } from "@gojo/db";
+import { createStudentInput } from "@gojo/shared";
+import { zValidator } from "@hono/zod-validator";
 import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
+import { auth } from "../auth.ts";
 import { db } from "../db.ts";
+import { env } from "../env.ts";
 
 export const adminRoute = new Hono<AuthContext>();
 
@@ -140,4 +144,37 @@ adminRoute.get("/summary", async (c) => {
       createdAt: n.createdAt.toISOString(),
     })),
   });
+});
+
+// Accounts are admin-provisioned only (no public self-signup) — this is the
+// one path that creates a student login. The admin never sets or sees a
+// password: signUpEmail gets a throwaway random one, then
+// requestPasswordReset immediately emails an activation link through the
+// same mechanism a normal "forgot password" uses (see auth.ts
+// sendResetPassword, which branches its copy on emailVerified).
+adminRoute.post("/students", zValidator("json", createStudentInput), async (c) => {
+  const admin = c.get("user")!;
+  if (admin.role !== "admin") throw new HTTPException(403, { message: "admin access required" });
+
+  const { email, name, nickname } = c.req.valid("json");
+  const throwawayPassword = crypto.randomUUID() + crypto.randomUUID();
+
+  const created = await auth.api.signUpEmail({
+    body: {
+      email,
+      password: throwawayPassword,
+      name,
+      // biome-ignore lint/suspicious/noExplicitAny: additional fields beyond the base schema
+      ...({ nickname, role: "student" } as any),
+    },
+  });
+
+  await auth.api.requestPasswordReset({
+    body: {
+      email,
+      redirectTo: `${env.WEB_ORIGIN}/reset-password`,
+    },
+  });
+
+  return c.json({ ok: true, userId: created.user.id }, 201);
 });

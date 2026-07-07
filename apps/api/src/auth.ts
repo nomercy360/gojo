@@ -25,15 +25,29 @@ export const auth = betterAuth({
     // locking real signups out if mail lands in spam or bounces.
     // Best-effort — an SMTP hiccup (or SMTP not configured yet) must not
     // break the reset-password request itself.
+    //
+    // This same flow doubles as account activation for admin-provisioned
+    // accounts (see POST /admin/students): those are created with
+    // emailVerified: false and a throwaway password, so the very first
+    // "reset" a fresh account gets is really "set your first password" —
+    // branch the copy on that instead of building a second token/email path.
     sendResetPassword: async ({ user, url }) => {
+      const isFirstActivation = !user.emailVerified;
       try {
         await sendEmail(
           user.email,
-          "Восстановление пароля — Gojo Learn",
-          `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
-           <p>Кто-то (надеемся, ты) запросил сброс пароля для аккаунта Gojo Learn.</p>
-           <p><a href="${url}">Сбросить пароль</a></p>
-           <p>Если это был не ты — просто проигнорируй это письмо.</p>`,
+          isFirstActivation
+            ? "Активируй аккаунт — Gojo Learn"
+            : "Восстановление пароля — Gojo Learn",
+          isFirstActivation
+            ? `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
+               <p>Для тебя создан аккаунт в Gojo Learn. Установи пароль, чтобы войти:</p>
+               <p><a href="${url}">Установить пароль</a></p>
+               <p>Если ты не ожидал(а) это письмо — просто проигнорируй его.</p>`
+            : `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
+               <p>Кто-то (надеемся, ты) запросил сброс пароля для аккаунта Gojo Learn.</p>
+               <p><a href="${url}">Сбросить пароль</a></p>
+               <p>Если это был не ты — просто проигнорируй это письмо.</p>`,
         );
       } catch (err) {
         console.error("sendResetPassword email failed:", err);
