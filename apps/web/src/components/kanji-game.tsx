@@ -215,7 +215,7 @@ function SetupScreen({ onStart }: { onStart: (difficulty: Difficulty) => void })
             letterSpacing: "0.01em",
           }}
         >
-          Начать →
+          Начать
         </button>
       </div>
     </div>

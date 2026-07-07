@@ -265,7 +265,7 @@ export function Landing() {
               openModal();
             }}
           >
-            Попробовать бесплатно →
+            Попробовать бесплатно
           </a>
           <button
             type="button"
@@ -334,14 +334,14 @@ export function Landing() {
                 openModal();
               }}
             >
-              Начать учить японский →
+              Начать учить японский
             </a>
             <a href="/onboarding/quiz" className="btn-secondary-dark">
               Пройти тест уровня
             </a>
           </div>
           <a href="/kana" className="hero-trainer-link">
-            🎮 Тренажёр →
+            🎮 Тренажёр
           </a>
         </div>
 
@@ -515,7 +515,7 @@ export function Landing() {
               openModal();
             }}
           >
-            Начать по-другому →
+            Начать по-другому
           </a>
         </div>
       </section>
@@ -540,7 +540,7 @@ export function Landing() {
               <div className="how-card-text">
                 Короткий тест — 10 минут, и мы знаем с чего начать.
               </div>
-              <div className="how-card-cta">Пройти тест →</div>
+              <div className="how-card-cta">Пройти тест</div>
             </div>
           </Link>
 
@@ -786,7 +786,7 @@ export function Landing() {
                 openModal();
               }}
             >
-              Начать индивидуально →
+              Начать индивидуально
             </a>
           </div>
 
@@ -827,7 +827,7 @@ export function Landing() {
                 openModal();
               }}
             >
-              Записаться в группу →
+              Записаться в группу
             </a>
           </div>
 
@@ -876,7 +876,7 @@ export function Landing() {
                 openModal();
               }}
             >
-              Записаться на бесплатный урок →
+              Записаться на бесплатный урок
             </a>
           </div>
         </div>
@@ -897,7 +897,7 @@ export function Landing() {
               напиши, ответим лично.
             </p>
             <a href="mailto:ruslan@gojolearn.ru" className="faq-aside-link">
-              Написать нам →
+              Написать нам
             </a>
           </aside>
 
@@ -1040,7 +1040,7 @@ export function Landing() {
             openModal();
           }}
         >
-          Первый урок — бесплатно →
+          Первый урок — бесплатно
         </a>
 
         <div
@@ -1209,7 +1209,7 @@ export function Landing() {
                 <input className="form-input" type="text" placeholder="@username" id="g-tg" />
               </div>
               <button type="button" className="form-submit" onClick={submitGuideForm}>
-                Получить гайд →
+                Получить гайд
               </button>
               <p className="form-note">
                 Никакого спама. Только гайд и, если захочешь, новости о старте школы.
@@ -1332,7 +1332,7 @@ export function Landing() {
                 </select>
               </div>
               <button type="button" className="form-submit" onClick={submitForm}>
-                Записаться на бесплатный урок →
+                Записаться на бесплатный урок
               </button>
               <p className="form-note">
                 Нажимая кнопку, ты соглашаешься с политикой конфиденциальности. Никакого спама —

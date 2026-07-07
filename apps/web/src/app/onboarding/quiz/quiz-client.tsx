@@ -157,7 +157,7 @@ export function QuizClient({
                   className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
                 />
                 <button type="submit" disabled={leadPending} className="g-btn-primary text-sm">
-                  {leadPending ? "Отправляем..." : "Получить подробный результат →"}
+                  {leadPending ? "Отправляем..." : "Получить подробный результат"}
                 </button>
               </form>
             )}
@@ -170,7 +170,7 @@ export function QuizClient({
               rel="noopener noreferrer"
               className="g-btn-primary flex-1 text-sm"
             >
-              Записаться на консультацию →
+              Записаться на консультацию
             </a>
             {isLoggedIn ? (
               <Link
