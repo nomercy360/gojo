@@ -48,12 +48,14 @@ export default async function AdminPage() {
             {summary.leadPipeline.map((row) => (
               <Row key={row.status} left={row.status} right={String(row.count)} />
             ))}
-            <Link
-              href="/teacher/leads"
-              className="mt-4 inline-block text-sm font-bold text-gojo-orange"
-            >
-              Открыть заявки ▸
-            </Link>
+            <div className="mt-4 flex gap-4">
+              <Link href="/teacher/leads" className="text-sm font-bold text-gojo-orange">
+                Открыть заявки
+              </Link>
+              <Link href="/admin/students" className="text-sm font-bold text-gojo-orange">
+                Создать аккаунт студента
+              </Link>
+            </div>
           </Panel>
 
           <Panel title="Retention risks">

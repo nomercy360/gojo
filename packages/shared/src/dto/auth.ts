@@ -28,6 +28,15 @@ export const loginInput = z.object({
 });
 export type LoginInput = z.infer<typeof loginInput>;
 
+/** Admin-provisioned student account — no password from the admin; the
+ * student sets their own via the activation email (see POST /admin/students). */
+export const createStudentInput = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(200),
+  nickname: z.string().min(1).max(40).optional(),
+});
+export type CreateStudentInput = z.infer<typeof createStudentInput>;
+
 /**
  * Telegram Login Widget callback payload.
  * See: https://core.telegram.org/widgets/login

@@ -13,8 +13,11 @@ export const leads = pgTable("leads", {
   kind: text().notNull(), // 'booking' | 'guide'
   status: text().notNull().default("new"),
   name: text().notNull(),
-  email: text().notNull(),
-  contact: text(), // telegram / phone (booking form)
+  // Nullable — booking leads now require a phone (in `contact`) but email is
+  // optional; only the "guide" kind still requires email for PDF delivery
+  // (enforced client-side).
+  email: text(),
+  contact: text(), // phone (booking form, now required client-side) / telegram
   level: text(), // self-reported level (booking form)
   goal: text(), // goal (booking form)
   notes: text(),
