@@ -85,6 +85,13 @@
       "when": 1783342148392,
       "tag": "0011_cold_slyde",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783433692305,
+      "tag": "0012_curved_the_watchers",
+      "breakpoints": true
     }
   ]
 }

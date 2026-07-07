@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { PhoneField } from "./phone-field";
 
 const PHRASES = [
   "смотреть мангу и аниме в оригинале.",
@@ -97,6 +98,7 @@ export function Landing() {
   const [active, setActive] = useState(0);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
+  const [bookingPhone, setBookingPhone] = useState<string | undefined>();
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideSubmitted, setGuideSubmitted] = useState(false);
   const [intercomOpen, setIntercomOpen] = useState(false);
@@ -154,8 +156,8 @@ export function Landing() {
   };
 
   const submitForm = async () => {
-    if (!readValue("f-name") || !readValue("f-email")) {
-      toast.error("Пожалуйста, заполни имя и email");
+    if (!readValue("f-name") || !bookingPhone || !readValue("f-goal")) {
+      toast.error("Пожалуйста, заполни имя, телефон и цель");
       return;
     }
     try {
@@ -165,14 +167,14 @@ export function Landing() {
         body: JSON.stringify({
           kind: "booking",
           name: readValue("f-name"),
-          email: readValue("f-email"),
-          contact: readValue("f-contact") || undefined,
-          level: readValue("f-level") || undefined,
-          goal: readValue("f-goal") || undefined,
+          email: readValue("f-email") || undefined,
+          contact: bookingPhone,
+          goal: readValue("f-goal"),
         }),
       });
       if (!res.ok) throw new Error();
-      localStorage.setItem(PENDING_LEAD_KEY, readValue("f-email"));
+      const email = readValue("f-email");
+      if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
       setBookingSubmitted(true);
     } catch {
       toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
@@ -336,12 +338,12 @@ export function Landing() {
             >
               Начать учить японский
             </a>
-            <a href="/onboarding/quiz" className="btn-secondary-dark">
-              Пройти тест уровня
+            <a href="/kana" className="btn-secondary-dark">
+              ИИ тренажер
             </a>
           </div>
-          <a href="/kana" className="hero-trainer-link">
-            🎮 Тренажёр
+          <a href="/onboarding/quiz" className="hero-trainer-link">
+            🎯 Или пройди короткий тест уровня — без регистрации
           </a>
         </div>
 
@@ -896,7 +898,12 @@ export function Landing() {
               Школа ещё запускается, и мы стараемся отвечать на всё открыто. Не нашёл ответа —
               напиши, ответим лично.
             </p>
-            <a href="mailto:ruslan@gojolearn.ru" className="faq-aside-link">
+            <a
+              href="https://t.me/gojoedu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="faq-aside-link"
+            >
               Написать нам
             </a>
           </aside>
@@ -1146,11 +1153,13 @@ export function Landing() {
           <a href="#" className="footer-link">
             Политика конфиденциальности
           </a>
-          <a href="mailto:ruslan@gojolearn.ru" className="footer-link">
-            ruslan@gojolearn.ru
-          </a>
-          <a href="mailto:tam@gojolearn.ru" className="footer-link">
-            tam@gojolearn.ru
+          <a
+            href="https://t.me/gojoedu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            Telegram
           </a>
         </div>
       </footer>
@@ -1271,53 +1280,22 @@ export function Landing() {
             </p>
 
             <div className="modal-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="f-name">
-                    Имя
-                  </label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    placeholder="Как тебя зовут?"
-                    id="f-name"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="f-email">
-                    Email
-                  </label>
-                  <input
-                    className="form-input"
-                    type="email"
-                    placeholder="your@email.com"
-                    id="f-email"
-                  />
-                </div>
-              </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="f-contact">
-                  Telegram или телефон
+                <label className="form-label" htmlFor="f-name">
+                  Имя
                 </label>
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="@username или +7 999 ..."
-                  id="f-contact"
+                  placeholder="Как тебя зовут?"
+                  id="f-name"
                 />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="f-level">
-                  Твой уровень японского
+                <label className="form-label" htmlFor="f-phone">
+                  Телефон
                 </label>
-                <select className="form-select form-input" id="f-level">
-                  <option value="">Выбери вариант</option>
-                  <option>Полный ноль — начинаю с нуля</option>
-                  <option>Знаю хирагану / катакану</option>
-                  <option>N5 — базовый уровень</option>
-                  <option>N4 — элементарный</option>
-                  <option>N3 и выше</option>
-                </select>
+                <PhoneField id="f-phone" value={bookingPhone} onChange={setBookingPhone} />
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="f-goal">
@@ -1330,6 +1308,17 @@ export function Landing() {
                   <option>Работать с японскими партнёрами</option>
                   <option>Просто интересно / хочу попробовать</option>
                 </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="f-email">
+                  Email <span style={{ fontWeight: 400, opacity: 0.6 }}>(необязательно)</span>
+                </label>
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="your@email.com"
+                  id="f-email"
+                />
               </div>
               <button type="button" className="form-submit" onClick={submitForm}>
                 Записаться на бесплатный урок

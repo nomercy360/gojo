@@ -242,7 +242,7 @@ export type TeacherLeadDto = {
   kind: string;
   status: string;
   name: string;
-  email: string;
+  email: string | null;
   contact: string | null;
   level: string | null;
   goal: string | null;

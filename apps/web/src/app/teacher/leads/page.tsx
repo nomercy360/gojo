@@ -115,8 +115,7 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
           </div>
           <h2 className="mt-2 font-serif text-[24px] font-bold">{lead.name}</h2>
           <p className="mt-1 text-sm text-gojo-ink-muted">
-            {lead.email}
-            {lead.contact ? ` · ${lead.contact}` : ""}
+            {[lead.email, lead.contact].filter(Boolean).join(" · ") || "Без контактов"}
           </p>
           <p className="mt-2 text-sm text-gojo-ink-soft">
             {[lead.level, lead.goal].filter(Boolean).join(" · ") || "Без деталей"}
