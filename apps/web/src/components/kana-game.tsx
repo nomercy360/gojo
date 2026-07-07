@@ -414,7 +414,7 @@ function SetupScreen({ onStart }: { onStart: (mode: SetupMode, dir: Direction) =
             e.currentTarget.style.opacity = "1";
           }}
         >
-          Начать →
+          Начать
         </button>
       </div>
     </div>

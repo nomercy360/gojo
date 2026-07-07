@@ -188,7 +188,7 @@ export default async function DashboardPage() {
                   rel="noopener noreferrer"
                   className="g-btn-primary text-sm"
                 >
-                  Записаться на консультацию →
+                  Записаться на консультацию
                 </a>
                 <Link href="/lessons" className="g-btn-secondary text-sm">
                   Посмотреть уроки
@@ -310,7 +310,7 @@ export default async function DashboardPage() {
             rel="noopener noreferrer"
             className="g-btn-primary shrink-0 text-[13px]"
           >
-            Telegram →
+            Telegram
           </a>
         </div>
       </div>
