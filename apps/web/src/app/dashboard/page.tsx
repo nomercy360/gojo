@@ -175,16 +175,21 @@ export default async function DashboardPage() {
           ) : (
             <div className="mt-5 rounded-xl bg-gojo-paper p-5">
               <div className="g-display text-[22px] font-extrabold text-gojo-ink">
-                Определи уровень и запишись на первый урок
+                Запишись на первый бесплатный урок
               </div>
               <p className="g-body mt-2 max-w-2xl text-[13px] text-gojo-ink-muted">
                 Здесь появятся часы практики, уроки и домашние задания после реальной активности.
-                Пока лучше начать с короткого теста или бесплатной консультации.
+                Преподаватель определит уровень на бесплатной консультации.
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Link href="/onboarding/quiz" className="g-btn-primary text-sm">
-                  Пройти тест уровня →
-                </Link>
+                <a
+                  href="https://t.me/gojoedu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="g-btn-primary text-sm"
+                >
+                  Записаться на консультацию →
+                </a>
                 <Link href="/lessons" className="g-btn-secondary text-sm">
                   Посмотреть уроки
                 </Link>
@@ -221,12 +226,6 @@ export default async function DashboardPage() {
                   Предварительная оценка по квизу. Финальный уровень выставит преподаватель на
                   бесплатной консультации.
                 </p>
-                <Link
-                  href="/onboarding/quiz"
-                  className="g-body mt-3 inline-block text-[12px] font-bold text-gojo-orange hover:underline"
-                >
-                  Пройти квиз ещё раз →
-                </Link>
               </>
             ) : (
               <>
@@ -234,14 +233,8 @@ export default async function DashboardPage() {
                   Пока не определён
                 </div>
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  Пройди короткий квиз или запишись на бесплатную консультацию с преподавателем.
+                  Уровень выставит преподаватель на бесплатной консультации.
                 </p>
-                <Link
-                  href="/onboarding/quiz"
-                  className="g-btn-secondary mt-4 inline-block text-[13px]"
-                >
-                  Пройти квиз уровня →
-                </Link>
               </>
             )}
 
