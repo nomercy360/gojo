@@ -429,12 +429,14 @@ function SummaryScreen({
   mistakes,
   onRetryMistakes,
   onRestart,
+  isLoggedIn,
 }: {
   correct: number;
   total: number;
   mistakes: Kana[];
   onRetryMistakes: () => void;
   onRestart: () => void;
+  isLoggedIn: boolean;
 }) {
   const pct = Math.round((correct / total) * 100);
   const rank =
@@ -616,21 +618,43 @@ function SummaryScreen({
           >
             Начать заново
           </button>
-          <a
-            href="/login?mode=signup"
-            style={{
-              padding: "14px",
-              borderRadius: 10,
-              background: C.ink,
-              color: C.white,
-              textDecoration: "none",
-              fontFamily: "var(--font-manrope), system-ui, sans-serif",
-              fontSize: 14,
-              fontWeight: 800,
-            }}
-          >
-            Сохранить прогресс в аккаунте
-          </a>
+          {!isLoggedIn && (
+            <>
+              <a
+                href="/login?mode=signup"
+                style={{
+                  padding: "14px",
+                  borderRadius: 10,
+                  background: C.ink,
+                  color: C.white,
+                  textDecoration: "none",
+                  fontFamily: "var(--font-manrope), system-ui, sans-serif",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  textAlign: "center",
+                }}
+              >
+                Зарегистрироваться и начать полноценное обучение
+              </a>
+              <a
+                href="/login"
+                style={{
+                  padding: "14px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(0,0,0,0.1)",
+                  background: "transparent",
+                  color: C.ink,
+                  textDecoration: "none",
+                  textAlign: "center",
+                  fontFamily: "var(--font-manrope), system-ui, sans-serif",
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                Уже есть аккаунт — войти и сохранить баллы
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -639,7 +663,7 @@ function SummaryScreen({
 
 // ── Main Game ─────────────────────────────────────────────────────────────────
 
-export function KanaGame() {
+export function KanaGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   useTrainingHeartbeat("kana");
   const [phase, setPhase] = useState<Phase>("setup");
   const [setupMode, setSetupMode] = useState<SetupMode>("hiragana");
@@ -731,6 +755,7 @@ export function KanaGame() {
         mistakes={mistakes}
         onRetryMistakes={() => startGame(setupMode, direction, shuffle(mistakes))}
         onRestart={() => setPhase("setup")}
+        isLoggedIn={isLoggedIn}
       />
     );
   if (!question) return null;

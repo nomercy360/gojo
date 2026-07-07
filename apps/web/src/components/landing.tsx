@@ -251,6 +251,9 @@ export function Landing() {
           <a href="/kana" className="nav-link">
             Тренажёр
           </a>
+          <a href="/onboarding/quiz" className="nav-link">
+            Квиз уровня
+          </a>
           <a href="/dashboard" className="nav-link">
             Личный кабинет
           </a>
@@ -288,6 +291,9 @@ export function Landing() {
           </a>
           <a href="/kana" onClick={() => setNavOpen(false)}>
             Тренажёр
+          </a>
+          <a href="/onboarding/quiz" onClick={() => setNavOpen(false)}>
+            Квиз уровня
           </a>
         </div>
       </nav>

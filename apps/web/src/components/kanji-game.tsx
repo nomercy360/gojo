@@ -228,12 +228,14 @@ function SummaryScreen({
   mistakes,
   onRetryMistakes,
   onRestart,
+  isLoggedIn,
 }: {
   correct: number;
   total: number;
   mistakes: KanjiDto[];
   onRetryMistakes: () => void;
   onRestart: () => void;
+  isLoggedIn: boolean;
 }) {
   const pct = Math.round((correct / total) * 100);
 
@@ -380,22 +382,43 @@ function SummaryScreen({
           >
             Начать заново
           </button>
-          <a
-            href="/login?mode=signup"
-            style={{
-              padding: "14px",
-              borderRadius: 10,
-              background: C.ink,
-              color: C.white,
-              textAlign: "center",
-              textDecoration: "none",
-              fontFamily: "var(--font-manrope), system-ui, sans-serif",
-              fontSize: 14,
-              fontWeight: 800,
-            }}
-          >
-            Сохранить прогресс в аккаунте
-          </a>
+          {!isLoggedIn && (
+            <>
+              <a
+                href="/login?mode=signup"
+                style={{
+                  padding: "14px",
+                  borderRadius: 10,
+                  background: C.ink,
+                  color: C.white,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  fontFamily: "var(--font-manrope), system-ui, sans-serif",
+                  fontSize: 14,
+                  fontWeight: 800,
+                }}
+              >
+                Зарегистрироваться и начать полноценное обучение
+              </a>
+              <a
+                href="/login"
+                style={{
+                  padding: "14px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(0,0,0,0.1)",
+                  background: "transparent",
+                  color: C.ink,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  fontFamily: "var(--font-manrope), system-ui, sans-serif",
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                Уже есть аккаунт — войти и сохранить баллы
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -415,7 +438,7 @@ function buildQuestions(pool: KanjiDto[], rounds: KanjiDto[]): Question[] {
   });
 }
 
-export function KanjiGame() {
+export function KanjiGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [phase, setPhase] = useState<Phase>("setup");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [pool, setPool] = useState<KanjiDto[]>([]);
@@ -547,6 +570,7 @@ export function KanjiGame() {
         mistakes={mistakes}
         onRetryMistakes={() => start(difficulty, shuffle(mistakes))}
         onRestart={() => setPhase("setup")}
+        isLoggedIn={isLoggedIn}
       />
     );
 
