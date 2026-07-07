@@ -44,7 +44,7 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
           ? "border-b border-white/10 bg-[rgba(20,20,20,0.75)] backdrop-blur-md"
           : "border-b border-transparent bg-transparent"
       }`
-    : "border-b-2 border-gojo-ink bg-gojo-paper";
+    : "border-b border-black/10 bg-gojo-paper";
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
   const teacherUser = isTeacherUser(user);

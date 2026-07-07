@@ -20,7 +20,7 @@ export type QuizSubmitInput = z.infer<typeof quizSubmitInput>;
 export const quizLeadInput = quizSubmitInput.extend({
   name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(200),
-  contact: z.string().trim().max(200).optional(),
+  contact: z.string().trim().min(1).max(200),
 });
 export type QuizLeadInput = z.infer<typeof quizLeadInput>;
 

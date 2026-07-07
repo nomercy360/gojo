@@ -242,7 +242,7 @@ export type TeacherLeadDto = {
   kind: string;
   status: string;
   name: string;
-  email: string;
+  email: string | null;
   contact: string | null;
   level: string | null;
   goal: string | null;
@@ -340,6 +340,13 @@ export function fetchTeacherStudentProfile(studentId: string): Promise<TeacherSt
 
 export function fetchAdminSummary(): Promise<AdminSummaryDto> {
   return apiFetch("/admin/summary");
+}
+
+export function createStudent(body: { email: string; name: string; nickname?: string }) {
+  return apiFetch<{ ok: boolean; userId: string }>("/admin/students", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {

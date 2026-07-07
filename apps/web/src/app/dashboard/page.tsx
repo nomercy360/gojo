@@ -110,18 +110,18 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {/* ── Access / payment banner ── */}
+        {/* ── Library ── */}
         <div className="g-card mb-6 flex flex-wrap items-center justify-between gap-4 px-7 py-5">
           <div>
             <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
-              Доступ
+              Библиотека
             </div>
             <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
-              Первый урок можно попробовать бесплатно. Для регулярных занятий подключи оплату.
+              Видеоуроки и материалы появятся здесь после первых занятий.
             </p>
           </div>
-          <Link href="/payments" className="g-btn-primary text-sm">
-            Оплата и доступ
+          <Link href="/payments" className="g-btn-secondary text-sm">
+            Оплата
           </Link>
         </div>
 
@@ -298,10 +298,10 @@ export default async function DashboardPage() {
         <div className="g-card mt-4 flex items-center justify-between px-7 py-5">
           <div>
             <div className="g-display text-[15px] font-bold text-gojo-ink">
-              Связаться с учителем
+              Связаться с нами
             </div>
             <div className="g-body mt-0.5 text-[13px] text-gojo-ink-muted">
-              Руслан · вопросы по обучению, материалы, индивидуальный план
+              Вопросы по обучению, материалы, индивидуальный план
             </div>
           </div>
           <a

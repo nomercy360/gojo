@@ -203,6 +203,38 @@ h4 {
   background: rgba(232, 66, 10, 0.04);
 }
 
+/* react-phone-number-input — restyled to match the app's soft input look.
+ * Not scoped under .landing-root since it's shared with the app-side quiz
+ * lead form too. */
+.gojo-phone-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--color-gojo-surface);
+}
+.gojo-phone-field:focus-within {
+  outline: 2px solid var(--color-gojo-orange-soft);
+  outline-offset: 2px;
+}
+.gojo-phone-field .PhoneInputCountry {
+  gap: 6px;
+}
+.gojo-phone-field .PhoneInputCountrySelectArrow {
+  opacity: 0.5;
+}
+.gojo-phone-field .PhoneInputInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 12px 0;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--color-gojo-ink);
+}
+
 /* ===================================================================== *
  * Landing-page styles (v14 — ported 1:1 from manager prototype gojo_v14).
  *
@@ -1083,8 +1115,12 @@ html:has(.landing-root) {
   display: block;
 }
 .landing-root .section-mission:not(.section-mission-alt) .mteam-photo {
-  margin-left: 10px;
+  width: 86px;
+  height: 110px;
+  object-fit: contain;
   object-position: center top;
+  align-self: center;
+  margin: 6px 8px;
 }
 .landing-root .section-mission-alt .mteam-photo {
   width: 86px;
@@ -1319,7 +1355,7 @@ html:has(.landing-root) {
 }
 /* ───── CTA ───── */
 .landing-root .section-cta {
-  background: var(--ink);
+  background: #2b1710;
   padding-top: 100px;
   padding-bottom: 100px;
   text-align: center;
@@ -1980,7 +2016,7 @@ html:has(.landing-root) {
   max-width: 520px;
   width: 100%;
   position: relative;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 6px 6px 0 var(--orange);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   animation: modal-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes modal-in {

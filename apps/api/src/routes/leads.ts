@@ -10,7 +10,9 @@ import { notifyLead } from "../lead-notifications.ts";
 const leadInput = z.object({
   kind: z.enum(["booking", "guide"]).default("booking"),
   name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(200),
+  // Required for "guide" (delivery address) but optional for "booking" —
+  // enforced client-side per kind rather than split into two schemas.
+  email: z.string().trim().email().max(200).optional(),
   contact: z.string().trim().max(200).optional(),
   level: z.string().trim().max(200).optional(),
   goal: z.string().trim().max(500).optional(),
