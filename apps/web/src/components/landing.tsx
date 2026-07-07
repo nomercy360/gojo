@@ -340,8 +340,8 @@ export function Landing() {
               Пройти тест уровня
             </a>
           </div>
-          <a href="/onboarding/quiz" className="hero-trainer-link">
-            🎯 Или пройди короткий тест уровня — без регистрации →
+          <a href="/kana" className="hero-trainer-link">
+            🎮 Тренажёр →
           </a>
         </div>
 
