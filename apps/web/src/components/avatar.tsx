@@ -47,7 +47,7 @@ export function Avatar({
         alt={preset.label}
         width={size}
         height={size}
-        className="shrink-0 rounded-full border-2 border-gojo-ink bg-gojo-orange object-cover"
+        className="shrink-0 rounded-full bg-gojo-orange object-cover"
         style={style}
       />
     );
@@ -60,7 +60,7 @@ export function Avatar({
         alt={fallback ?? "Avatar"}
         width={size}
         height={size}
-        className="shrink-0 rounded-full border-2 border-gojo-ink object-cover"
+        className="shrink-0 rounded-full object-cover"
         style={style}
       />
     );
@@ -70,7 +70,7 @@ export function Avatar({
   return (
     <span
       aria-label={fallback ?? "Avatar"}
-      className="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-gojo-ink bg-gojo-orange font-bold text-white"
+      className="inline-flex shrink-0 items-center justify-center rounded-full bg-gojo-orange font-bold text-white"
       style={{ ...style, fontSize: Math.round(size * 0.45) }}
     >
       {initial}
