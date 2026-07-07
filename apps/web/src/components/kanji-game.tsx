@@ -4,6 +4,7 @@ import { fetchKanjiListAction } from "@/app/kanji/actions";
 import { useTrainingHeartbeat } from "@/lib/use-training-heartbeat";
 import type { KanjiDto } from "@gojo/shared";
 import { useCallback, useEffect, useState } from "react";
+import { BookingModal } from "./booking-modal";
 
 // ── Design tokens (matches kana trainer) ────────────────────────────────────
 const C = {
@@ -238,6 +239,7 @@ function SummaryScreen({
   isLoggedIn: boolean;
 }) {
   const pct = Math.round((correct / total) * 100);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     saveGuestTrainerProgress("kanji", correct, total);
@@ -371,8 +373,8 @@ function SummaryScreen({
             style={{
               padding: "14px",
               borderRadius: 10,
-              border: "1.5px solid rgba(0,0,0,0.12)",
-              background: C.white,
+              border: "1.5px solid rgba(0,0,0,0.18)",
+              background: C.cream2,
               color: C.ink,
               cursor: "pointer",
               fontFamily: "var(--font-manrope), system-ui, sans-serif",
@@ -384,22 +386,24 @@ function SummaryScreen({
           </button>
           {!isLoggedIn && (
             <>
-              <a
-                href="/login?mode=signup"
+              <button
+                type="button"
+                onClick={() => setBookingOpen(true)}
                 style={{
                   padding: "14px",
                   borderRadius: 10,
+                  border: "none",
                   background: C.ink,
                   color: C.white,
+                  cursor: "pointer",
                   textAlign: "center",
-                  textDecoration: "none",
                   fontFamily: "var(--font-manrope), system-ui, sans-serif",
                   fontSize: 14,
                   fontWeight: 800,
                 }}
               >
-                Зарегистрироваться и начать полноценное обучение
-              </a>
+                Зарегистрируйся, сохрани очки и начни учебу
+              </button>
               <a
                 href="/login"
                 style={{
@@ -415,12 +419,15 @@ function SummaryScreen({
                   fontWeight: 700,
                 }}
               >
-                Уже есть аккаунт — войти и сохранить баллы
+                Войти и сохранить очки
               </a>
             </>
           )}
         </div>
       </div>
+      {!isLoggedIn && (
+        <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { PhoneField } from "./phone-field";
+import { BookingModal } from "./booking-modal";
 
 const PHRASES = [
   "смотреть мангу и аниме в оригинале.",
@@ -89,7 +89,6 @@ function CyclingWord({ onAdvance }: { onAdvance: (index: number) => void }) {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-const PENDING_LEAD_KEY = "gojo:pending-lead-email";
 
 const readValue = (id: string) =>
   (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
@@ -97,12 +96,8 @@ const readValue = (id: string) =>
 export function Landing() {
   const [active, setActive] = useState(0);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [bookingSubmitted, setBookingSubmitted] = useState(false);
-  const [bookingPhone, setBookingPhone] = useState<string | undefined>();
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideSubmitted, setGuideSubmitted] = useState(false);
-  const [intercomOpen, setIntercomOpen] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
   const [studentsCount, setStudentsCount] = useState(0);
   const [yearsCount, setYearsCount] = useState(0);
@@ -150,36 +145,7 @@ export function Landing() {
   const closeModal = () => setBookingOpen(false);
   const openGuideModal = () => setGuideOpen(true);
   const closeGuideModal = () => setGuideOpen(false);
-  const toggleIntercom = () => {
-    setIntercomOpen((o) => !o);
-    setShowTooltip(false);
-  };
 
-  const submitForm = async () => {
-    if (!readValue("f-name") || !bookingPhone || !readValue("f-goal")) {
-      toast.error("Пожалуйста, заполни имя, телефон и цель");
-      return;
-    }
-    try {
-      const res = await fetch(`${API_URL}/leads`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "booking",
-          name: readValue("f-name"),
-          email: readValue("f-email") || undefined,
-          contact: bookingPhone,
-          goal: readValue("f-goal"),
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const email = readValue("f-email");
-      if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
-      setBookingSubmitted(true);
-    } catch {
-      toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
-    }
-  };
   const submitGuideForm = async () => {
     if (!readValue("g-name") || !readValue("g-email")) {
       toast.error("Пожалуйста, заполни имя и email");
@@ -203,31 +169,23 @@ export function Landing() {
     }
   };
 
-  // lock body scroll while a modal is open
+  // lock body scroll while the guide modal is open (BookingModal manages its
+  // own scroll-lock/Escape internally, since it's also mounted standalone on
+  // other pages)
   useEffect(() => {
-    const open = bookingOpen || guideOpen;
-    document.body.style.overflow = open ? "hidden" : "";
+    document.body.style.overflow = guideOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [bookingOpen, guideOpen]);
+  }, [guideOpen]);
 
-  // close modals on Escape
+  // close guide modal on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setBookingOpen(false);
-        setGuideOpen(false);
-      }
+      if (e.key === "Escape") setGuideOpen(false);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, []);
-
-  // auto-hide the intercom tooltip after 4s
-  useEffect(() => {
-    const t = setTimeout(() => setShowTooltip(false), 4000);
-    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -1255,190 +1213,8 @@ export function Landing() {
         </div>
       </div>
 
-      <div
-        className={`modal-overlay ${bookingOpen ? "open" : ""}`}
-        id="modal"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) closeModal();
-        }}
-      >
-        <div className="modal-box">
-          <button type="button" className="modal-close" onClick={closeModal}>
-            ✕
-          </button>
+      <BookingModal open={bookingOpen} onClose={closeModal} />
 
-          <div id="modal-form-view" style={{ display: bookingSubmitted ? "none" : "block" }}>
-            <div className="modal-tag">🎌 Бесплатный первый урок</div>
-            <h2 className="modal-title">
-              Попробуй японский
-              <br />
-              <em>без обязательств</em>
-            </h2>
-            <p className="modal-sub">
-              Запишись на бесплатный первый урок. Никакой оплаты — просто познакомимся и определим
-              твой уровень.
-            </p>
-
-            <div className="modal-form">
-              <div className="form-group">
-                <label className="form-label" htmlFor="f-name">
-                  Имя
-                </label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Как тебя зовут?"
-                  id="f-name"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="f-phone">
-                  Телефон
-                </label>
-                <PhoneField id="f-phone" value={bookingPhone} onChange={setBookingPhone} />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="f-goal">
-                  Что хочешь получить от японского?
-                </label>
-                <select className="form-select form-input" id="f-goal">
-                  <option value="">Выбери вариант</option>
-                  <option>Смотреть аниме / читать мангу в оригинале</option>
-                  <option>Переехать или учиться в Японии</option>
-                  <option>Работать с японскими партнёрами</option>
-                  <option>Просто интересно / хочу попробовать</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="f-email">
-                  Email <span style={{ fontWeight: 400, opacity: 0.6 }}>(необязательно)</span>
-                </label>
-                <input
-                  className="form-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  id="f-email"
-                />
-              </div>
-              <button type="button" className="form-submit" onClick={submitForm}>
-                Записаться на бесплатный урок
-              </button>
-              <p className="form-note">
-                Нажимая кнопку, ты соглашаешься с политикой конфиденциальности. Никакого спама —
-                только информация о записи.
-              </p>
-            </div>
-          </div>
-
-          <div
-            className="form-success"
-            id="modal-success-view"
-            style={{ display: bookingSubmitted ? "block" : "none" }}
-          >
-            <div className="form-success-icon">🎌</div>
-            <div className="form-success-title">Отлично, ждём тебя!</div>
-            <p className="form-success-text">
-              Мы получили твою заявку и свяжемся в течение 24 часов, чтобы договориться о времени
-              первого урока.
-              <br />
-              <br />
-              Создай аккаунт с тем же email, чтобы заявка привязалась к личному кабинету.
-            </p>
-            <a
-              href="/login?mode=signup&intent=booking"
-              className="form-submit"
-              style={{
-                display: "inline-block",
-                textAlign: "center",
-                textDecoration: "none",
-                marginTop: "18px",
-                borderRadius: "8px",
-              }}
-            >
-              Создать аккаунт
-            </a>
-            <a
-              href="https://t.me/gojoedu"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "10px",
-                marginTop: "14px",
-                background: "var(--orange)",
-                color: "var(--white)",
-                padding: "13px 24px",
-                borderRadius: "8px",
-                textDecoration: "none",
-                fontFamily: "var(--font-body)",
-                fontSize: "14px",
-                fontWeight: "700",
-              }}
-            >
-              ✈️ Telegram-сообщество Gojo
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div className="intercom-bubble">
-        <div className={`intercom-menu ${intercomOpen ? "open" : ""}`} id="intercom-menu">
-          <a
-            href="#"
-            className="intercom-menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              openModal();
-              toggleIntercom();
-            }}
-          >
-            <span className="ico">📝</span> Записаться на урок
-          </a>
-          <a
-            href="https://t.me/gojoedu"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="intercom-menu-item"
-          >
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06-.01.24-.02.27z"
-                fill="#29B6F6"
-              />
-            </svg>
-            Telegram
-          </a>
-          <a href="#" className="intercom-menu-item">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
-                fill="#25D366"
-              />
-            </svg>
-            WhatsApp
-          </a>
-          <a href="mailto:hello@gojolearn.ru" className="intercom-menu-item">
-            <span className="ico">✉️</span> Написать нам
-          </a>
-        </div>
-        <button
-          type="button"
-          className={`intercom-btn ${intercomOpen ? "open" : ""}`}
-          id="intercom-btn"
-          onClick={toggleIntercom}
-        >
-          <span className="ico-open">🗣</span>
-          <span className="ico-close">✕</span>
-          <div
-            className="intercom-tooltip"
-            id="intercom-tooltip"
-            style={{ display: showTooltip ? "block" : "none" }}
-          >
-            Есть вопросы?
-          </div>
-        </button>
-      </div>
     </div>
   );
 }

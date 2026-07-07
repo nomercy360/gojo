@@ -2,6 +2,7 @@
 
 import { useTrainingHeartbeat } from "@/lib/use-training-heartbeat";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookingModal } from "./booking-modal";
 
 // ── Design tokens (landing policy) ───────────────────────────────────────────
 const C = {
@@ -441,6 +442,7 @@ function SummaryScreen({
   const pct = Math.round((correct / total) * 100);
   const rank =
     pct === 100 ? "完璧！" : pct >= 80 ? "よくできました" : pct >= 60 ? "がんばって" : "もう一度";
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     saveGuestTrainerProgress("kana", correct, total);
@@ -607,8 +609,8 @@ function SummaryScreen({
             style={{
               padding: "14px",
               borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.1)",
-              background: C.white,
+              border: "1.5px solid rgba(0,0,0,0.18)",
+              background: C.cream2,
               color: C.ink,
               cursor: "pointer",
               fontFamily: "var(--font-manrope), system-ui, sans-serif",
@@ -620,22 +622,24 @@ function SummaryScreen({
           </button>
           {!isLoggedIn && (
             <>
-              <a
-                href="/login?mode=signup"
+              <button
+                type="button"
+                onClick={() => setBookingOpen(true)}
                 style={{
                   padding: "14px",
                   borderRadius: 10,
+                  border: "none",
                   background: C.ink,
                   color: C.white,
-                  textDecoration: "none",
+                  cursor: "pointer",
                   fontFamily: "var(--font-manrope), system-ui, sans-serif",
                   fontSize: 14,
                   fontWeight: 800,
                   textAlign: "center",
                 }}
               >
-                Зарегистрироваться и начать полноценное обучение
-              </a>
+                Зарегистрируйся, сохрани очки и начни учебу
+              </button>
               <a
                 href="/login"
                 style={{
@@ -651,12 +655,15 @@ function SummaryScreen({
                   fontWeight: 700,
                 }}
               >
-                Уже есть аккаунт — войти и сохранить баллы
+                Войти и сохранить очки
               </a>
             </>
           )}
         </div>
       </div>
+      {!isLoggedIn && (
+        <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
+      )}
     </div>
   );
 }
@@ -967,7 +974,7 @@ export function KanaGame({ isLoggedIn }: { isLoggedIn: boolean }) {
                     fontFamily: "var(--font-jetbrains-mono), monospace",
                     fontSize: 10,
                     fontWeight: 700,
-                    opacity: 0.25,
+                    opacity: 0.55,
                   }}
                 >
                   {i + 1}
@@ -1004,7 +1011,7 @@ export function KanaGame({ isLoggedIn }: { isLoggedIn: boolean }) {
             marginTop: 20,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 10,
-            color: C.muted,
+            color: C.ink3,
             letterSpacing: "0.06em",
           }}
         >

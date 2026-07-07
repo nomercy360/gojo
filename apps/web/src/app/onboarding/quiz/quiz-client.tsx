@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneField } from "@/components/phone-field";
 import type { QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -41,6 +42,7 @@ export function QuizClient({
   const [result, setResult] = useState<QuizResultDto | null>(null);
   const [leadSent, setLeadSent] = useState(false);
   const [leadEmailSent, setLeadEmailSent] = useState(true);
+  const [leadPhone, setLeadPhone] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
   const [leadPending, startLeadTransition] = useTransition();
 
@@ -77,7 +79,10 @@ export function QuizClient({
     const form = new FormData(e.currentTarget);
     const name = String(form.get("name") ?? "").trim();
     const email = String(form.get("email") ?? "").trim();
-    const contact = String(form.get("contact") ?? "").trim();
+    if (!leadPhone) {
+      toast.error("Укажи телефон, чтобы мы отправили подробный результат");
+      return;
+    }
 
     startLeadTransition(async () => {
       try {
@@ -85,7 +90,7 @@ export function QuizClient({
           answers: submittedAnswers,
           name,
           email,
-          ...(contact ? { contact } : {}),
+          contact: leadPhone,
         });
         setLeadSent(true);
         setLeadEmailSent(r.emailSent);
@@ -150,12 +155,7 @@ export function QuizClient({
                     className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
                   />
                 </div>
-                <input
-                  name="contact"
-                  maxLength={200}
-                  placeholder="Telegram или телефон, если удобно"
-                  className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
-                />
+                <PhoneField value={leadPhone} onChange={setLeadPhone} />
                 <button type="submit" disabled={leadPending} className="g-btn-primary text-sm">
                   {leadPending ? "Отправляем..." : "Получить подробный результат"}
                 </button>
@@ -180,7 +180,11 @@ export function QuizClient({
               >
                 Посмотреть уроки
               </Link>
-            ) : null}
+            ) : (
+              <Link href="/login" className="g-btn-secondary flex-1 text-sm">
+                Войти
+              </Link>
+            )}
           </div>
 
           <button
@@ -193,7 +197,7 @@ export function QuizClient({
               setLeadSent(false);
               setLeadEmailSent(true);
             }}
-            className="g-body mt-3 text-[12px] font-bold text-gojo-ink-muted hover:text-gojo-ink"
+            className="g-body mt-3 text-[13px] font-bold text-gojo-ink underline decoration-black/20 underline-offset-4 hover:decoration-gojo-orange hover:text-gojo-orange"
           >
             Пройти заново
           </button>
