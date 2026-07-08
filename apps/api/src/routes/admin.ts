@@ -5,6 +5,7 @@ import {
   lessons,
   notificationLogs,
   payments,
+  studentAccess,
   user as userTable,
 } from "@gojo/db";
 import { createStudentInput } from "@gojo/shared";
@@ -16,6 +17,7 @@ import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { auth } from "../auth.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
+import { paymentPlans } from "./payments.ts";
 
 export const adminRoute = new Hono<AuthContext>();
 
@@ -94,7 +96,7 @@ adminRoute.get("/summary", async (c) => {
     .from(userTable)
     .leftJoin(lessons, eq(lessons.teacherId, userTable.id))
     .leftJoin(bookings, eq(bookings.lessonId, lessons.id))
-    .where(eq(userTable.role, "teacher"))
+    .where(eq(userTable.role, "admin"))
     .groupBy(userTable.id, userTable.email, userTable.nickname)
     .orderBy(desc(sql`COUNT(DISTINCT ${lessons.id})`));
 
@@ -156,7 +158,10 @@ adminRoute.post("/students", zValidator("json", createStudentInput), async (c) =
   const admin = c.get("user")!;
   if (admin.role !== "admin") throw new HTTPException(403, { message: "admin access required" });
 
-  const { email, name, nickname } = c.req.valid("json");
+  const { email, name, nickname, planId } = c.req.valid("json");
+  if (!paymentPlans.some((p) => p.id === planId)) {
+    throw new HTTPException(400, { message: "unknown plan" });
+  }
   const throwawayPassword = crypto.randomUUID() + crypto.randomUUID();
 
   const created = await auth.api.signUpEmail({
@@ -167,6 +172,12 @@ adminRoute.post("/students", zValidator("json", createStudentInput), async (c) =
       // biome-ignore lint/suspicious/noExplicitAny: additional fields beyond the base schema
       ...({ nickname, role: "student" } as any),
     },
+  });
+
+  await db.insert(studentAccess).values({
+    userId: created.user.id,
+    assignedPlanId: planId,
+    updatedAt: new Date(),
   });
 
   await auth.api.requestPasswordReset({

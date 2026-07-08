@@ -12,11 +12,13 @@ export async function createStudentAction(
   const email = String(formData.get("email") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const nickname = String(formData.get("nickname") ?? "").trim() || undefined;
+  const planId = String(formData.get("planId") ?? "").trim();
 
   if (!email || !name) return { error: "Заполни email и имя" };
+  if (!planId) return { error: "Выбери тариф" };
 
   try {
-    await createStudent({ email, name, nickname });
+    await createStudent({ email, name, nickname, planId });
   } catch (e) {
     if (e instanceof ApiError) {
       if (e.status === 401) redirect("/login");

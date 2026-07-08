@@ -174,7 +174,8 @@ export function CalendarSection() {
   if (hidden) {
     return (
       <div
-        className="lg:col-span-2 rounded-2xl bg-white"
+        id="calendar"
+        className="lg:col-span-2 scroll-mt-20 rounded-2xl bg-white"
         style={{ border: "1px solid rgba(0,0,0,0.06)" }}
       >
         <div className="flex items-center justify-between px-5 py-3">
@@ -199,7 +200,8 @@ export function CalendarSection() {
 
   return (
     <div
-      className="lg:col-span-2 overflow-hidden rounded-2xl bg-white"
+      id="calendar"
+      className="lg:col-span-2 scroll-mt-20 overflow-hidden rounded-2xl bg-white"
       style={{ border: "1px solid rgba(0,0,0,0.06)" }}
     >
       {/* Top edge bar — just the hide toggle, kept separate from the content below */}

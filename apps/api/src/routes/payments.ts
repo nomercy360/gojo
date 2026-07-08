@@ -54,6 +54,7 @@ paymentsRoute.get("/me", requireAuth, async (c) => {
     .limit(20);
 
   const now = Date.now();
+  const assignedPlan = paymentPlans.find((p) => p.id === access?.assignedPlanId) ?? null;
   return c.json({
     access: {
       activeUntil: access?.activeUntil ? access.activeUntil.toISOString() : null,
@@ -63,7 +64,9 @@ paymentsRoute.get("/me", requireAuth, async (c) => {
         (access?.activeUntil && access.activeUntil.getTime() > now) ||
           (access?.lessonCredits ?? 0) > 0,
       ),
+      assignedPlanId: access?.assignedPlanId ?? null,
     },
+    assignedPlan,
     payments: rows.map((p) => ({
       id: p.id,
       providerPaymentId: p.providerPaymentId,
@@ -90,6 +93,15 @@ paymentsRoute.post("/checkout", requireAuth, zValidator("json", createCheckoutIn
   const { planId } = c.req.valid("json");
   const plan = paymentPlans.find((p) => p.id === planId);
   if (!plan) throw new HTTPException(400, { message: "unknown plan" });
+
+  const [access] = await db
+    .select({ assignedPlanId: studentAccess.assignedPlanId })
+    .from(studentAccess)
+    .where(eq(studentAccess.userId, user.id))
+    .limit(1);
+  if (!access?.assignedPlanId || access.assignedPlanId !== planId) {
+    throw new HTTPException(403, { message: "plan not assigned to this student" });
+  }
 
   const idempotenceKey = crypto.randomUUID();
   const [local] = await db

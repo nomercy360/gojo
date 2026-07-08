@@ -1,9 +1,15 @@
 import { Avatar } from "@/components/avatar";
-import { ApiError, type TeacherStudentProfileDto, fetchTeacherStudentProfile } from "@/lib/api";
+import {
+  ApiError,
+  fetchPaymentPlans,
+  fetchTeacherStudentProfile,
+  type TeacherStudentProfileDto,
+} from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { setStudentPlanAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +45,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
   }
 
   const student = profile.student;
+  const plans = await fetchPaymentPlans();
 
   return (
     <main className="min-h-screen bg-gojo-paper">
@@ -70,6 +77,38 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="g-card mt-6 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+            Тариф
+          </div>
+          <p className="mt-2 text-sm text-gojo-ink-muted">
+            Текущий:{" "}
+            <span className="font-bold text-gojo-ink">
+              {plans.find((p) => p.id === student.assignedPlanId)?.title ?? "не назначен"}
+            </span>
+          </p>
+          <form action={setStudentPlanAction} className="mt-4 flex flex-wrap items-center gap-3">
+            <input type="hidden" name="studentId" value={student.id} />
+            <select
+              name="planId"
+              defaultValue={student.assignedPlanId ?? ""}
+              className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            >
+              <option value="" disabled>
+                Выбери тариф
+              </option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.title} — {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="g-btn-secondary text-sm">
+              Сохранить тариф
+            </button>
+          </form>
         </section>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">

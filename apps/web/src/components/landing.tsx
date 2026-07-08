@@ -300,9 +300,6 @@ export function Landing() {
               ИИ тренажер
             </a>
           </div>
-          <a href="/onboarding/quiz" className="hero-trainer-link">
-            🎯 Или пройди короткий тест уровня — без регистрации
-          </a>
         </div>
 
         <div className="hero-image-col" id="hero-images">
@@ -486,10 +483,10 @@ export function Landing() {
         <h2 className="section-title">Как это работает</h2>
 
         <div className="how-grid">
-          <Link href="/onboarding/quiz" className="how-card">
+          <Link href="/onboarding/quiz" className="how-card how-card-featured">
             <div className="how-card-head">
               <div className="how-card-head-left">
-                <span className="how-card-step">Шаг 01</span>
+                <span className="how-card-step">Шаг 01 · Бесплатно</span>
                 <span className="how-card-head-label">
                   <span className="accent">Старт</span>
                 </span>
@@ -498,9 +495,9 @@ export function Landing() {
             <div className="how-card-body">
               <div className="how-card-title">Определи свой уровень</div>
               <div className="how-card-text">
-                Короткий тест — 10 минут, и мы знаем с чего начать.
+                Короткий тест — 10 минут, без регистрации, и мы знаем с чего начать.
               </div>
-              <div className="how-card-cta">Пройти тест</div>
+              <div className="how-card-cta how-card-cta-btn">Пройти тест →</div>
             </div>
           </Link>
 

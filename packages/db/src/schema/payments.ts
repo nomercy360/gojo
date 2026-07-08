@@ -45,6 +45,8 @@ export const studentAccess = pgTable("student_access", {
   activeUntil: timestamp({ withTimezone: true }),
   lessonCredits: integer().notNull().default(0),
   trialUsed: boolean().notNull().default(false),
+  /** Plan id (see paymentPlans in apps/api) the admin assigned to this student. Checkout is only allowed for this plan. */
+  assignedPlanId: text(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 

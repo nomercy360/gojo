@@ -19,6 +19,11 @@ export const createCheckoutInput = z.object({
 });
 export type CreateCheckoutInput = z.infer<typeof createCheckoutInput>;
 
+export const setStudentPlanInput = z.object({
+  planId: z.string().min(1),
+});
+export type SetStudentPlanInput = z.infer<typeof setStudentPlanInput>;
+
 export const checkoutResponseDto = z.object({
   paymentId: z.string().uuid(),
   status: paymentStatusSchema,
@@ -44,11 +49,13 @@ export const paymentAccessDto = z.object({
   lessonCredits: z.number().int(),
   trialUsed: z.boolean(),
   isActive: z.boolean(),
+  assignedPlanId: z.string().nullable(),
 });
 export type PaymentAccessDto = z.infer<typeof paymentAccessDto>;
 
 export const paymentsMeDto = z.object({
   access: paymentAccessDto,
+  assignedPlan: paymentPlanDto.nullable(),
   payments: z.array(paymentDto),
 });
 export type PaymentsMeDto = z.infer<typeof paymentsMeDto>;

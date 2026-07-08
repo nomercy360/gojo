@@ -272,6 +272,7 @@ export type TeacherStudentProfileDto = {
     jlptLevel: string | null;
     quizLevel: string | null;
     telegramId: number | null;
+    assignedPlanId: string | null;
     createdAt: string;
   };
   lessons: Array<{
@@ -342,11 +343,23 @@ export function fetchAdminSummary(): Promise<AdminSummaryDto> {
   return apiFetch("/admin/summary");
 }
 
-export function createStudent(body: { email: string; name: string; nickname?: string }) {
+export function createStudent(body: {
+  email: string;
+  name: string;
+  nickname?: string;
+  planId: string;
+}) {
   return apiFetch<{ ok: boolean; userId: string }>("/admin/students", {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export function setStudentPlan(studentId: string, planId: string) {
+  return apiFetch<{ studentId: string; assignedPlanId: string }>(
+    `/teacher/students/${studentId}/plan`,
+    { method: "PATCH", body: JSON.stringify({ planId }) },
+  );
 }
 
 export function fetchLessonStudents(lessonId: string): Promise<LessonStudentDto[]> {

@@ -120,34 +120,28 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
               ) : (
                 <>
                   <Link
-                    href="/dashboard"
+                    href="/dashboard#library"
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                   >
-                    Кабинет
+                    Библиотека
                   </Link>
                   <Link
-                    href="/lessons"
+                    href="/dashboard#trainers"
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                   >
-                    Уроки
+                    Тренажёры
                   </Link>
                   <Link
-                    href="/payments"
+                    href="/dashboard#calendar"
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                   >
-                    Оплата
+                    Расписание
                   </Link>
                   <Link
-                    href="/kana"
+                    href="/dashboard#contact"
                     className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                   >
-                    Кана
-                  </Link>
-                  <Link
-                    href="/review"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Карточки
+                    Связаться с нами
                   </Link>
                 </>
               )}

@@ -1,5 +1,5 @@
 /**
- * Dev seed: creates a teacher (via raw insert since better-auth is in the API package)
+ * Dev seed: creates an admin (via raw insert since better-auth is in the API package)
  * and 3 lessons. Uses crypto.randomUUID for IDs matching better-auth's text primary key.
  */
 import { eq } from "drizzle-orm";
@@ -25,7 +25,7 @@ if (!teacher) {
       email,
       name: "Tanaka-sensei",
       nickname: "Tanaka-sensei",
-      role: "teacher",
+      role: "admin",
       jlptLevel: "N1",
       emailVerified: true,
     })

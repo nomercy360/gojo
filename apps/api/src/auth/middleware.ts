@@ -6,7 +6,7 @@ export type SessionUser = {
   id: string;
   email: string;
   name: string;
-  role: "student" | "teacher" | "admin";
+  role: "student" | "admin";
   nickname?: string | null;
   image?: string | null;
   jlptLevel?: string | null;
@@ -44,8 +44,8 @@ export const requireAuth = createMiddleware<AuthContext>(async (c, next) => {
 export const requireTeacher = createMiddleware<AuthContext>(async (c, next) => {
   const user = c.get("user");
   if (!user) throw new HTTPException(401, { message: "unauthorized" });
-  if (user.role !== "teacher" && user.role !== "admin") {
-    throw new HTTPException(403, { message: "teacher access required" });
+  if (user.role !== "admin") {
+    throw new HTTPException(403, { message: "admin access required" });
   }
   await next();
 });
