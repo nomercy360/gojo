@@ -8,7 +8,12 @@ import {
   studentAccess,
   user as userTable,
 } from "@gojo/db";
-import { addLessonCardInput, setHomeworkStatusInput, setStudentLevelInput } from "@gojo/shared";
+import {
+  addLessonCardInput,
+  setHomeworkStatusInput,
+  setStudentLevelInput,
+  setStudentPlanInput,
+} from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -19,6 +24,7 @@ import { db } from "../db.ts";
 import { materializeNewCardForBookings } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
 import { toLessonCardDto, toLessonDto } from "./mappers.ts";
+import { paymentPlans } from "./payments.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
 
@@ -253,6 +259,12 @@ teacherRoute.get("/students/:studentId", async (c) => {
   const [student] = await db.select().from(userTable).where(eq(userTable.id, studentId)).limit(1);
   if (!student) throw new HTTPException(404, { message: "student not found" });
 
+  const [access] = await db
+    .select({ assignedPlanId: studentAccess.assignedPlanId })
+    .from(studentAccess)
+    .where(eq(studentAccess.userId, studentId))
+    .limit(1);
+
   const leadRows = await db
     .select()
     .from(leads)
@@ -269,6 +281,7 @@ teacherRoute.get("/students/:studentId", async (c) => {
       jlptLevel: student.jlptLevel ?? null,
       quizLevel: student.quizLevel ?? null,
       telegramId: student.telegramId ?? null,
+      assignedPlanId: access?.assignedPlanId ?? null,
       createdAt: student.createdAt.toISOString(),
     },
     lessons: rows.map((r) => ({
@@ -296,6 +309,35 @@ teacherRoute.get("/students/:studentId", async (c) => {
     })),
   });
 });
+
+teacherRoute.patch(
+  "/students/:studentId/plan",
+  zValidator("json", setStudentPlanInput),
+  async (c) => {
+    const studentId = c.req.param("studentId");
+    const { planId } = c.req.valid("json");
+    if (!paymentPlans.some((p) => p.id === planId)) {
+      throw new HTTPException(400, { message: "unknown plan" });
+    }
+
+    const [student] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.id, studentId))
+      .limit(1);
+    if (!student) throw new HTTPException(404, { message: "student not found" });
+
+    await db
+      .insert(studentAccess)
+      .values({ userId: studentId, assignedPlanId: planId, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: studentAccess.userId,
+        set: { assignedPlanId: planId, updatedAt: new Date() },
+      });
+
+    return c.json({ studentId, assignedPlanId: planId });
+  },
+);
 
 teacherRoute.get("/lessons", async (c) => {
   const u = c.get("user")!;

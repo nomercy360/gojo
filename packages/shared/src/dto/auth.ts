@@ -4,7 +4,7 @@ import { userDto } from "./users";
 export const devLoginInput = z.object({
   email: z.string().email(),
   nickname: z.string().min(1).max(40).optional(),
-  role: z.enum(["student", "teacher", "admin"]).default("student"),
+  role: z.enum(["student", "admin"]).default("student"),
 });
 export type DevLoginInput = z.infer<typeof devLoginInput>;
 
@@ -18,7 +18,7 @@ export const signupInput = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(100),
   nickname: z.string().min(1).max(40).optional(),
-  role: z.enum(["student", "teacher"]).default("student"),
+  role: z.enum(["student"]).default("student"),
 });
 export type SignupInput = z.infer<typeof signupInput>;
 
@@ -34,6 +34,7 @@ export const createStudentInput = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(200),
   nickname: z.string().min(1).max(40).optional(),
+  planId: z.string().min(1),
 });
 export type CreateStudentInput = z.infer<typeof createStudentInput>;
 

@@ -9,7 +9,6 @@ import { redirect } from "next/navigation";
 
 const ROLE_LABEL: Record<string, string> = {
   student: "Студент",
-  teacher: "Учитель",
   admin: "Админ",
 };
 
@@ -111,22 +110,17 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Library ── */}
-        <div className="g-card mb-6 flex flex-wrap items-center justify-between gap-4 px-7 py-5">
-          <div>
-            <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
-              Библиотека
-            </div>
-            <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
-              Видеоуроки и материалы появятся здесь после первых занятий.
-            </p>
+        <div id="library" className="g-card mb-6 scroll-mt-20 px-7 py-5">
+          <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
+            Библиотека
           </div>
-          <Link href="/payments" className="g-btn-secondary text-sm">
-            Оплата
-          </Link>
+          <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
+            Видеоуроки и материалы появятся здесь после первых занятий.
+          </p>
         </div>
 
-        {/* ── Progress ── */}
-        <div className="g-card mb-6 p-7">
+        {/* ── Progress + trainers ── */}
+        <div id="trainers" className="g-card mb-6 scroll-mt-20 p-7">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
@@ -196,6 +190,51 @@ export default async function DashboardPage() {
               </div>
             </div>
           )}
+
+          <div className="mt-6 border-t border-black/10 pt-6">
+            <div className="g-mono mb-4 text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
+              Тренажёры
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Link href="/review" className="g-card group flex items-center gap-4 p-5">
+                <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
+                  単
+                </div>
+                <div>
+                  <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
+                  <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
+                    Повторение слов
+                  </div>
+                </div>
+              </Link>
+
+              <Link href="/kana" className="g-card group flex items-center gap-4 p-5">
+                <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
+                  あ
+                </div>
+                <div>
+                  <div className="g-display text-[15px] font-bold text-gojo-ink">
+                    Хирагана · Катакана
+                  </div>
+                  <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
+                    Тренажёр символов
+                  </div>
+                </div>
+              </Link>
+
+              <Link href="/kanji" className="g-card group flex items-center gap-4 p-5">
+                <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
+                  漢
+                </div>
+                <div>
+                  <div className="g-display text-[15px] font-bold text-gojo-ink">Кандзи</div>
+                  <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
+                    Тренажёр иероглифов
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* ── Main grid ── */}
@@ -249,53 +288,8 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Tools ── */}
-        <div className="mt-10">
-          <div className="g-mono mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gojo-ink-muted">
-            <span className="inline-block h-0.5 w-6 bg-gojo-ink-muted" />
-            Тренировки
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Link href="/review" className="g-card group flex items-center gap-4 p-5">
-              <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                単
-              </div>
-              <div>
-                <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
-                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">Повторение слов</div>
-              </div>
-            </Link>
-
-            <Link href="/kana" className="g-card group flex items-center gap-4 p-5">
-              <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                あ
-              </div>
-              <div>
-                <div className="g-display text-[15px] font-bold text-gojo-ink">
-                  Хирагана · Катакана
-                </div>
-                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                  Тренажёр символов
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/kanji" className="g-card group flex items-center gap-4 p-5">
-              <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                漢
-              </div>
-              <div>
-                <div className="g-display text-[15px] font-bold text-gojo-ink">Кандзи</div>
-                <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                  Тренажёр иероглифов
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-
         {/* ── Contact ── */}
-        <div className="g-card mt-4 flex items-center justify-between px-7 py-5">
+        <div id="contact" className="g-card mt-10 scroll-mt-20 flex items-center justify-between px-7 py-5">
           <div>
             <div className="g-display text-[15px] font-bold text-gojo-ink">
               Связаться с нами

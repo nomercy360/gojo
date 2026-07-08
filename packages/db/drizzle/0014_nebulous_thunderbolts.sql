@@ -1,0 +1,1 @@
+ALTER TABLE "student_access" ADD COLUMN "assigned_plan_id" text;

@@ -6,7 +6,7 @@ import { user as userTable } from "./schema/index.ts";
 const email = process.argv[2]?.trim().toLowerCase();
 
 if (!email) {
-  console.error("Usage: bun run promote-teacher <email>");
+  console.error("Usage: bun run promote-admin <email>");
   process.exit(1);
 }
 
@@ -17,7 +17,7 @@ const db = drizzle(client, { casing: "snake_case" });
 try {
   const [updated] = await db
     .update(userTable)
-    .set({ role: "teacher", updatedAt: new Date() })
+    .set({ role: "admin", updatedAt: new Date() })
     .where(eq(userTable.email, email))
     .returning({
       id: userTable.id,

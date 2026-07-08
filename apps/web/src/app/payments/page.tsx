@@ -1,4 +1,4 @@
-import { fetchMyPayments, fetchPaymentPlans } from "@/lib/api";
+import { fetchMyPayments } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
@@ -14,6 +14,27 @@ const ERROR_COPY: Record<string, string> = {
   checkout_failed: "Не удалось создать платёж. Попробуй ещё раз или напиши администратору.",
 };
 
+function ContactBlock() {
+  return (
+    <section className="g-card mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
+      <div>
+        <div className="font-serif text-[18px] font-bold">
+          Возникла проблема или хочешь изменить план?
+        </div>
+        <p className="mt-1 text-sm text-gojo-ink-muted">Свяжись с нами — поможем разобраться.</p>
+      </div>
+      <a
+        href="https://t.me/gojoedu"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="g-btn-secondary shrink-0 text-sm"
+      >
+        Написать в Telegram
+      </a>
+    </section>
+  );
+}
+
 export default async function PaymentsPage({
   searchParams,
 }: {
@@ -24,7 +45,7 @@ export default async function PaymentsPage({
   if (isTeacherUser(user)) redirect("/teacher");
 
   const { error } = await searchParams;
-  const [plans, account] = await Promise.all([fetchPaymentPlans(), fetchMyPayments()]);
+  const account = await fetchMyPayments();
 
   return (
     <main className="min-h-screen bg-gojo-paper">
@@ -62,25 +83,37 @@ export default async function PaymentsPage({
           </div>
         </section>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-2">
-          {plans.map((plan) => (
-            <form
-              key={plan.id}
-              action={checkoutAction}
-              className="g-card p-5"
-            >
-              <input type="hidden" name="planId" value={plan.id} />
-              <h2 className="font-serif text-[24px] font-bold">{plan.title}</h2>
-              <p className="mt-2 min-h-10 text-sm text-gojo-ink-muted">{plan.description}</p>
+        {account.assignedPlan ? (
+          <section className="g-card mt-8 max-w-md p-5">
+            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+              Твой план
+            </div>
+            <form action={checkoutAction} className="mt-3">
+              <input type="hidden" name="planId" value={account.assignedPlan.id} />
+              <h2 className="font-serif text-[24px] font-bold">{account.assignedPlan.title}</h2>
+              <p className="mt-2 text-sm text-gojo-ink-muted">
+                {account.assignedPlan.description}
+              </p>
               <div className="mt-5 font-serif text-[34px] font-bold">
-                {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+                {Number(account.assignedPlan.amountValue).toLocaleString("ru-RU")} ₽
               </div>
               <button type="submit" className="g-btn-primary mt-5 w-full text-sm">
                 Оплатить через ЮKassa
               </button>
             </form>
-          ))}
-        </section>
+          </section>
+        ) : (
+          <section className="g-card mt-8 p-5">
+            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+              Твой план
+            </div>
+            <p className="mt-2 text-sm text-gojo-ink-muted">
+              Тебе ещё не назначили тариф. Напиши нам — подберём подходящий план.
+            </p>
+          </section>
+        )}
+
+        <ContactBlock />
 
         <section className="mt-10">
           <h2 className="font-serif text-[24px] font-bold">История платежей</h2>

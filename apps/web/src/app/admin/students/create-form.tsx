@@ -1,12 +1,13 @@
 "use client";
 
+import type { PaymentPlanDto } from "@gojo/shared";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 import { type CreateStudentState, createStudentAction } from "./actions";
 
 const initial: CreateStudentState = {};
 
-export function CreateStudentForm() {
+export function CreateStudentForm({ plans }: { plans: PaymentPlanDto[] }) {
   const [state, formAction, pending] = useActionState(createStudentAction, initial);
 
   useEffect(() => {
@@ -58,6 +59,27 @@ export function CreateStudentForm() {
             placeholder="Как будет отображаться в ЛК"
             className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft" htmlFor="planId">
+            Тариф
+          </label>
+          <select
+            id="planId"
+            name="planId"
+            required
+            defaultValue=""
+            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+          >
+            <option value="" disabled>
+              Выбери тариф
+            </option>
+            {plans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.title} — {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+              </option>
+            ))}
+          </select>
         </div>
 
         {state.error ? (

@@ -595,24 +595,6 @@ html:has(.landing-root) {
   color: var(--orange);
   background: rgba(247, 107, 0, 0.04);
 }
-.landing-root .hero-trainer-link {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 18px;
-  color: var(--ink);
-  text-decoration: none;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  border-bottom: 2px solid rgba(247, 107, 0, 0.35);
-  padding-bottom: 2px;
-  transition: color 0.15s, border-color 0.15s, transform 0.15s;
-}
-.landing-root .hero-trainer-link:hover {
-  color: var(--orange);
-  border-color: var(--orange);
-  transform: translateX(3px);
-}
 /* HERO IMAGE */
 /* ───── HERO TRIPTYCH ───── */
 .landing-root .hero-image-col {
@@ -901,6 +883,14 @@ html:has(.landing-root) {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(247, 107, 0, 0.1);
 }
+.landing-root .how-card-featured {
+  background: linear-gradient(160deg, rgba(247, 107, 0, 0.1), var(--cream-soft) 55%);
+  border-color: rgba(247, 107, 0, 0.4);
+  box-shadow: 0 4px 18px rgba(247, 107, 0, 0.08);
+}
+.landing-root .how-card-featured:hover {
+  box-shadow: 0 10px 28px rgba(247, 107, 0, 0.18);
+}
 .landing-root .how-card-head {
   background: transparent;
   padding: 20px 22px 18px;
@@ -969,6 +959,20 @@ html:has(.landing-root) {
   font-size: 13px;
   font-weight: 700;
   color: var(--orange);
+}
+.landing-root .how-card-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fff;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.landing-root .how-card-featured:hover .how-card-cta-btn {
+  transform: translateX(2px);
+  box-shadow: 0 4px 14px rgba(247, 107, 0, 0.3);
 }
 .landing-root .how-card-visual {
   margin: 16px 0 4px;
