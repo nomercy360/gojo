@@ -67,6 +67,7 @@ function toUserDto(u: RawUser): UserDto {
   return {
     id: u.id,
     email: u.email,
+    name: u.name ?? "",
     nickname: u.nickname ?? u.name ?? null,
     avatarUrl: u.image ?? null,
     role: (u.role as UserDto["role"]) ?? "student",

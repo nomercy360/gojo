@@ -56,8 +56,8 @@ export function LessonCardsManager({
     <section className="mt-10">
       <h2 className="font-serif text-[22px] font-bold">Карточки к уроку</h2>
       <p className="mt-1 text-[13px] text-gojo-ink-muted">
-        Слова для запоминания. Автоматически попадают в SRS-пул студентов после
-        записи на урок.
+        Слова для запоминания. Автоматически попадают в SRS-пул студентов после того,
+        как урок отмечен как пройденный (посещён).
       </p>
 
       <form

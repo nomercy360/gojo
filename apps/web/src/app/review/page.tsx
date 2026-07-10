@@ -1,7 +1,6 @@
 import { fetchReviewQueue } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ReviewClient } from "./review-client";
 
@@ -26,9 +25,6 @@ export default async function ReviewPage() {
             Карточки появятся, когда запишешься на урок — преподаватель добавляет слова к уроку, и
             они автоматически попадают в твой пул для повторения.
           </p>
-          <Link href="/lessons" className="g-btn-primary mt-6 inline-flex text-sm">
-            Посмотреть уроки
-          </Link>
         </div>
       </main>
     );

@@ -86,70 +86,52 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
         </Link>
 
         <nav className="g-body flex items-center gap-5 text-[13px] font-semibold">
-          {user ? (
+          {user ? teacherUser ? (
             <>
-              {teacherUser ? (
-                <>
-                  {user.role === "admin" ? (
-                    <Link
-                      href="/admin"
-                      className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                    >
-                      Админ
-                    </Link>
-                  ) : null}
-                  <Link
-                    href="/teacher"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Учитель
-                  </Link>
-                  <Link
-                    href="/teacher/students"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Студенты
-                  </Link>
-                  <Link
-                    href="/teacher/leads"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Заявки
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/dashboard#library"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Библиотека
-                  </Link>
-                  <Link
-                    href="/dashboard#trainers"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Тренажёры
-                  </Link>
-                  <Link
-                    href="/dashboard#calendar"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Расписание
-                  </Link>
-                  <Link
-                    href="/dashboard#contact"
-                    className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                  >
-                    Связаться с нами
-                  </Link>
-                </>
-              )}
+              <Link
+                href="/teacher"
+                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+              >
+                Учитель
+              </Link>
+              <Link
+                href="/teacher/students"
+                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+              >
+                Студенты
+              </Link>
+              <Link
+                href="/teacher/leads"
+                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+              >
+                Заявки
+              </Link>
               <Link
                 href="/profile"
                 className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
               >
                 <Avatar value={user.avatarUrl} size={26} fallback={user.nickname ?? user.email} />
+              </Link>
+              <form onSubmit={handleLogout}>
+                <button
+                  type="submit"
+                  disabled={loggingOut}
+                  className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+                >
+                  Выйти
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link href="/" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>
+                На сайт
+              </Link>
+              <Link
+                href="/payments"
+                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+              >
+                Оплата
               </Link>
               <form onSubmit={handleLogout}>
                 <button

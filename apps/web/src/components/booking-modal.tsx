@@ -168,7 +168,7 @@ export function BookingModal({ open, onClose }: { open: boolean; onClose: () => 
                 fontWeight: "700",
               }}
             >
-              ✈️ Telegram-сообщество Gojo
+              ✈️ Telegram сообщество Gojo
             </a>
           </div>
         </div>

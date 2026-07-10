@@ -54,6 +54,14 @@ export const lessonMaterialDto = z.object({
 });
 export type LessonMaterialDto = z.infer<typeof lessonMaterialDto>;
 
+export const libraryItemDto = z.object({
+  lessonId: z.string().uuid(),
+  title: z.string(),
+  startsAt: z.string(),
+  recordingUrl: z.string(),
+});
+export type LibraryItemDto = z.infer<typeof libraryItemDto>;
+
 export const studentStatsDto = z.object({
   completedLessons: z.number(),
   upcomingLessons: z.number(),

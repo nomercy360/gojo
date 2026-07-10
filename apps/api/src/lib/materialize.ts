@@ -1,13 +1,14 @@
 import { bookings, flashcards, lessonCards } from "@gojo/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db.ts";
 
 /**
  * Create flashcard rows for every lesson_card of a lesson, for one student.
  * Idempotent via the (user_id, lesson_card_id) unique index — re-running is safe.
- * Called on booking.
+ * Called when a student's booking is marked attended — not on booking itself,
+ * so the deck only reveals a lesson's vocab once the lesson actually happened.
  */
-export async function materializeCardsForBooking(userId: string, lessonId: string) {
+export async function materializeCardsForAttendance(userId: string, lessonId: string) {
   const templates = await db
     .select()
     .from(lessonCards)
@@ -28,10 +29,12 @@ export async function materializeCardsForBooking(userId: string, lessonId: strin
 }
 
 /**
- * When a teacher adds a new card to a lesson that already has bookings, fan the
- * template out to every booked student so their SRS deck stays in sync.
+ * When a teacher adds a new card to a lesson that already has attended
+ * bookings, fan the template out to those students so their SRS deck stays
+ * in sync. Students who haven't attended yet get the full current card set
+ * (including this one) when their own attendance is marked.
  */
-export async function materializeNewCardForBookings(lessonCardId: string) {
+export async function materializeNewCardForAttendedBookings(lessonCardId: string) {
   const [template] = await db
     .select()
     .from(lessonCards)
@@ -42,7 +45,7 @@ export async function materializeNewCardForBookings(lessonCardId: string) {
   const students = await db
     .select({ studentId: bookings.studentId })
     .from(bookings)
-    .where(eq(bookings.lessonId, template.lessonId));
+    .where(and(eq(bookings.lessonId, template.lessonId), eq(bookings.attendanceStatus, "attended")));
   if (students.length === 0) return 0;
 
   const rows = students.map((s) => ({

@@ -11,6 +11,7 @@ import {
 } from "@gojo/db";
 import {
   addLessonCardInput,
+  createStudentInput,
   reviewSubmissionInput,
   setHomeworkStatusInput,
   setStudentLevelInput,
@@ -21,12 +22,14 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { auth } from "../auth.ts";
 import { type AuthContext, requireAuth, requireTeacher } from "../auth/middleware.ts";
 import { db } from "../db.ts";
-import { materializeNewCardForBookings } from "../lib/materialize.ts";
+import { env } from "../env.ts";
+import { materializeCardsForAttendance, materializeNewCardForAttendedBookings } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
 import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
-import { paymentPlans } from "./payments.ts";
+import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
 
@@ -193,6 +196,7 @@ teacherRoute.post(
 
 teacherRoute.get("/students", async (c) => {
   const u = c.get("user")!;
+  const now = Date.now();
 
   const rows = await db
     .select({
@@ -203,11 +207,18 @@ teacherRoute.get("/students", async (c) => {
       jlptLevel: userTable.jlptLevel,
       quizLevel: userTable.quizLevel,
       lessonCount: sql<number>`COUNT(DISTINCT ${bookings.lessonId})`.as("lesson_count"),
+      attendedCount:
+        sql<number>`COUNT(DISTINCT CASE WHEN ${bookings.attendanceStatus} = 'attended' THEN ${bookings.lessonId} END)`.as(
+          "attended_count",
+        ),
       lastLessonAt: sql<Date>`MAX(${lessons.startsAt})`.as("last_lesson_at"),
+      activeUntil: studentAccess.activeUntil,
+      lessonCredits: studentAccess.lessonCredits,
     })
     .from(bookings)
     .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
     .innerJoin(userTable, eq(userTable.id, bookings.studentId))
+    .leftJoin(studentAccess, eq(studentAccess.userId, bookings.studentId))
     .where(teacherLessonScope(u))
     .groupBy(
       userTable.id,
@@ -216,20 +227,30 @@ teacherRoute.get("/students", async (c) => {
       userTable.image,
       userTable.jlptLevel,
       userTable.quizLevel,
+      studentAccess.activeUntil,
+      studentAccess.lessonCredits,
     )
     .orderBy(desc(sql`MAX(${lessons.startsAt})`));
 
   return c.json(
-    rows.map((r) => ({
-      studentId: r.studentId,
-      nickname: r.nickname ?? null,
-      email: r.email,
-      avatarUrl: r.avatarUrl ?? null,
-      jlptLevel: r.jlptLevel ?? null,
-      quizLevel: r.quizLevel ?? null,
-      lessonCount: Number(r.lessonCount),
-      lastLessonAt: r.lastLessonAt ? new Date(r.lastLessonAt).toISOString() : null,
-    })),
+    rows.map((r) => {
+      const lessonCredits = r.lessonCredits ?? 0;
+      const activeUntil = r.activeUntil ? r.activeUntil.getTime() : null;
+      return {
+        studentId: r.studentId,
+        nickname: r.nickname ?? null,
+        email: r.email,
+        avatarUrl: r.avatarUrl ?? null,
+        jlptLevel: r.jlptLevel ?? null,
+        quizLevel: r.quizLevel ?? null,
+        lessonCount: Number(r.lessonCount),
+        attendedCount: Number(r.attendedCount),
+        lastLessonAt: r.lastLessonAt ? new Date(r.lastLessonAt).toISOString() : null,
+        activeUntil: r.activeUntil ? r.activeUntil.toISOString() : null,
+        lessonCredits,
+        isActive: Boolean((activeUntil && activeUntil > now) || lessonCredits > 0),
+      };
+    }),
   );
 });
 
@@ -261,11 +282,7 @@ teacherRoute.get("/students/:studentId", async (c) => {
   const [student] = await db.select().from(userTable).where(eq(userTable.id, studentId)).limit(1);
   if (!student) throw new HTTPException(404, { message: "student not found" });
 
-  const [access] = await db
-    .select({ assignedPlanId: studentAccess.assignedPlanId })
-    .from(studentAccess)
-    .where(eq(studentAccess.userId, studentId))
-    .limit(1);
+  const snapshot = await getStudentAccessSnapshot(studentId);
 
   const leadRows = await db
     .select()
@@ -273,6 +290,9 @@ teacherRoute.get("/students/:studentId", async (c) => {
     .where(eq(leads.userId, studentId))
     .orderBy(desc(leads.createdAt))
     .limit(10);
+
+  const attended = rows.filter((r) => r.booking.attendanceStatus === "attended").length;
+  const noShow = rows.filter((r) => r.booking.attendanceStatus === "no_show").length;
 
   return c.json({
     student: {
@@ -283,9 +303,13 @@ teacherRoute.get("/students/:studentId", async (c) => {
       jlptLevel: student.jlptLevel ?? null,
       quizLevel: student.quizLevel ?? null,
       telegramId: student.telegramId ?? null,
-      assignedPlanId: access?.assignedPlanId ?? null,
+      assignedPlanId: snapshot.access.assignedPlanId,
       createdAt: student.createdAt.toISOString(),
     },
+    access: snapshot.access,
+    assignedPlan: snapshot.assignedPlan,
+    payments: snapshot.payments,
+    progress: { attended, noShow, total: rows.length },
     lessons: rows.map((r) => ({
       lessonId: r.lesson.id,
       title: r.lesson.title,
@@ -310,6 +334,45 @@ teacherRoute.get("/students/:studentId", async (c) => {
       createdAt: l.createdAt.toISOString(),
     })),
   });
+});
+
+// Accounts are admin-provisioned only (no public self-signup) — this is the
+// one path that creates a student login. The admin never sets or sees a
+// password: signUpEmail gets a throwaway random one, then
+// requestPasswordReset immediately emails an activation link through the
+// same mechanism a normal "forgot password" uses (see auth.ts
+// sendResetPassword, which branches its copy on emailVerified).
+teacherRoute.post("/students", zValidator("json", createStudentInput), async (c) => {
+  const { email, name, nickname, planId } = c.req.valid("json");
+  if (!paymentPlans.some((p) => p.id === planId)) {
+    throw new HTTPException(400, { message: "unknown plan" });
+  }
+  const throwawayPassword = crypto.randomUUID() + crypto.randomUUID();
+
+  const created = await auth.api.signUpEmail({
+    body: {
+      email,
+      password: throwawayPassword,
+      name,
+      // biome-ignore lint/suspicious/noExplicitAny: additional fields beyond the base schema
+      ...({ nickname, role: "student" } as any),
+    },
+  });
+
+  await db.insert(studentAccess).values({
+    userId: created.user.id,
+    assignedPlanId: planId,
+    updatedAt: new Date(),
+  });
+
+  await auth.api.requestPasswordReset({
+    body: {
+      email,
+      redirectTo: `${env.WEB_ORIGIN}/reset-password`,
+    },
+  });
+
+  return c.json({ ok: true, userId: created.user.id }, 201);
 });
 
 teacherRoute.patch(
@@ -658,6 +721,10 @@ teacherRoute.patch(
       .returning();
     if (!row) throw new HTTPException(404, { message: "student not booked on this lesson" });
 
+    if (body.attendanceStatus === "attended") {
+      await materializeCardsForAttendance(studentId, lessonId);
+    }
+
     return c.json({
       studentId: row.studentId,
       attendanceStatus: row.attendanceStatus,
@@ -761,7 +828,7 @@ teacherRoute.post("/lessons/:id/cards", zValidator("json", addLessonCardInput), 
     .returning();
   if (!row) throw new HTTPException(500, { message: "insert failed" });
 
-  await materializeNewCardForBookings(row.id);
+  await materializeNewCardForAttendedBookings(row.id);
   return c.json(toLessonCardDto(row), 201);
 });
 

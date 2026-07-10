@@ -27,7 +27,7 @@ export const auth = betterAuth({
     // break the reset-password request itself.
     //
     // This same flow doubles as account activation for admin-provisioned
-    // accounts (see POST /admin/students): those are created with
+    // accounts (see POST /teacher/students): those are created with
     // emailVerified: false and a throwaway password, so the very first
     // "reset" a fresh account gets is really "set your first password" —
     // branch the copy on that instead of building a second token/email path.

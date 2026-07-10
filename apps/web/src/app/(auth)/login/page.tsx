@@ -10,7 +10,7 @@ import { toast } from "sonner";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
 
-// Accounts are admin-provisioned only (see /admin/students) — there is no
+// Accounts are admin-provisioned only (see /teacher/students/new) — there is no
 // public self-signup. New users get an activation email; this page is
 // sign-in only, with a link to /forgot-password for both "I forgot my
 // password" and "I need to set my first password" (same flow, see

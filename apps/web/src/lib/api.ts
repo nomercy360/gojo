@@ -12,7 +12,10 @@ import type {
   LessonCardDto,
   LessonDto,
   LessonMaterialDto,
+  LibraryItemDto,
   LivekitTokenResponse,
+  PaymentAccessDto,
+  PaymentDto,
   PaymentPlanDto,
   PaymentsMeDto,
   QuizLeadInput,
@@ -75,6 +78,10 @@ export function fetchLesson(id: string) {
 
 export function fetchStudentStats() {
   return apiFetch<StudentStatsDto>("/lessons/my-stats");
+}
+
+export function fetchMyRecordings() {
+  return apiFetch<LibraryItemDto[]>("/lessons/my-recordings");
 }
 
 export function fetchLessonMaterials(lessonId: string) {
@@ -174,10 +181,6 @@ export function fetchKanji(char: string) {
   return apiFetch<KanjiDto>(`/kanji/${encodeURIComponent(char)}`);
 }
 
-export function fetchKanjiList(difficulty: "easy" | "medium" | "hard" | "all", limit: number) {
-  return apiFetch<KanjiDto[]>(`/kanji/list?difficulty=${difficulty}&limit=${limit}`);
-}
-
 export function fetchLessonCards(lessonId: string) {
   return apiFetch<LessonCardDto[]>(`/teacher/lessons/${lessonId}/cards`);
 }
@@ -263,7 +266,11 @@ export type TeacherStudentDto = {
   jlptLevel: string | null;
   quizLevel: string | null;
   lessonCount: number;
+  attendedCount: number;
   lastLessonAt: string | null;
+  activeUntil: string | null;
+  lessonCredits: number;
+  isActive: boolean;
 };
 
 export type TeacherStudentProfileDto = {
@@ -278,6 +285,10 @@ export type TeacherStudentProfileDto = {
     assignedPlanId: string | null;
     createdAt: string;
   };
+  access: PaymentAccessDto;
+  assignedPlan: PaymentPlanDto | null;
+  payments: PaymentDto[];
+  progress: { attended: number; noShow: number; total: number };
   lessons: Array<{
     lessonId: string;
     title: string;
@@ -303,37 +314,6 @@ export type TeacherStudentProfileDto = {
   }>;
 };
 
-export type AdminSummaryDto = {
-  leadPipeline: Array<{ status: string; count: number }>;
-  revenueRub: number;
-  activeStudents: number;
-  upcomingLessons: number;
-  retentionRisks: Array<{
-    studentId: string;
-    email: string;
-    nickname: string | null;
-    lastLessonAt: string | null;
-    reasons: string[];
-  }>;
-  teacherWorkload: Array<{
-    teacherId: string;
-    email: string;
-    nickname: string | null;
-    lessonCount: number;
-    attendedCount: number;
-    hours: number;
-  }>;
-  recentNotifications: Array<{
-    id: string;
-    event: string;
-    channel: string;
-    recipient: string;
-    status: string;
-    error: string | null;
-    createdAt: string;
-  }>;
-};
-
 export function fetchTeacherStudents(): Promise<TeacherStudentDto[]> {
   return apiFetch("/teacher/students");
 }
@@ -342,17 +322,13 @@ export function fetchTeacherStudentProfile(studentId: string): Promise<TeacherSt
   return apiFetch(`/teacher/students/${studentId}`);
 }
 
-export function fetchAdminSummary(): Promise<AdminSummaryDto> {
-  return apiFetch("/admin/summary");
-}
-
 export function createStudent(body: {
   email: string;
   name: string;
   nickname?: string;
   planId: string;
 }) {
-  return apiFetch<{ ok: boolean; userId: string }>("/admin/students", {
+  return apiFetch<{ ok: boolean; userId: string }>("/teacher/students", {
     method: "POST",
     body: JSON.stringify(body),
   });

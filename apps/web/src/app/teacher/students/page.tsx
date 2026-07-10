@@ -34,8 +34,13 @@ export default async function TeacherStudentsPage() {
             </div>
             <h1 className="mt-2 font-serif text-[28px] font-bold">Мои студенты</h1>
           </div>
-          <div className="rounded-md border border-black/10 bg-gojo-surface px-4 py-2 text-sm font-bold">
-            {students.length} всего
+          <div className="flex items-center gap-3">
+            <div className="rounded-md border border-black/10 bg-gojo-surface px-4 py-2 text-sm font-bold">
+              {students.length} всего
+            </div>
+            <Link href="/teacher/students/new" className="g-btn-primary text-sm">
+              + Новый студент
+            </Link>
           </div>
         </div>
 
@@ -69,8 +74,9 @@ export default async function TeacherStudentsPage() {
 
                 <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold">
                   <span className="rounded-sm bg-gojo-ink px-2 py-1 text-white">
-                    {s.lessonCount} уроков
+                    {s.attendedCount}/{s.lessonCount} уроков
                   </span>
+                  <PaymentPill student={s} />
                   <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
                     JLPT: {s.jlptLevel ?? "не выставлен"}
                   </span>
@@ -92,4 +98,18 @@ export default async function TeacherStudentsPage() {
       </div>
     </main>
   );
+}
+
+function PaymentPill({ student }: { student: TeacherStudentDto }) {
+  if (!student.isActive) {
+    return (
+      <span className="rounded-sm border border-gojo-error/40 bg-gojo-error-soft px-2 py-1 text-gojo-error">
+        нет оплаты
+      </span>
+    );
+  }
+  const label = student.activeUntil
+    ? `до ${new Date(student.activeUntil).toLocaleDateString("ru-RU")}`
+    : `${student.lessonCredits} ур. осталось`;
+  return <span className="rounded-sm bg-gojo-orange px-2 py-1 text-white">{label}</span>;
 }

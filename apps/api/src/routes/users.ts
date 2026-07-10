@@ -19,6 +19,7 @@ usersRoute.patch("/me", requireAuth, zValidator("json", updateProfileInput), asy
   const body = c.req.valid("json");
 
   const patch: Partial<typeof userTable.$inferInsert> = { updatedAt: new Date() };
+  if (body.name !== undefined) patch.name = body.name;
   if (body.nickname !== undefined) patch.nickname = body.nickname;
   if (body.avatarUrl !== undefined) patch.image = body.avatarUrl || null;
   if (body.telegramId !== undefined) patch.telegramId = body.telegramId;

@@ -9,7 +9,6 @@ import { auth } from "./auth.ts";
 import { type AuthContext, loadSession } from "./auth/middleware.ts";
 import { env } from "./env.ts";
 import { startReminderLoop } from "./reminders.ts";
-import { adminRoute } from "./routes/admin.ts";
 import { authRoute } from "./routes/auth.ts";
 import { homeworkRoute } from "./routes/homework.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
@@ -57,7 +56,6 @@ app.route("/leads", leadsRoute);
 
 // Custom dev-login lives under /dev-auth to avoid conflicting with better-auth
 app.route("/dev-auth", authRoute);
-app.route("/admin", adminRoute);
 app.route("/users", usersRoute);
 app.route("/lessons", lessonsRoute);
 app.route("/livekit", livekitRoute);
@@ -71,6 +69,13 @@ app.route("/training", trainingRoute);
 app.route("/homework", homeworkRoute);
 
 startReminderLoop();
+
+if (env.NODE_ENV === "production" && env.ALLOW_DEV_LOGIN) {
+  console.warn(
+    "⚠️  SECURITY: ALLOW_DEV_LOGIN is enabled in production — the /dev-auth/dev-login " +
+      "endpoint can mint arbitrary sessions (including admin). Unset ALLOW_DEV_LOGIN.",
+  );
+}
 
 console.log(`api listening on :${env.API_PORT}`);
 

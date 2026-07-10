@@ -15,6 +15,7 @@ export function toUserDto(u: User): UserDto {
   return {
     id: u.id,
     email: u.email,
+    name: u.name,
     nickname: u.nickname ?? null,
     avatarUrl: u.image ?? null,
     role: u.role,
@@ -80,6 +81,8 @@ export function toLessonDto(
     studentCount?: number;
     isParticipant?: boolean;
     now?: Date;
+    /** When false, recordingUrl is withheld (viewer lacks access). Defaults to true. */
+    includeRecording?: boolean;
   },
 ): LessonDto {
   let joinState: LessonJoinState | undefined;
@@ -106,7 +109,7 @@ export function toLessonDto(
     endsAt: lesson.endsAt.toISOString(),
     maxStudents: lesson.maxStudents,
     jlptLevel: lesson.jlptLevel,
-    recordingUrl: lesson.recordingUrl,
+    recordingUrl: opts?.includeRecording === false ? null : lesson.recordingUrl,
     ...(opts?.booked !== undefined ? { booked: opts.booked } : {}),
     ...(opts?.studentCount !== undefined ? { studentCount: opts.studentCount } : {}),
     ...(joinState ? { joinState } : {}),
