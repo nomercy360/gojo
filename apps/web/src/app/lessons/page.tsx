@@ -1,4 +1,5 @@
 import { LessonCountdown } from "@/components/lesson-countdown";
+import { LocalTime } from "@/components/local-time";
 import { fetchLessons } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -77,12 +78,6 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
   const isTomorrow = starts.toDateString() === new Date(Date.now() + 86400000).toDateString();
   const dayLabel = isToday ? "СЕГОДНЯ" : isTomorrow ? "ЗАВТРА" : null;
   const durationMin = Math.round((ends.getTime() - starts.getTime()) / 60000);
-  const fmt = new Intl.DateTimeFormat("ru-RU", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
   const seats = lesson.studentCount ?? 0;
   const max = lesson.maxStudents;
@@ -109,7 +104,16 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
               </span>
             ) : null}
             <span className="text-[11px] font-bold text-gojo-ink-muted">
-              {fmt.format(starts)} · {durationMin} мин
+              <LocalTime
+                iso={lesson.startsAt}
+                options={{
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }}
+              />{" "}
+              · {durationMin} мин
             </span>
           </div>
           <h3 className="mt-2 truncate font-serif text-[20px] font-bold">

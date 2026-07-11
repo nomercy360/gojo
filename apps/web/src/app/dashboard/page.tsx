@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/avatar";
 import { CalendarSection } from "@/components/calendar-section";
+import { LocalTime } from "@/components/local-time";
 import { fetchMyPayments, fetchMyRecordings, fetchStudentStats } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -148,7 +149,10 @@ export default async function DashboardPage() {
                     <div className="min-w-0">
                       <div className="truncate font-bold text-gojo-ink">{rec.title}</div>
                       <div className="mt-0.5 text-[12px] text-gojo-ink-muted">
-                        {new Date(rec.startsAt).toLocaleDateString("ru-RU")}
+                        <LocalTime
+                          iso={rec.startsAt}
+                          options={{ day: "numeric", month: "numeric", year: "numeric" }}
+                        />
                       </div>
                     </div>
                     <span className="shrink-0 text-[12px] font-bold text-gojo-orange">

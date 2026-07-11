@@ -1,4 +1,5 @@
 import { LessonCountdown } from "@/components/lesson-countdown";
+import { LocalTime } from "@/components/local-time";
 import {
   ApiError,
   type LessonStudentDto,
@@ -106,12 +107,15 @@ export default async function LessonDetailPage({ params }: Props) {
           <h1 className="mt-2 font-serif text-[32px] font-bold">{lesson.title}</h1>
           <p className="mt-2 text-sm text-gojo-ink-muted">
             {lesson.teacherNickname ?? "Teacher"} ·{" "}
-            {starts.toLocaleString("ru-RU", {
-              day: "numeric",
-              month: "long",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}{" "}
+            <LocalTime
+              iso={lesson.startsAt}
+              options={{
+                day: "numeric",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+              }}
+            />{" "}
             · {durationMin} мин
           </p>
         </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LocalTime } from "@/components/local-time";
 import { ApiError, fetchLesson, fetchLivekitToken } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
 import { RoomClient } from "./room-client";
@@ -46,10 +47,10 @@ export default async function RoomPage({ params }: Props) {
           <h1 className="text-sm font-bold text-white/90">{lesson.title}</h1>
           <span className="text-[11px] text-white/40">
             {lesson.teacherNickname} ·{" "}
-            {new Date(lesson.startsAt).toLocaleTimeString("ru-RU", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            <LocalTime
+              iso={lesson.startsAt}
+              options={{ hour: "2-digit", minute: "2-digit" }}
+            />
           </span>
         </div>
         <div className="flex items-center gap-2">
