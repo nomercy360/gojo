@@ -10,6 +10,8 @@ export const kanji = pgTable("kanji", {
   strokeCount: integer().notNull(),
   meaning: text().notNull(),
   grade: integer(),
+  /** JLPT level 3-5 (N3-N5) from the community jlpt_new mapping; null = above N3 or unlisted. */
+  jlpt: integer(),
   kunyomiJa: text(),
   kunyomi: text(),
   onyomiJa: text(),
@@ -27,18 +29,4 @@ export const kanji = pgTable("kanji", {
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 
-export const radicals = pgTable("radicals", {
-  id: integer().primaryKey(),
-  character: text().notNull(),
-  strokeCount: integer().notNull(),
-  meaning: text().notNull(),
-  readingJa: text(),
-  reading: text(),
-  rFilename: text(),
-  animFilename: text(),
-  positionJa: text(),
-  position: text(),
-});
-
 export type Kanji = typeof kanji.$inferSelect;
-export type Radical = typeof radicals.$inferSelect;

@@ -9,27 +9,25 @@ import { toKanjiDto } from "./mappers.ts";
 
 export const kanjiRoute = new Hono<AuthContext>();
 
-const DIFFICULTY_GRADES: Record<string, number[]> = {
-  easy: [1, 2],
-  medium: [3, 4],
-  hard: [5, 6],
+// JLPT-based difficulty: easy = N5, medium = N4, hard = N3 and above
+// (jlpt <= 3 or untagged jouyou kanji).
+const DIFFICULTY_JLPT: Record<string, number[]> = {
+  easy: [5],
+  medium: [4],
+  hard: [3],
 };
 
-/**
- * Random batch of kanji for the practice game. Grade is the Kanji Alive
- * elementary-school grade (1-6, or null for jouyou kanji taught later) —
- * used only as a rough difficulty knob, not a JLPT mapping.
- */
+/** Random batch of kanji for the practice game, filtered by JLPT difficulty. */
 kanjiRoute.get("/list", async (c) => {
   const difficulty = c.req.query("difficulty") ?? "all";
   const limit = Math.min(Math.max(Number(c.req.query("limit") ?? 10), 1), 40);
 
-  const grades = DIFFICULTY_GRADES[difficulty];
+  const jlptLevels = DIFFICULTY_JLPT[difficulty];
   const where =
     difficulty === "hard"
-      ? or(inArray(kanji.grade, grades!), isNull(kanji.grade))
-      : grades
-        ? inArray(kanji.grade, grades)
+      ? or(inArray(kanji.jlpt, jlptLevels!), isNull(kanji.jlpt))
+      : jlptLevels
+        ? inArray(kanji.jlpt, jlptLevels)
         : undefined;
 
   const rows = await db

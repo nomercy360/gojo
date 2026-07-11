@@ -11,6 +11,7 @@ export type SessionUser = {
   image?: string | null;
   jlptLevel?: string | null;
   quizLevel?: string | null;
+  currentLevel?: number | null;
 };
 
 export type AuthContext = {

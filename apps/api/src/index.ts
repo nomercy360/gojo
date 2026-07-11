@@ -15,6 +15,7 @@ import { homeworkRoute } from "./routes/homework.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
 import { leadsRoute } from "./routes/leads.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
+import { levelsRoute } from "./routes/levels.ts";
 import { livekitRoute } from "./routes/livekit.ts";
 import { onboardingRoute } from "./routes/onboarding.ts";
 import { paymentsRoute } from "./routes/payments.ts";
@@ -69,6 +70,7 @@ app.route("/review", reviewRoute);
 app.route("/kanji", kanjiRoute);
 app.route("/training", trainingRoute);
 app.route("/homework", homeworkRoute);
+app.route("/levels", levelsRoute);
 
 startReminderLoop();
 

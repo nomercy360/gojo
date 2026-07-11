@@ -2,13 +2,15 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { eq, sql } from "drizzle-orm";
 import * as schema from "./schema/index.ts";
-import { kanji, radicals } from "./schema/kanji.ts";
+import { kanji } from "./schema/kanji.ts";
 
 /**
- * Idempotent kanji + radicals seeder. Runs after migrations in CI deploy.
- * No-op if either table already has rows — lets us re-run safely on every
- * deploy without wiping or double-inserting reference data.
+ * Idempotent kanji seeder. Runs after migrations in CI deploy. No-op if the
+ * table already has rows — lets us re-run safely on every deploy without
+ * wiping or double-inserting reference data. The JLPT backfill runs even on
+ * an already-seeded table so existing DBs pick up the mapping.
  */
 
 function parseCsv(text: string): string[][] {
@@ -144,49 +146,30 @@ async function seedKanji(db: Client, dataDir: string): Promise<number> {
   return inserted;
 }
 
-async function seedRadicals(db: Client, dataDir: string): Promise<number> {
-  const existing = await db.select().from(radicals).limit(1);
-  if (existing.length > 0) {
-    console.log("[seed] radicals already seeded, skipping");
-    return 0;
+/**
+ * Fill kanji.jlpt from the vendored community mapping. Runs only when every
+ * jlpt value is still null, so a re-run on a tagged table is a no-op.
+ */
+async function backfillJlpt(db: Client, dataDir: string): Promise<void> {
+  const [tagged] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(kanji)
+    .where(sql`${kanji.jlpt} IS NOT NULL`);
+  if (Number(tagged?.n ?? 0) > 0) {
+    console.log("[seed] kanji jlpt already tagged, skipping");
+    return;
   }
 
-  const text = await readFile(`${dataDir}/japanese-radicals.csv`, "utf8");
-  const rows = parseCsv(text);
-  const [header, ...records] = rows;
-  if (!header) return 0;
-  const idx: Record<string, number | undefined> = Object.fromEntries(
-    header.map((h, i) => [h, i]),
-  );
-  const col = (r: string[], k: string): string | undefined => {
-    const i = idx[k];
-    return i === undefined ? undefined : r[i];
-  };
-
-  const batch = records
-    .map((r) => {
-      const id = num(col(r, "Radical ID#"));
-      const character = str(col(r, "Radical"));
-      const strokeCount = num(col(r, "Stroke#"));
-      if (id === null || !character || strokeCount === null) return null;
-      return {
-        id,
-        character,
-        strokeCount,
-        meaning: str(col(r, "Meaning")) ?? "",
-        readingJa: str(col(r, "Reading-J")),
-        reading: str(col(r, "Reading-R")),
-        rFilename: str(col(r, "R-Filename")),
-        animFilename: str(col(r, "Anim-Filename")),
-        positionJa: str(col(r, "Position-J")),
-        position: str(col(r, "Position-R")),
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
-
-  await db.insert(radicals).values(batch).onConflictDoNothing();
-  console.log(`[seed] inserted ${batch.length} radical rows`);
-  return batch.length;
+  const mapping = JSON.parse(await readFile(`${dataDir}/jlpt-kanji.json`, "utf8")) as Record<
+    string,
+    { jlpt: number; freq: number }
+  >;
+  let updated = 0;
+  for (const [character, { jlpt }] of Object.entries(mapping)) {
+    const res = await db.update(kanji).set({ jlpt }).where(eq(kanji.character, character));
+    updated += res.count ?? 0;
+  }
+  console.log(`[seed] tagged ${updated} kanji with jlpt levels`);
 }
 
 export async function runSeed(dataDir: string): Promise<void> {
@@ -195,7 +178,7 @@ export async function runSeed(dataDir: string): Promise<void> {
   const db = drizzle(client, { schema, casing: "snake_case" });
   try {
     await seedKanji(db, dataDir);
-    await seedRadicals(db, dataDir);
+    await backfillJlpt(db, dataDir);
   } finally {
     await client.end();
   }

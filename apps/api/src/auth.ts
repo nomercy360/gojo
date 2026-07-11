@@ -100,6 +100,11 @@ export const auth = betterAuth({
         required: false,
         input: false,
       },
+      currentLevel: {
+        type: "number",
+        required: false,
+        input: false,
+      },
       telegramId: {
         type: "number",
         required: false,

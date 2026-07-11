@@ -4,6 +4,7 @@ export * from "./lessons.ts";
 export * from "./personal-events.ts";
 export * from "./materials.ts";
 export * from "./kanji.ts";
+export * from "./curriculum.ts";
 export * from "./flashcards.ts";
 export * from "./progress.ts";
 export * from "./payments.ts";

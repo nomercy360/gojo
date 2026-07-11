@@ -3,7 +3,7 @@
  * Additional fields (role, nickname, avatarUrl, etc.) live on user via
  * better-auth's `user.additionalFields` config.
  */
-import { bigint, boolean, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, integer, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["student", "admin"]);
 
@@ -20,6 +20,8 @@ export const user = pgTable("user", {
   jlptLevel: text(),
   /** Indicative self-assessment from the onboarding quiz — shown to the student, never authoritative. */
   quizLevel: text(),
+  /** Position on the 30-level curriculum ladder. Advancement is gated (SRS coverage + homework), not self-served. */
+  currentLevel: integer().notNull().default(1),
   telegramId: bigint({ mode: "number" }).unique(),
 
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
