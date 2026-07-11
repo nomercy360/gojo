@@ -98,15 +98,6 @@ paymentsRoute.post("/checkout", requireAuth, zValidator("json", createCheckoutIn
   const plan = paymentPlans.find((p) => p.id === planId);
   if (!plan) throw new HTTPException(400, { message: "unknown plan" });
 
-  const [access] = await db
-    .select({ assignedPlanId: studentAccess.assignedPlanId })
-    .from(studentAccess)
-    .where(eq(studentAccess.userId, user.id))
-    .limit(1);
-  if (!access?.assignedPlanId || access.assignedPlanId !== planId) {
-    throw new HTTPException(403, { message: "plan not assigned to this student" });
-  }
-
   const idempotenceKey = crypto.randomUUID();
   const [local] = await db
     .insert(payments)

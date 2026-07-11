@@ -1,4 +1,4 @@
-import { fetchMyPayments } from "@/lib/api";
+import { fetchMyPayments, fetchPaymentPlans } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
@@ -45,7 +45,7 @@ export default async function PaymentsPage({
   if (isTeacherUser(user)) redirect("/teacher");
 
   const { error } = await searchParams;
-  const account = await fetchMyPayments();
+  const [account, plans] = await Promise.all([fetchMyPayments(), fetchPaymentPlans()]);
 
   return (
     <main className="min-h-screen bg-gojo-paper">
@@ -83,35 +83,23 @@ export default async function PaymentsPage({
           </div>
         </section>
 
-        {account.assignedPlan ? (
-          <section className="g-card mt-8 max-w-md p-5">
-            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-              Твой план
+        <section className="mt-8 grid gap-5 sm:grid-cols-2">
+          {plans.map((plan) => (
+            <div key={plan.id} className="g-card p-5">
+              <form action={checkoutAction}>
+                <input type="hidden" name="planId" value={plan.id} />
+                <h2 className="font-serif text-[24px] font-bold">{plan.title}</h2>
+                <p className="mt-2 text-sm text-gojo-ink-muted">{plan.description}</p>
+                <div className="mt-5 font-serif text-[34px] font-bold">
+                  {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+                </div>
+                <button type="submit" className="g-btn-primary mt-5 w-full text-sm">
+                  Оплатить через ЮKassa
+                </button>
+              </form>
             </div>
-            <form action={checkoutAction} className="mt-3">
-              <input type="hidden" name="planId" value={account.assignedPlan.id} />
-              <h2 className="font-serif text-[24px] font-bold">{account.assignedPlan.title}</h2>
-              <p className="mt-2 text-sm text-gojo-ink-muted">
-                {account.assignedPlan.description}
-              </p>
-              <div className="mt-5 font-serif text-[34px] font-bold">
-                {Number(account.assignedPlan.amountValue).toLocaleString("ru-RU")} ₽
-              </div>
-              <button type="submit" className="g-btn-primary mt-5 w-full text-sm">
-                Оплатить через ЮKassa
-              </button>
-            </form>
-          </section>
-        ) : (
-          <section className="g-card mt-8 p-5">
-            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-              Твой план
-            </div>
-            <p className="mt-2 text-sm text-gojo-ink-muted">
-              Тебе ещё не назначили тариф. Напиши нам — подберём подходящий план.
-            </p>
-          </section>
-        )}
+          ))}
+        </section>
 
         <ContactBlock />
 
