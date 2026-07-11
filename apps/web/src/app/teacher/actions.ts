@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ApiError, cancelLesson, createLesson } from "@/lib/api";
+import { ApiError, cancelLesson, createLesson, updateLessonMeetingUrl } from "@/lib/api";
 
 export type TeacherActionState = { error?: string; ok?: boolean };
 
@@ -14,6 +14,7 @@ export async function createLessonAction(
   const date = String(formData.get("date") ?? "");
   const time = String(formData.get("time") ?? "");
   const durationMin = Number(formData.get("duration") ?? 60);
+  const meetingUrl = String(formData.get("meetingUrl") ?? "").trim();
 
   if (!title || !date || !time) return { error: "Заполни все поля" };
 
@@ -27,6 +28,7 @@ export async function createLessonAction(
       title,
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
+      ...(meetingUrl ? { meetingUrl } : {}),
     });
   } catch (e) {
     if (e instanceof ApiError) {
@@ -38,6 +40,29 @@ export async function createLessonAction(
   }
 
   revalidatePath("/teacher");
+  return { ok: true };
+}
+
+export async function updateMeetingUrlAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
+  const lessonId = String(formData.get("lessonId") ?? "");
+  const meetingUrl = String(formData.get("meetingUrl") ?? "").trim();
+  if (!lessonId) return { error: "Нет id урока" };
+
+  try {
+    await updateLessonMeetingUrl(lessonId, meetingUrl || null);
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/login");
+      if (e.status === 400) return { error: "Ссылка должна быть корректным URL" };
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось сохранить ссылку" };
+  }
+
+  revalidatePath(`/teacher/lessons/${lessonId}`);
   return { ok: true };
 }
 

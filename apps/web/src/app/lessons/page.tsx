@@ -183,9 +183,21 @@ function LessonAction({
   }
 
   if (state === "joinable") {
+    if (lesson.meetingUrl) {
+      return (
+        <a
+          href={lesson.meetingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="g-btn-primary shrink-0 text-sm"
+        >
+          Войти ▸
+        </a>
+      );
+    }
     return (
-      <Link href={`/lessons/${lesson.id}/room`} className="g-btn-primary shrink-0 text-sm">
-        Войти ▸
+      <Link href={`/lessons/${lesson.id}`} className="g-btn-primary shrink-0 text-sm">
+        Открыть ▸
       </Link>
     );
   }

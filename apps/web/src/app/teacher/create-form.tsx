@@ -73,6 +73,21 @@ export function CreateLessonForm() {
             </select>
           </div>
         </div>
+        <div>
+          <label
+            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
+            htmlFor="meetingUrl"
+          >
+            Ссылка на встречу (Zoom / Meet, можно добавить позже)
+          </label>
+          <input
+            id="meetingUrl"
+            name="meetingUrl"
+            type="url"
+            placeholder="https://zoom.us/j/..."
+            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+          />
+        </div>
 
         {state.error ? (
           <p className="text-sm font-bold text-gojo-error">{state.error}</p>

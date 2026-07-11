@@ -13,7 +13,6 @@ import type {
   LessonDto,
   LessonMaterialDto,
   LibraryItemDto,
-  LivekitTokenResponse,
   PaymentAccessDto,
   PaymentDto,
   PaymentPlanDto,
@@ -105,12 +104,6 @@ export async function uploadLessonMaterial(
   return (await res.json()) as LessonMaterialDto;
 }
 
-export function fetchLivekitToken(lessonId: string) {
-  return apiFetch<LivekitTokenResponse>(`/livekit/token/${lessonId}`, {
-    method: "POST",
-  });
-}
-
 export function bookLesson(lessonId: string) {
   return apiFetch<{ id: string; lessonId: string; studentId: string }>(
     `/lessons/${lessonId}/book`,
@@ -147,10 +140,22 @@ export function fetchTeacherLessons() {
   return apiFetch<TeacherLessonDto[]>("/teacher/lessons");
 }
 
-export function createLesson(body: { title: string; startsAt: string; endsAt: string }) {
+export function createLesson(body: {
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  meetingUrl?: string;
+}) {
   return apiFetch<LessonDto>("/teacher/lessons", {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export function updateLessonMeetingUrl(lessonId: string, meetingUrl: string | null) {
+  return apiFetch<LessonDto>(`/teacher/lessons/${lessonId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ meetingUrl }),
   });
 }
 

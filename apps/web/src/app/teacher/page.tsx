@@ -127,12 +127,16 @@ function TeacherLessonCard({ lesson }: { lesson: TeacherLessonDto }) {
             >
               Управлять ▸
             </a>
-            <a
-              href={`/lessons/${lesson.id}/room`}
-              className="text-sm font-bold text-gojo-orange hover:underline"
-            >
-              Войти ▸
-            </a>
+            {lesson.meetingUrl ? (
+              <a
+                href={lesson.meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-bold text-gojo-orange hover:underline"
+              >
+                Войти ▸
+              </a>
+            ) : null}
           </div>
         </div>
         <form action={cancelLessonAction}>

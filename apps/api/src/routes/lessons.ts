@@ -88,6 +88,7 @@ lessonsRoute.get("/", async (c) => {
         studentCount,
         isParticipant: booked || isOwner,
         now,
+        includeMeetingUrl: booked || isOwner,
       });
     }),
   );
@@ -237,6 +238,7 @@ lessonsRoute.get("/:id", async (c) => {
       isParticipant: booked || isOwner,
       now,
       includeRecording: booked || isOwner || isAdmin,
+      includeMeetingUrl: booked || isOwner || isAdmin,
     }),
   );
 });

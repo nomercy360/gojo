@@ -136,19 +136,26 @@ export default async function LessonDetailPage({ params }: Props) {
               </video>
             </div>
           </section>
-        ) : lesson.status === "completed" ? (
-          <div className="mt-10 rounded-lg border border-black/10 bg-gojo-paper-2 px-5 py-6 text-center text-sm text-gojo-ink-muted">
-            Запись обрабатывается. Обычно это занимает до 30 минут.
-          </div>
         ) : null}
 
-        {/* Join room — gated by joinState */}
+        {/* Join link (Zoom/Meet) — gated by joinState */}
         {user && lesson.joinState === "joinable" ? (
-          <div className="mt-8">
-            <Link href={`/lessons/${id}/room`} className="g-btn-primary inline-flex text-sm">
-              Войти в урок ▸
-            </Link>
-          </div>
+          lesson.meetingUrl ? (
+            <div className="mt-8">
+              <a
+                href={lesson.meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="g-btn-primary inline-flex text-sm"
+              >
+                Войти в урок ▸
+              </a>
+            </div>
+          ) : (
+            <div className="mt-8 rounded-md border border-black/10 bg-gojo-paper-2 px-5 py-4 text-sm text-gojo-ink-muted">
+              Учитель ещё не добавил ссылку на встречу — она появится здесь перед началом.
+            </div>
+          )
         ) : user && lesson.joinState === "waiting" && lesson.joinOpensAt ? (
           <div className="mt-8 rounded-md border border-black/10 bg-gojo-paper-2 px-5 py-4">
             <div className="text-[13px] font-bold text-gojo-ink">

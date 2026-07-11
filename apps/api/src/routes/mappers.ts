@@ -83,6 +83,8 @@ export function toLessonDto(
     now?: Date;
     /** When false, recordingUrl is withheld (viewer lacks access). Defaults to true. */
     includeRecording?: boolean;
+    /** When false, meetingUrl is withheld (viewer lacks access). Defaults to false. */
+    includeMeetingUrl?: boolean;
   },
 ): LessonDto {
   let joinState: LessonJoinState | undefined;
@@ -110,6 +112,7 @@ export function toLessonDto(
     maxStudents: lesson.maxStudents,
     jlptLevel: lesson.jlptLevel,
     recordingUrl: opts?.includeRecording === false ? null : lesson.recordingUrl,
+    meetingUrl: opts?.includeMeetingUrl ? lesson.meetingUrl : null,
     ...(opts?.booked !== undefined ? { booked: opts.booked } : {}),
     ...(opts?.studentCount !== undefined ? { studentCount: opts.studentCount } : {}),
     ...(joinState ? { joinState } : {}),

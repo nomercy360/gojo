@@ -37,6 +37,7 @@ const createLessonInput = z.object({
   title: z.string().min(1).max(200),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
+  meetingUrl: z.string().url().max(500).optional(),
   metadata: z
     .object({
       topic: z.string().optional(),
@@ -49,6 +50,7 @@ const updateLessonInput = z.object({
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
   status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
+  meetingUrl: z.string().url().max(500).nullable().optional(),
 });
 
 const leadStatusInput = z.object({
@@ -428,6 +430,7 @@ teacherRoute.get("/lessons", async (c) => {
         studentCount,
         isParticipant: true,
         now,
+        includeMeetingUrl: true,
       });
     }),
   );
@@ -444,12 +447,13 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
       title: body.title,
       startsAt: new Date(body.startsAt),
       endsAt: new Date(body.endsAt),
+      meetingUrl: body.meetingUrl,
       metadata: body.metadata,
     })
     .returning();
 
   if (!row) throw new HTTPException(500, { message: "failed to create lesson" });
-  return c.json(toLessonDto(row, null), 201);
+  return c.json(toLessonDto(row, null, { includeMeetingUrl: true }), 201);
 });
 
 teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async (c) => {
@@ -466,10 +470,11 @@ teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async 
   if (body.startsAt !== undefined) patch.startsAt = new Date(body.startsAt);
   if (body.endsAt !== undefined) patch.endsAt = new Date(body.endsAt);
   if (body.status !== undefined) patch.status = body.status;
+  if (body.meetingUrl !== undefined) patch.meetingUrl = body.meetingUrl;
 
   const [row] = await db.update(lessons).set(patch).where(eq(lessons.id, id)).returning();
   if (!row) throw new HTTPException(500, { message: "update failed" });
-  return c.json(toLessonDto(row, null));
+  return c.json(toLessonDto(row, null, { includeMeetingUrl: true }));
 });
 
 teacherRoute.delete("/lessons/:id", async (c) => {

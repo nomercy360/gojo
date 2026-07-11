@@ -38,6 +38,7 @@ export const lessonDto = z.object({
   studentCount: z.number().optional(),
   jlptLevel: z.string().nullable(),
   recordingUrl: z.string().nullable(),
+  meetingUrl: z.string().nullable(),
   booked: z.boolean().optional(),
   joinState: lessonJoinStateSchema.optional(),
   joinOpensAt: z.string().optional(),
@@ -72,10 +73,3 @@ export const studentStatsDto = z.object({
   currentStreak: z.number(),
 });
 export type StudentStatsDto = z.infer<typeof studentStatsDto>;
-
-export const livekitTokenResponse = z.object({
-  token: z.string(),
-  url: z.string(),
-  room: z.string(),
-});
-export type LivekitTokenResponse = z.infer<typeof livekitTokenResponse>;

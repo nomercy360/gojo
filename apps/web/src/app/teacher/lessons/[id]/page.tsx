@@ -20,6 +20,7 @@ import type {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MaterialUploadForm } from "./material-upload-form";
+import { MeetingLinkForm } from "./meeting-link-form";
 import { SubmissionsReview } from "./submissions-review";
 
 export const dynamic = "force-dynamic";
@@ -80,26 +81,19 @@ export default async function TeacherLessonPage({ params }: Props) {
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
             Урок учителя
           </div>
-          <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="font-serif text-[32px] font-bold">{lesson.title}</h1>
-              <p className="mt-2 text-sm text-gojo-ink-muted">
-                {starts.toLocaleString("ru-RU", {
-                  day: "numeric",
-                  month: "long",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                · {durationMin} мин · {students.length} студ.
-              </p>
-            </div>
-            <Link
-              href={`/lessons/${id}/room`}
-              className="g-btn-primary text-sm"
-            >
-              Войти в комнату ▸
-            </Link>
+          <div className="mt-3">
+            <h1 className="font-serif text-[32px] font-bold">{lesson.title}</h1>
+            <p className="mt-2 text-sm text-gojo-ink-muted">
+              {starts.toLocaleString("ru-RU", {
+                day: "numeric",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}{" "}
+              · {durationMin} мин · {students.length} студ.
+            </p>
           </div>
+          <MeetingLinkForm lessonId={id} meetingUrl={lesson.meetingUrl} />
         </div>
 
         <section className="mt-10">

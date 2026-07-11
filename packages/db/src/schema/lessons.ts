@@ -30,6 +30,9 @@ export const lessons = pgTable("lessons", {
   maxStudents: integer().notNull().default(8),
   jlptLevel: text(),
   recordingUrl: text(),
+  // External meeting link (Zoom/Meet) the teacher pastes; MVP replaces the
+  // in-app LiveKit room.
+  meetingUrl: text(),
   metadata: jsonb().$type<{ topic?: string }>(),
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
