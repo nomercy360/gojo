@@ -51,6 +51,11 @@ const schema = z.object({
   // Claude first-pass homework review. Unset = submissions stay in
   // "submitted" and the teacher reviews raw text without AI markup.
   ANTHROPIC_API_KEY: z.string().optional(),
+  // Resend transactional email. When set, mail goes through the Resend HTTP
+  // API (port 443) instead of SMTP — prod SMTP ports are blocked on the VM.
+  // Unset (dev) falls back to SMTP/Mailpit. Sender domain must be verified
+  // in Resend and match SMTP_FROM.
+  RESEND_API_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);

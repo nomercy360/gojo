@@ -132,6 +132,9 @@ services:
       # Claude first-pass homework review. Lives in .env.prod. Unset = AI
       # pass skipped; submissions wait for the teacher as raw text.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Resend transactional email (HTTP API on 443 — VM SMTP ports blocked).
+      # Unset falls back to SMTP. Sender domain must be verified in Resend.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
       YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
 
