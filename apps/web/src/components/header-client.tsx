@@ -101,12 +101,6 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
                 Студенты
               </Link>
               <Link
-                href="/teacher/leads"
-                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-              >
-                Заявки
-              </Link>
-              <Link
                 href="/profile"
                 className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
               >

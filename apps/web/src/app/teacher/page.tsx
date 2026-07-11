@@ -36,9 +36,6 @@ export default async function TeacherPage() {
           <Link href="/teacher/students" className="g-btn-secondary text-sm">
             Мои студенты ▸
           </Link>
-          <Link href="/teacher/leads" className="g-btn-primary text-sm">
-            Заявки ▸
-          </Link>
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">
