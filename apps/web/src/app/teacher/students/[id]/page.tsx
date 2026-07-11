@@ -9,7 +9,9 @@ import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { StudentAccessForm } from "./access-form";
 import { setStudentPlanAction } from "./actions";
+import { StudentIdentityForm } from "./identity-form";
 
 export const dynamic = "force-dynamic";
 
@@ -71,12 +73,9 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
               <h1 className="mt-1 font-serif text-[32px] font-bold">
                 {student.nickname ?? student.email}
               </h1>
-              <p className="text-sm text-gojo-ink-muted">
-                {student.email} · JLPT: {student.jlptLevel ?? "не выставлен"} · Квиз:{" "}
-                {student.quizLevel ?? "нет"}
-              </p>
             </div>
           </div>
+          <StudentIdentityForm student={student} />
         </section>
 
         <section className="g-card mt-6 p-5">
@@ -128,6 +127,13 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
             />
             <StatusTile label="Уроки" value={String(profile.access.lessonCredits)} />
           </div>
+
+          <StudentAccessForm
+            studentId={student.id}
+            activeUntil={profile.access.activeUntil}
+            lessonCredits={profile.access.lessonCredits}
+            assignedPlanId={student.assignedPlanId}
+          />
 
           {profile.payments.length > 0 ? (
             <ul className="mt-4 space-y-2">

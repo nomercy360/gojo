@@ -1,5 +1,6 @@
 "use client";
 
+import { BookingModal } from "@/components/booking-modal";
 import { authClient } from "@/lib/auth-client";
 import { homePathForUser } from "@/lib/roles";
 import Link from "next/link";
@@ -11,14 +12,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
 
 // Accounts are admin-provisioned only (see /teacher/students/new) — there is no
-// public self-signup. New users get an activation email; this page is
-// sign-in only, with a link to /forgot-password for both "I forgot my
-// password" and "I need to set my first password" (same flow, see
-// apps/api/src/auth.ts sendResetPassword).
+// public self-signup, so /forgot-password only ever does something for an
+// email an admin already provisioned (same flow covers "set my first
+// password" for a fresh account, see apps/api/src/auth.ts sendResetPassword).
+// Anyone without an account yet gets routed to the booking modal instead.
 export default function LoginPage() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -86,13 +88,24 @@ export default function LoginPage() {
 
         <p className="mt-6 text-[13px] text-gojo-ink-muted">
           <Link href="/forgot-password" className="font-bold text-gojo-orange hover:underline">
-            Забыли пароль или впервые здесь?
+            Забыли пароль?
           </Link>
         </p>
-        <p className="mt-2 text-[11px] text-gojo-ink-muted">
-          Аккаунт создаётся администратором после консультации.
-        </p>
+
+        <div className="mt-8 rounded-lg border border-black/10 bg-gojo-surface p-4">
+          <p className="text-[13px] text-gojo-ink-muted">
+            Ещё нет аккаунта? Аккаунт создаётся администратором после бесплатной консультации.
+          </p>
+          <button
+            type="button"
+            onClick={() => setBookingOpen(true)}
+            className="g-btn-primary mt-3 w-full text-sm"
+          >
+            Записаться на консультацию
+          </button>
+        </div>
       </div>
+      <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </main>
   );
 }

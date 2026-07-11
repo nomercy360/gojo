@@ -303,24 +303,15 @@ export function Landing() {
         </div>
 
         <div className="hero-image-col" id="hero-images">
-          <div
-            className={`triptych-card ${active === 0 ? "active" : "dim"}`}
-            onClick={() => setActive(0)}
-          >
+          <div className={`triptych-card ${active === 0 ? "active" : "dim"}`}>
             <img className="img-manga" src="/landing/manga.webp" alt="Манга и аниме в оригинале" />
             <div className="label">Манга и аниме</div>
           </div>
-          <div
-            className={`triptych-card ${active === 1 ? "active" : "dim"}`}
-            onClick={() => setActive(1)}
-          >
+          <div className={`triptych-card ${active === 1 ? "active" : "dim"}`}>
             <img className="img-culture" src="/landing/culture.webp" alt="Культура Японии" />
             <div className="label">Культура</div>
           </div>
-          <div
-            className={`triptych-card ${active === 2 ? "active" : "dim"}`}
-            onClick={() => setActive(2)}
-          >
+          <div className={`triptych-card ${active === 2 ? "active" : "dim"}`}>
             <img className="img-study" src="/landing/study.webp" alt="Учёба и жизнь в Японии" />
             <div className="label">Жить в Японии</div>
           </div>
@@ -497,7 +488,7 @@ export function Landing() {
               <div className="how-card-text">
                 Короткий тест — 10 минут, без регистрации, и мы знаем с чего начать.
               </div>
-              <div className="how-card-cta how-card-cta-btn">Пройти тест →</div>
+              <div className="how-card-cta how-card-cta-btn">Пройти тест</div>
             </div>
           </Link>
 

@@ -24,6 +24,13 @@ export const setStudentPlanInput = z.object({
 });
 export type SetStudentPlanInput = z.infer<typeof setStudentPlanInput>;
 
+/** Admin manually correcting a student's payment access (cash payments, comps, fixes). */
+export const adminUpdateAccessInput = z.object({
+  activeUntil: z.string().datetime().nullable().optional(),
+  lessonCredits: z.number().int().min(0).optional(),
+});
+export type AdminUpdateAccessInput = z.infer<typeof adminUpdateAccessInput>;
+
 export const checkoutResponseDto = z.object({
   paymentId: z.string().uuid(),
   status: paymentStatusSchema,

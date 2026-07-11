@@ -130,7 +130,7 @@ function LeadCard({ lead }: { lead: TeacherLeadDto }) {
               href={`/teacher/lessons/${lead.trialLessonId}`}
               className="mt-3 inline-block text-sm font-bold text-gojo-orange hover:underline"
             >
-              Открыть пробный урок ▸
+              Открыть пробный урок
             </Link>
           ) : null}
         </div>

@@ -146,7 +146,7 @@ export default async function LessonDetailPage({ params }: Props) {
         {user && lesson.joinState === "joinable" ? (
           <div className="mt-8">
             <Link href={`/lessons/${id}/room`} className="g-btn-primary inline-flex text-sm">
-              Войти в урок ▸
+              Войти в урок
             </Link>
           </div>
         ) : user && lesson.joinState === "waiting" && lesson.joinOpensAt ? (

@@ -1,5 +1,7 @@
 import type {
   AddLessonCardInput,
+  AdminUpdateAccessInput,
+  AdminUpdateStudentInput,
   CheckoutResponseDto,
   FlashcardDto,
   HomeworkStatus,
@@ -276,6 +278,7 @@ export type TeacherStudentDto = {
 export type TeacherStudentProfileDto = {
   student: {
     id: string;
+    name: string;
     nickname: string | null;
     email: string;
     avatarUrl: string | null;
@@ -338,6 +341,20 @@ export function setStudentPlan(studentId: string, planId: string) {
   return apiFetch<{ studentId: string; assignedPlanId: string }>(
     `/teacher/students/${studentId}/plan`,
     { method: "PATCH", body: JSON.stringify({ planId }) },
+  );
+}
+
+export function updateStudentProfile(studentId: string, body: AdminUpdateStudentInput) {
+  return apiFetch<UserDto>(`/teacher/students/${studentId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateStudentAccess(studentId: string, body: AdminUpdateAccessInput) {
+  return apiFetch<{ activeUntil: string | null; lessonCredits: number }>(
+    `/teacher/students/${studentId}/access`,
+    { method: "PATCH", body: JSON.stringify(body) },
   );
 }
 
