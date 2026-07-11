@@ -97,7 +97,7 @@ export default async function TeacherLessonPage({ params }: Props) {
               href={`/lessons/${id}/room`}
               className="g-btn-primary text-sm"
             >
-              Войти в комнату ▸
+              Войти в комнату
             </Link>
           </div>
         </div>

@@ -156,7 +156,7 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     <span className="shrink-0 text-[12px] font-bold text-gojo-orange">
-                      Смотреть →
+                      Смотреть
                     </span>
                   </Link>
                 </li>

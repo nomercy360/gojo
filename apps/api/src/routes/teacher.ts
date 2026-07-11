@@ -11,6 +11,8 @@ import {
 } from "@gojo/db";
 import {
   addLessonCardInput,
+  adminUpdateAccessInput,
+  adminUpdateStudentInput,
   createStudentInput,
   reviewSubmissionInput,
   setHomeworkStatusInput,
@@ -28,7 +30,7 @@ import { db } from "../db.ts";
 import { env } from "../env.ts";
 import { materializeCardsForAttendance, materializeNewCardForAttendedBookings } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
-import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
+import { toLessonCardDto, toLessonDto, toSubmissionDto, toUserDto } from "./mappers.ts";
 import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
@@ -297,6 +299,7 @@ teacherRoute.get("/students/:studentId", async (c) => {
   return c.json({
     student: {
       id: student.id,
+      name: student.name,
       nickname: student.nickname ?? student.name ?? null,
       email: student.email,
       avatarUrl: student.image ?? null,
@@ -401,6 +404,68 @@ teacherRoute.patch(
       });
 
     return c.json({ studentId, assignedPlanId: planId });
+  },
+);
+
+teacherRoute.patch(
+  "/students/:studentId",
+  zValidator("json", adminUpdateStudentInput),
+  async (c) => {
+    const studentId = c.req.param("studentId");
+    const body = c.req.valid("json");
+
+    const patch: Partial<typeof userTable.$inferInsert> = { updatedAt: new Date() };
+    if (body.name !== undefined) patch.name = body.name;
+    if (body.nickname !== undefined) patch.nickname = body.nickname;
+    if (body.email !== undefined) patch.email = body.email;
+    if (body.jlptLevel !== undefined) patch.jlptLevel = body.jlptLevel;
+    if (body.quizLevel !== undefined) patch.quizLevel = body.quizLevel;
+
+    let row: typeof userTable.$inferSelect | undefined;
+    try {
+      [row] = await db.update(userTable).set(patch).where(eq(userTable.id, studentId)).returning();
+    } catch (err) {
+      if (err instanceof Error && "code" in err && (err as { code?: string }).code === "23505") {
+        throw new HTTPException(409, { message: "email_taken" });
+      }
+      throw err;
+    }
+    if (!row) throw new HTTPException(404, { message: "student not found" });
+    return c.json(toUserDto(row));
+  },
+);
+
+teacherRoute.patch(
+  "/students/:studentId/access",
+  zValidator("json", adminUpdateAccessInput),
+  async (c) => {
+    const studentId = c.req.param("studentId");
+    const body = c.req.valid("json");
+
+    const [student] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.id, studentId))
+      .limit(1);
+    if (!student) throw new HTTPException(404, { message: "student not found" });
+
+    const patch: Partial<typeof studentAccess.$inferInsert> = { updatedAt: new Date() };
+    if (body.activeUntil !== undefined) {
+      patch.activeUntil = body.activeUntil ? new Date(body.activeUntil) : null;
+    }
+    if (body.lessonCredits !== undefined) patch.lessonCredits = body.lessonCredits;
+
+    const [row] = await db
+      .insert(studentAccess)
+      .values({ userId: studentId, ...patch })
+      .onConflictDoUpdate({ target: studentAccess.userId, set: patch })
+      .returning();
+    if (!row) throw new HTTPException(500, { message: "update failed" });
+
+    return c.json({
+      activeUntil: row.activeUntil ? row.activeUntil.toISOString() : null,
+      lessonCredits: row.lessonCredits,
+    });
   },
 );
 

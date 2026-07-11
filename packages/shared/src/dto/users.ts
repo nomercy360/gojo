@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { jlptLevelSchema } from "./onboarding";
 
 export const userRoleSchema = z.enum(["student", "admin"]);
 export type UserRole = z.infer<typeof userRoleSchema>;
@@ -41,3 +42,13 @@ export const updateProfileInput = z.object({
   telegramId: z.number().int().positive().nullable().optional(),
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileInput>;
+
+/** Admin editing a student's own identity/level fields from the teacher panel. */
+export const adminUpdateStudentInput = z.object({
+  name: z.string().min(1).max(200).optional(),
+  nickname: z.string().min(1).max(40).optional(),
+  email: z.string().email().optional(),
+  jlptLevel: jlptLevelSchema.nullable().optional(),
+  quizLevel: z.string().min(1).max(40).nullable().optional(),
+});
+export type AdminUpdateStudentInput = z.infer<typeof adminUpdateStudentInput>;

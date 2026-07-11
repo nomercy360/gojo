@@ -34,10 +34,10 @@ export default async function TeacherPage() {
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <h1 className="font-serif text-[28px] font-bold">Мои уроки</h1>
           <Link href="/teacher/students" className="g-btn-secondary text-sm">
-            Мои студенты ▸
+            Мои студенты
           </Link>
           <Link href="/teacher/leads" className="g-btn-primary text-sm">
-            Заявки ▸
+            Заявки
           </Link>
         </div>
 
@@ -50,7 +50,7 @@ export default async function TeacherPage() {
               </div>
             ) : scheduled.length === 0 ? (
               <div className="g-card px-5 py-10 text-center text-gojo-ink-muted">
-                Нет запланированных уроков. Создай первый →
+                Нет запланированных уроков. Создай первый
               </div>
             ) : (
               <ul className="space-y-4">
@@ -81,7 +81,7 @@ export default async function TeacherPage() {
                         href={`/teacher/lessons/${l.id}`}
                         className="shrink-0 text-xs font-bold text-gojo-orange hover:underline"
                       >
-                        Управлять ▸
+                        Управлять
                       </Link>
                     </li>
                   ))}
@@ -125,13 +125,13 @@ function TeacherLessonCard({ lesson }: { lesson: TeacherLessonDto }) {
               href={`/teacher/lessons/${lesson.id}`}
               className="text-sm font-bold text-gojo-orange hover:underline"
             >
-              Управлять ▸
+              Управлять
             </a>
             <a
               href={`/lessons/${lesson.id}/room`}
               className="text-sm font-bold text-gojo-orange hover:underline"
             >
-              Войти ▸
+              Войти
             </a>
           </div>
         </div>

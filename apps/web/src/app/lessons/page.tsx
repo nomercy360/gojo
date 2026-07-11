@@ -185,7 +185,7 @@ function LessonAction({
   if (state === "joinable") {
     return (
       <Link href={`/lessons/${lesson.id}/room`} className="g-btn-primary shrink-0 text-sm">
-        Войти ▸
+        Войти
       </Link>
     );
   }

@@ -612,7 +612,6 @@ html:has(.landing-root) {
   background: var(--cream);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.5s ease;
-  cursor: pointer;
 }
 .landing-root .triptych-card.dim {
   opacity: 0.35;
