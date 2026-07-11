@@ -31,8 +31,13 @@ export const auth = betterAuth({
     // emailVerified: false and a throwaway password, so the very first
     // "reset" a fresh account gets is really "set your first password" —
     // branch the copy on that instead of building a second token/email path.
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async ({ user, token }) => {
       const isFirstActivation = !user.emailVerified;
+      // Build the link straight to the frontend page (which reads ?token= and
+      // calls authClient.resetPassword). better-auth's own `url` points at
+      // baseURL/auth/... without the public /api prefix, so it 404s through
+      // Caddy — don't use it.
+      const link = `${env.WEB_ORIGIN}/reset-password?token=${token}`;
       try {
         await sendEmail(
           user.email,
@@ -42,11 +47,11 @@ export const auth = betterAuth({
           isFirstActivation
             ? `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
                <p>Для тебя создан аккаунт в Gojo Learn. Установи пароль, чтобы войти:</p>
-               <p><a href="${url}">Установить пароль</a></p>
+               <p><a href="${link}">Установить пароль</a></p>
                <p>Если ты не ожидал(а) это письмо — просто проигнорируй его.</p>`
             : `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
                <p>Кто-то (надеемся, ты) запросил сброс пароля для аккаунта Gojo Learn.</p>
-               <p><a href="${url}">Сбросить пароль</a></p>
+               <p><a href="${link}">Сбросить пароль</a></p>
                <p>Если это был не ты — просто проигнорируй это письмо.</p>`,
         );
       } catch (err) {
@@ -59,14 +64,18 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     // Best-effort — same reasoning: a mail failure must not break sign-up
     // itself, since sign-in isn't gated on verification (yet).
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, token }) => {
+      // verify-email is an API GET that marks the address verified then
+      // redirects to callbackURL. Route it through the public /api prefix so
+      // Caddy reaches the container; better-auth's `url` omits /api and 404s.
+      const link = `${env.WEB_ORIGIN}/api/auth/verify-email?token=${token}&callbackURL=${encodeURIComponent(`${env.WEB_ORIGIN}/login`)}`;
       try {
         await sendEmail(
           user.email,
           "Подтверди почту — Gojo Learn",
           `<p>Привет${user.name ? `, ${user.name}` : ""}!</p>
            <p>Спасибо за регистрацию в Gojo Learn. Подтверди свою почту:</p>
-           <p><a href="${url}">Подтвердить почту</a></p>
+           <p><a href="${link}">Подтвердить почту</a></p>
            <p>Если ты не регистрировался — просто проигнорируй это письмо.</p>`,
         );
       } catch (err) {

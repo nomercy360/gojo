@@ -98,6 +98,9 @@ services:
       # routes are matched at /auth/*. A baseURL with /api → 404; empty
       # trustedOrigins → 403 INVALID_ORIGIN.
       API_ORIGIN: ${API_ORIGIN:-https://gojolearn.ru}
+      # Public web origin — used to build password-reset / verification links
+      # in emails. Must be the site origin, not the API path.
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://gojolearn.ru}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-https://gojolearn.ru}
       DATABASE_URL: postgres://${POSTGRES_USER:-gojo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gojo}
       REDIS_URL: redis://redis:6379
