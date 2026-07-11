@@ -129,6 +129,8 @@ const KATAKANA: Kana[] = [
 
 const ALL_KANA = [...HIRAGANA, ...KATAKANA];
 
+const ROUND_SIZE = 25;
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -728,9 +730,14 @@ export function KanaGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   function startGame(mode: SetupMode, dir: Direction, customQueue?: Kana[]) {
     setSetupMode(mode);
     setDirection(dir);
+    // Short rounds (random sample of the set) — a full 46/92-kana round is
+    // too long to hold attention; missed kana resurface via "retry mistakes".
     const q =
       customQueue ??
-      shuffle(mode === "hiragana" ? HIRAGANA : mode === "katakana" ? KATAKANA : ALL_KANA);
+      shuffle(mode === "hiragana" ? HIRAGANA : mode === "katakana" ? KATAKANA : ALL_KANA).slice(
+        0,
+        ROUND_SIZE,
+      );
     setQueue(q);
     setQueueIndex(0);
     setCorrectCount(0);
