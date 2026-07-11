@@ -16,19 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: gojo-redis
-    restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   minio:
     image: minio/minio:latest
     container_name: gojo-minio
@@ -62,17 +49,6 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET: ${S3_BUCKET:-gojo}
 
-  livekit:
-    image: livekit/livekit-server:latest
-    container_name: gojo-livekit
-    restart: unless-stopped
-    environment:
-      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET}"
-    ports:
-      - "7881:7881"
-      - "7882:7882/udp"
-    command: --dev --bind 0.0.0.0
-
   api:
     image: ${GOJO_IMAGE_API:-ghcr.io/nomercy360/gojo-api:latest}
     pull_policy: always
@@ -88,8 +64,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       # better-auth baseURL (used for absolute URLs + origin validation) and
@@ -103,13 +77,9 @@ services:
       WEB_ORIGIN: ${WEB_ORIGIN:-https://gojolearn.ru}
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-https://gojolearn.ru}
       DATABASE_URL: postgres://${POSTGRES_USER:-gojo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gojo}
-      REDIS_URL: redis://redis:6379
       API_PORT: "3001"
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       ALLOW_DEV_LOGIN: ${ALLOW_DEV_LOGIN:-false}
-      LIVEKIT_URL: ${LIVEKIT_URL:-ws://livekit:7880}
-      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
-      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       S3_ENDPOINT: http://minio:9000
       S3_PUBLIC_URL: ${S3_PUBLIC_URL:?set S3_PUBLIC_URL}
       S3_REGION: us-east-1
@@ -175,7 +145,6 @@ services:
 
 volumes:
   pg_data:
-  redis_data:
   minio_data:
   caddy_data:
   caddy_config:

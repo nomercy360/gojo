@@ -3,7 +3,6 @@ import { z } from "zod";
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url().optional(),
   API_PORT: z.coerce.number().default(3001),
   API_ORIGIN: z.string().url().default("http://localhost:3001"),
   WEB_ORIGIN: z.string().url().default("http://localhost:3000"),

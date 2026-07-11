@@ -1,6 +1,6 @@
 # Gojo Learn
 
-Школа японского языка нового поколения. Монорепо: Next.js + Hono + Drizzle + Postgres + LiveKit + better-auth.
+Школа японского языка нового поколения. Монорепо: Next.js + Hono + Drizzle + Postgres + better-auth.
 
 ## Стек
 
@@ -8,7 +8,7 @@
 - **API**: Hono on Bun
 - **DB**: PostgreSQL 18 + pgvector
 - **Auth**: better-auth (email/password, sessions, OAuth-ready)
-- **Video**: LiveKit self-hosted
+- **Video**: внешние ссылки (Zoom/Meet) на уроке
 - **Storage**: S3-compatible (Minio локально / R2 в проде)
 - **DevOps**: Docker Compose, Caddy, GitHub Actions
 
@@ -17,12 +17,12 @@
 ```
 apps/
   web/              Next.js frontend
-  api/              Hono API (better-auth, lessons, rooms, teacher)
+  api/              Hono API (better-auth, lessons, teacher)
 packages/
   db/               Drizzle schema + migrations
   shared/           Zod DTOs shared between API and web
 infra/
-  docker-compose.yml          Dev stack (Postgres, Redis, Minio, Mailpit, LiveKit)
+  docker-compose.yml          Dev stack (Postgres, Minio, Mailpit)
   docker-compose.prod.yml     Prod stack (with pulled images + Caddy)
   Caddyfile
 .github/workflows/
@@ -34,7 +34,7 @@ infra/
 ```sh
 cp .env.example .env
 bun install
-bun run infra:up          # Postgres + Redis + Minio + Mailpit + LiveKit
+bun run infra:up          # Postgres + Minio + Mailpit
 bun run db:migrate
 bun run --cwd packages/db seed
 bun run dev               # web :3000 + api :3001
