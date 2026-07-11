@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import {
   homeworkSubmissions,
   lessonCards,
@@ -12,45 +13,6 @@ import { db } from "../db.ts";
 import { env } from "../env.ts";
 
 const client = env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }) : null;
-
-// Hand-written JSON schema (the SDK's zodOutputFormat needs zod v4; this repo
-// is on v3). Must stay in sync with homeworkAiReviewSchema in @gojo/shared,
-// which re-validates the parsed response below.
-const AI_REVIEW_JSON_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "summary",
-    "score",
-    "errors",
-    "naturalness",
-    "targetVocabUsed",
-    "targetVocabMissing",
-    "suggestedDecision",
-  ],
-  properties: {
-    summary: { type: "string" },
-    score: { type: "integer", enum: [1, 2, 3, 4, 5] },
-    errors: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["quote", "issue", "correction", "explanation"],
-        properties: {
-          quote: { type: "string" },
-          issue: { type: "string" },
-          correction: { type: "string" },
-          explanation: { type: "string" },
-        },
-      },
-    },
-    naturalness: { type: "string" },
-    targetVocabUsed: { type: "array", items: { type: "string" } },
-    targetVocabMissing: { type: "array", items: { type: "string" } },
-    suggestedDecision: { type: "string", enum: ["approve", "needs_revision"] },
-  },
-} as const;
 
 const SYSTEM_PROMPT = `Ты — ассистент преподавателя японского языка на платформе Gojo. Студенты — русскоязычные, уровни N5–N3. Твоя задача — first-pass проверка письменной домашней работы: преподаватель увидит твою разметку и подтвердит или дополнит её, поэтому будь точным и не выдумывай ошибок.
 
@@ -124,7 +86,7 @@ async function runAiReview(submissionId: string): Promise<void> {
     .filter(Boolean)
     .join("\n");
 
-  const response = await client.messages.create({
+  const response = await client.messages.parse({
     model: "claude-opus-4-8",
     max_tokens: 16000,
     thinking: { type: "adaptive" },
@@ -135,17 +97,14 @@ async function runAiReview(submissionId: string): Promise<void> {
         content: `${context}\n\nРабота студента:\n<homework>\n${submission.content}\n</homework>`,
       },
     ],
-    output_config: {
-      format: { type: "json_schema", schema: AI_REVIEW_JSON_SCHEMA },
-    },
+    output_config: { format: zodOutputFormat(homeworkAiReviewSchema) },
   });
 
   if (response.stop_reason !== "end_turn") {
     throw new Error(`ai review stopped with ${response.stop_reason}`);
   }
-  const text = response.content.find((b) => b.type === "text")?.text;
-  if (!text) throw new Error("ai review returned no text");
-  const review = homeworkAiReviewSchema.parse(JSON.parse(text));
+  const review = response.parsed_output;
+  if (!review) throw new Error("ai review returned no parsed output");
 
   await db
     .update(homeworkSubmissions)
