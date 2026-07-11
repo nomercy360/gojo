@@ -620,7 +620,25 @@ function SummaryScreen({
           >
             Начать заново
           </button>
-          {!isLoggedIn && (
+          {isLoggedIn ? (
+            <a
+              href="/dashboard"
+              style={{
+                padding: "14px",
+                borderRadius: 10,
+                border: "1px solid rgba(0,0,0,0.1)",
+                background: "transparent",
+                color: C.ink,
+                textDecoration: "none",
+                textAlign: "center",
+                fontFamily: "var(--font-manrope), system-ui, sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              ← Вернуться в личный кабинет
+            </a>
+          ) : (
             <>
               <button
                 type="button"

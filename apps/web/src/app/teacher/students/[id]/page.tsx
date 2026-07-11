@@ -92,6 +92,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
           <form action={setStudentPlanAction} className="mt-4 flex flex-wrap items-center gap-3">
             <input type="hidden" name="studentId" value={student.id} />
             <select
+              key={student.assignedPlanId ?? ""}
               name="planId"
               defaultValue={student.assignedPlanId ?? ""}
               className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
@@ -109,6 +110,55 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
               Сохранить тариф
             </button>
           </form>
+        </section>
+
+        <section className="g-card mt-6 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+            Статус оплаты
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <StatusTile label="Доступ" value={profile.access.isActive ? "Активен" : "Нет"} />
+            <StatusTile
+              label="До"
+              value={
+                profile.access.activeUntil
+                  ? new Date(profile.access.activeUntil).toLocaleDateString("ru-RU")
+                  : "—"
+              }
+            />
+            <StatusTile label="Уроки" value={String(profile.access.lessonCredits)} />
+          </div>
+
+          {profile.payments.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {profile.payments.slice(0, 5).map((payment) => (
+                <li
+                  key={payment.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-gojo-paper px-3 py-2 text-sm"
+                >
+                  <span className="text-gojo-ink-muted">
+                    {new Date(payment.createdAt).toLocaleDateString("ru-RU")} · {payment.planId}
+                  </span>
+                  <span className="font-bold">
+                    {Number(payment.amountValue).toLocaleString("ru-RU")} ₽ · {payment.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-gojo-ink-muted">Платежей пока нет.</p>
+          )}
+        </section>
+
+        <section className="g-card mt-6 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+            Прогресс по урокам
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <StatusTile label="Посещено" value={String(profile.progress.attended)} />
+            <StatusTile label="Пропущено" value={String(profile.progress.noShow)} />
+            <StatusTile label="Всего" value={String(profile.progress.total)} />
+          </div>
         </section>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -183,5 +233,16 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
         </div>
       </div>
     </main>
+  );
+}
+
+function StatusTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-gojo-paper px-4 py-3">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-gojo-ink-muted">
+        {label}
+      </div>
+      <div className="mt-1 font-serif text-[22px] font-bold">{value}</div>
+    </div>
   );
 }

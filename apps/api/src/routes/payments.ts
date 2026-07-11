@@ -1,5 +1,5 @@
 import { payments, studentAccess } from "@gojo/db";
-import { type PaymentPlanDto, createCheckoutInput } from "@gojo/shared";
+import { type PaymentPlanDto, type PaymentsMeDto, createCheckoutInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
 import { desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -35,27 +35,22 @@ export const paymentPlans: PaymentPlanDto[] = [
   },
 ];
 
-export const paymentsRoute = new Hono<AuthContext>();
-
-paymentsRoute.get("/plans", (c) => c.json(paymentPlans));
-
-paymentsRoute.get("/me", requireAuth, async (c) => {
-  const user = c.get("user")!;
+export async function getStudentAccessSnapshot(userId: string): Promise<PaymentsMeDto> {
   const [access] = await db
     .select()
     .from(studentAccess)
-    .where(eq(studentAccess.userId, user.id))
+    .where(eq(studentAccess.userId, userId))
     .limit(1);
   const rows = await db
     .select()
     .from(payments)
-    .where(eq(payments.userId, user.id))
+    .where(eq(payments.userId, userId))
     .orderBy(desc(payments.createdAt))
     .limit(20);
 
   const now = Date.now();
   const assignedPlan = paymentPlans.find((p) => p.id === access?.assignedPlanId) ?? null;
-  return c.json({
+  return {
     access: {
       activeUntil: access?.activeUntil ? access.activeUntil.toISOString() : null,
       lessonCredits: access?.lessonCredits ?? 0,
@@ -78,7 +73,16 @@ paymentsRoute.get("/me", requireAuth, async (c) => {
       paidAt: p.paidAt ? p.paidAt.toISOString() : null,
       createdAt: p.createdAt.toISOString(),
     })),
-  });
+  };
+}
+
+export const paymentsRoute = new Hono<AuthContext>();
+
+paymentsRoute.get("/plans", (c) => c.json(paymentPlans));
+
+paymentsRoute.get("/me", requireAuth, async (c) => {
+  const user = c.get("user")!;
+  return c.json(await getStudentAccessSnapshot(user.id));
 });
 
 paymentsRoute.post("/checkout", requireAuth, zValidator("json", createCheckoutInput), async (c) => {

@@ -7,13 +7,12 @@ import {
   trainingTotals,
   user as userTable,
 } from "@gojo/db";
-import { and, asc, count, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, lt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { AUTO_COMPLETE_AFTER_END_MS } from "../lib/lesson-state.ts";
-import { materializeCardsForBooking } from "../lib/materialize.ts";
 import { sendTelegramMessage } from "../reminders.ts";
 import { toLessonDto } from "./mappers.ts";
 
@@ -31,6 +30,23 @@ async function autoCompletePastLessons(now: Date) {
 }
 
 export const lessonsRoute = new Hono<AuthContext>();
+
+/**
+ * True if the user may see a lesson's private content (recording, materials):
+ * either an admin, the teacher who owns it, or a student booked on it.
+ */
+async function hasLessonContentAccess(
+  user: NonNullable<AuthContext["Variables"]["user"]>,
+  lesson: typeof lessons.$inferSelect,
+): Promise<boolean> {
+  if (user.role === "admin" || lesson.teacherId === user.id) return true;
+  const [b] = await db
+    .select({ id: bookings.id })
+    .from(bookings)
+    .where(and(eq(bookings.lessonId, lesson.id), eq(bookings.studentId, user.id)))
+    .limit(1);
+  return !!b;
+}
 
 lessonsRoute.get("/", async (c) => {
   const user = c.get("user");
@@ -133,8 +149,36 @@ lessonsRoute.get("/my-stats", requireAuth, async (c) => {
   });
 });
 
-lessonsRoute.get("/:id/materials", async (c) => {
+lessonsRoute.get("/my-recordings", requireAuth, async (c) => {
+  const user = c.get("user")!;
+
+  const rows = await db
+    .select({ lesson: lessons })
+    .from(bookings)
+    .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
+    .where(and(eq(bookings.studentId, user.id), isNotNull(lessons.recordingUrl)))
+    .orderBy(desc(lessons.startsAt));
+
+  return c.json(
+    rows.map((r) => ({
+      lessonId: r.lesson.id,
+      title: r.lesson.title,
+      startsAt: r.lesson.startsAt.toISOString(),
+      recordingUrl: r.lesson.recordingUrl,
+    })),
+  );
+});
+
+lessonsRoute.get("/:id/materials", requireAuth, async (c) => {
+  const user = c.get("user")!;
   const id = c.req.param("id");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (!(await hasLessonContentAccess(user, lesson))) {
+    throw new HTTPException(403, { message: "no access to this lesson" });
+  }
+
   const rows = await db
     .select()
     .from(lessonMaterials)
@@ -184,6 +228,7 @@ lessonsRoute.get("/:id", async (c) => {
     booked = !!b;
   }
   const isOwner = !!user && user.id === row.lesson.teacherId;
+  const isAdmin = user?.role === "admin";
   const studentCount = Number(row.studentCount);
   return c.json(
     toLessonDto(row.lesson, row.teacherNickname, {
@@ -191,6 +236,7 @@ lessonsRoute.get("/:id", async (c) => {
       studentCount,
       isParticipant: booked || isOwner,
       now,
+      includeRecording: booked || isOwner || isAdmin,
     }),
   );
 });
@@ -227,7 +273,6 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
     .returning();
   if (!booking) throw new HTTPException(500, { message: "booking failed" });
 
-  await materializeCardsForBooking(user.id, lessonId);
   await consumeBookingAccess(user.id, accessUse.mode);
   await sendBookingConfirmation(booking.id, user.id, lesson.title, lesson.startsAt);
 

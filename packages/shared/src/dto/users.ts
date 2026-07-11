@@ -6,6 +6,7 @@ export type UserRole = z.infer<typeof userRoleSchema>;
 export const userDto = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
+  name: z.string(),
   nickname: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   role: userRoleSchema,
@@ -32,6 +33,7 @@ export const avatarValueSchema = z.union([
 ]);
 
 export const updateProfileInput = z.object({
+  name: z.string().min(1).max(200).optional(),
   nickname: z.string().min(1).max(40).optional(),
   avatarUrl: avatarValueSchema.optional(),
   // Numeric Telegram user ID (from @userinfobot) — enables Telegram reminders.

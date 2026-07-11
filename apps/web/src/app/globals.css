@@ -1119,8 +1119,8 @@ html:has(.landing-root) {
   display: block;
 }
 .landing-root .section-mission:not(.section-mission-alt) .mteam-photo {
-  width: 86px;
-  height: 110px;
+  width: 112px;
+  height: 143px;
   object-fit: contain;
   object-position: center top;
   align-self: center;
@@ -1365,15 +1365,6 @@ html:has(.landing-root) {
   text-align: center;
   position: relative;
   overflow: hidden;
-}
-.landing-root .section-cta::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--orange);
 }
 .landing-root .section-cta > * {
   position: relative;

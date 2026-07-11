@@ -12,7 +12,11 @@ export async function updateProfileAction(
   formData: FormData,
 ): Promise<ProfileState> {
   const telegramIdRaw = String(formData.get("telegramId") ?? "").trim();
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const name = [firstName, lastName].filter(Boolean).join(" ") || undefined;
   const parsed = updateProfileInput.safeParse({
+    name,
     nickname: String(formData.get("nickname") ?? "").trim() || undefined,
     avatarUrl: formData.get("avatarUrl") ? String(formData.get("avatarUrl")) : undefined,
     telegramId: telegramIdRaw === "" ? null : Number(telegramIdRaw),
@@ -36,7 +40,7 @@ export async function updateProfileAction(
 
   revalidatePath("/profile");
   revalidatePath("/", "layout");
-  return { ok: true };
+  redirect("/dashboard?saved=1");
 }
 
 export async function uploadAvatarAction(

@@ -1,11 +1,13 @@
 import { Avatar } from "@/components/avatar";
 import { CalendarSection } from "@/components/calendar-section";
-import { fetchStudentStats } from "@/lib/api";
+import { fetchMyPayments, fetchMyRecordings, fetchStudentStats } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import type { StudentStatsDto } from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { SavedToast } from "./saved-toast";
 
 const ROLE_LABEL: Record<string, string> = {
   student: "Студент",
@@ -51,6 +53,11 @@ export default async function DashboardPage() {
     }),
   );
 
+  const recordings = await fetchMyRecordings().catch(() => []);
+  const isPaid = await fetchMyPayments()
+    .then((p) => p.access.isActive)
+    .catch(() => false);
+
   const trainingHoursWhole = Math.floor(apiStats.trainingSeconds / 3600);
   const trainingMinutes = Math.floor((apiStats.trainingSeconds % 3600) / 60);
 
@@ -74,6 +81,9 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-gojo-paper">
+      <Suspense fallback={null}>
+        <SavedToast />
+      </Suspense>
       <div className="mx-auto max-w-4xl px-10 py-14">
         {/* ── Greeting ── */}
         <div className="mb-10">
@@ -97,8 +107,17 @@ export default async function DashboardPage() {
             <div className="g-display truncate text-[18px] font-extrabold leading-tight text-gojo-ink">
               {user.nickname ?? user.email}
             </div>
-            <div className="g-mono mt-0.5 truncate text-[12px] text-gojo-ink-ghost">
-              @{user.nickname ?? user.email.split("@")[0]} · {ROLE_LABEL[user.role] ?? user.role}
+            <div className="g-mono mt-0.5 flex flex-wrap items-center gap-2 truncate text-[12px] text-gojo-ink-ghost">
+              <span>
+                @{user.nickname ?? user.email.split("@")[0]} · {ROLE_LABEL[user.role] ?? user.role}
+              </span>
+              <span
+                className={`rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${
+                  isPaid ? "bg-gojo-success" : "bg-gojo-error"
+                }`}
+              >
+                {isPaid ? "Оплачено" : "Не оплачено"}
+              </span>
             </div>
           </div>
           <Link
@@ -114,9 +133,32 @@ export default async function DashboardPage() {
           <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
             Библиотека
           </div>
-          <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
-            Видеоуроки и материалы появятся здесь после первых занятий.
-          </p>
+          {recordings.length === 0 ? (
+            <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
+              Видеоуроки и материалы появятся здесь после первых занятий.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {recordings.map((rec) => (
+                <li key={rec.lessonId}>
+                  <Link
+                    href={`/lessons/${rec.lessonId}`}
+                    className="g-body flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-gojo-paper px-4 py-3 text-[14px] transition-colors hover:border-gojo-orange"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-bold text-gojo-ink">{rec.title}</div>
+                      <div className="mt-0.5 text-[12px] text-gojo-ink-muted">
+                        {new Date(rec.startsAt).toLocaleDateString("ru-RU")}
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-[12px] font-bold text-gojo-orange">
+                      Смотреть →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* ── Progress + trainers ── */}
@@ -195,7 +237,7 @@ export default async function DashboardPage() {
             <div className="g-mono mb-4 text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
               Тренажёры
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Link href="/review" className="g-card group flex items-center gap-4 p-5">
                 <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
                   単
@@ -218,18 +260,6 @@ export default async function DashboardPage() {
                   </div>
                   <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
                     Тренажёр символов
-                  </div>
-                </div>
-              </Link>
-
-              <Link href="/kanji" className="g-card group flex items-center gap-4 p-5">
-                <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                  漢
-                </div>
-                <div>
-                  <div className="g-display text-[15px] font-bold text-gojo-ink">Кандзи</div>
-                  <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                    Тренажёр иероглифов
                   </div>
                 </div>
               </Link>
@@ -277,13 +307,18 @@ export default async function DashboardPage() {
               </>
             )}
 
-            <div className="mt-6 rounded-xl bg-gojo-paper p-4">
-              <div className="g-mono mb-1 text-[10px] font-bold uppercase tracking-wider text-gojo-orange">
-                Индивидуальный план
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-gojo-paper p-4">
+              <div>
+                <div className="g-mono mb-1 text-[10px] font-bold uppercase tracking-wider text-gojo-orange">
+                  Индивидуальный план
+                </div>
+                <div className="g-body text-[12px] text-gojo-ink-muted">
+                  Программа подобрана под ваши цели и темп обучения
+                </div>
               </div>
-              <div className="g-body text-[12px] text-gojo-ink-muted">
-                Программа подобрана под ваши цели и темп обучения
-              </div>
+              <Link href="/payments" className="g-btn-primary shrink-0 text-[13px]">
+                Оплата
+              </Link>
             </div>
           </div>
         </div>

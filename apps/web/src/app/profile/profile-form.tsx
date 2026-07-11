@@ -13,6 +13,12 @@ export function ProfileForm({ user }: { user: UserDto }) {
   const [avatarTab, setAvatarTab] = useState<"preset" | "upload">("preset");
   const [nickname, setNickname] = useState(user.nickname ?? "");
   const [telegramId, setTelegramId] = useState(user.telegramId?.toString() ?? "");
+  const [nameParts] = useState(() => {
+    const [firstName = "", ...rest] = user.name.trim().split(/\s+/);
+    return { firstName, lastName: rest.join(" ") };
+  });
+  const [firstName, setFirstName] = useState(nameParts.firstName);
+  const [lastName, setLastName] = useState(nameParts.lastName);
   const [profileState, profileAction, profilePending] = useActionState(
     updateProfileAction,
     initial,
@@ -24,7 +30,8 @@ export function ProfileForm({ user }: { user: UserDto }) {
   }, [user.avatarUrl]);
 
   useEffect(() => {
-    if (profileState?.ok) toast.success("Профиль сохранён");
+    // Success is signalled by a redirect to /dashboard?saved=1 (see updateProfileAction),
+    // so only the error branch fires here.
     if (profileState?.error) toast.error(profileState.error);
   }, [profileState]);
 
@@ -52,8 +59,48 @@ export function ProfileForm({ user }: { user: UserDto }) {
         </div>
       </div>
 
-      {/* Single form for nickname + preset avatar */}
+      {/* Single form for name + nickname + preset avatar */}
       <form action={profileAction} className="mt-6 space-y-6">
+        {/* Name */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
+              htmlFor="firstName"
+            >
+              Имя
+            </label>
+            <input
+              id="firstName"
+              name="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Имя"
+              maxLength={100}
+              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            />
+          </div>
+          <div>
+            <label
+              className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
+              htmlFor="lastName"
+            >
+              Фамилия
+            </label>
+            <input
+              id="lastName"
+              name="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Фамилия"
+              maxLength={100}
+              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            />
+          </div>
+        </div>
+
         {/* Nickname */}
         <div>
           <label
