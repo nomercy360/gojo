@@ -1,5 +1,16 @@
 import { sql } from "drizzle-orm";
-import { date, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  date,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
 import { lessons } from "./lessons.ts";
 
@@ -29,6 +40,44 @@ export const homework = pgTable(
   (t) => [uniqueIndex("homework_lesson_student_uniq").on(t.lessonId, t.studentId)],
 );
 
+export const homeworkSubmissionStatus = pgEnum("homework_submission_status", [
+  "submitted", // awaiting AI first-pass (or AI skipped when no API key)
+  "ai_reviewed", // Claude first-pass done, awaiting teacher decision
+  "approved", // teacher accepted — mirrored into homework.status = done
+  "needs_revision", // teacher sent back; student may submit again
+]);
+
+/**
+ * Student-written homework text per (lesson, student). Multiple rows per pair
+ * are allowed — each row is one attempt; the latest one is authoritative.
+ * `aiReview` holds the Claude first-pass markup (shape: HomeworkAiReview in
+ * @gojo/shared) that the teacher validates instead of reading raw text.
+ */
+export const homeworkSubmissions = pgTable(
+  "homework_submissions",
+  {
+    id: uuid().default(sql`uuidv7()`).primaryKey(),
+    lessonId: uuid()
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    studentId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    content: text().notNull(),
+    status: homeworkSubmissionStatus().notNull().default("submitted"),
+    aiReview: jsonb(),
+    aiReviewedAt: timestamp({ withTimezone: true }),
+    // Non-null when the Claude call failed; the teacher reviews raw text.
+    aiReviewError: text(),
+    teacherComment: text(),
+    reviewedBy: text().references(() => user.id),
+    reviewedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("homework_submissions_lesson_student_idx").on(t.lessonId, t.studentId)],
+);
+
 /**
  * Aggregate time spent per training activity. Incremented in small bounded
  * chunks by a client-side heartbeat (see api /training/track) rather than
@@ -49,4 +98,6 @@ export const trainingTotals = pgTable("training_totals", {
 
 export type Homework = typeof homework.$inferSelect;
 export type NewHomework = typeof homework.$inferInsert;
+export type HomeworkSubmission = typeof homeworkSubmissions.$inferSelect;
+export type NewHomeworkSubmission = typeof homeworkSubmissions.$inferInsert;
 export type TrainingTotals = typeof trainingTotals.$inferSelect;

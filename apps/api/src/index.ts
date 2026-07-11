@@ -11,6 +11,7 @@ import { env } from "./env.ts";
 import { startReminderLoop } from "./reminders.ts";
 import { adminRoute } from "./routes/admin.ts";
 import { authRoute } from "./routes/auth.ts";
+import { homeworkRoute } from "./routes/homework.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
 import { leadsRoute } from "./routes/leads.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
@@ -67,6 +68,7 @@ app.route("/personal-events", personalEventsRoute);
 app.route("/review", reviewRoute);
 app.route("/kanji", kanjiRoute);
 app.route("/training", trainingRoute);
+app.route("/homework", homeworkRoute);
 
 startReminderLoop();
 

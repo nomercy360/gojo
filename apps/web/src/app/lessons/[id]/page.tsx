@@ -6,14 +6,21 @@ import {
   fetchLessonCards,
   fetchLessonMaterials,
   fetchLessonStudents,
+  fetchMySubmissions,
 } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import type { LessonCardDto, LessonDto, LessonMaterialDto } from "@gojo/shared";
+import type {
+  HomeworkSubmissionDto,
+  LessonCardDto,
+  LessonDto,
+  LessonMaterialDto,
+} from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LessonCardsManager } from "./cards-manager";
 import { HomeworkManager } from "./homework-manager";
+import { HomeworkSubmission } from "./homework-submission";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +74,17 @@ export default async function LessonDetailPage({ params }: Props) {
       students = await fetchLessonStudents(id);
     } catch {
       // none yet
+    }
+  }
+
+  // Homework is only for booked students — the API 403s otherwise, which we
+  // treat as "hide the section".
+  let submissions: HomeworkSubmissionDto[] | null = null;
+  if (user && !isOwner) {
+    try {
+      submissions = await fetchMySubmissions(id);
+    } catch {
+      submissions = null;
     }
   }
 
@@ -147,6 +165,9 @@ export default async function LessonDetailPage({ params }: Props) {
 
         {isOwner ? <LessonCardsManager lessonId={id} initialCards={cards} /> : null}
         {isOwner ? <HomeworkManager lessonId={id} initialStudents={students} /> : null}
+        {submissions !== null ? (
+          <HomeworkSubmission lessonId={id} initialSubmissions={submissions} />
+        ) : null}
 
         {/* Materials (Task #7) */}
         <section className="mt-10">

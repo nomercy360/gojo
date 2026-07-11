@@ -3,6 +3,9 @@ import type {
   CheckoutResponseDto,
   FlashcardDto,
   HomeworkStatus,
+  HomeworkSubmissionDto,
+  ReviewSubmissionInput,
+  TeacherSubmissionDto,
   JlptLevel,
   KanjiBreakdownEntry,
   KanjiDto,
@@ -371,6 +374,28 @@ export function setHomeworkStatus(lessonId: string, studentId: string, status: H
     `/teacher/lessons/${lessonId}/homework/${studentId}`,
     { method: "PATCH", body: JSON.stringify({ status }) },
   );
+}
+
+export function fetchMySubmissions(lessonId: string) {
+  return apiFetch<HomeworkSubmissionDto[]>(`/homework/lessons/${lessonId}`);
+}
+
+export function submitHomework(lessonId: string, content: string) {
+  return apiFetch<HomeworkSubmissionDto>(`/homework/lessons/${lessonId}`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function fetchLessonSubmissions(lessonId: string) {
+  return apiFetch<TeacherSubmissionDto[]>(`/teacher/lessons/${lessonId}/submissions`);
+}
+
+export function reviewSubmission(submissionId: string, body: ReviewSubmissionInput) {
+  return apiFetch<HomeworkSubmissionDto>(`/teacher/submissions/${submissionId}/review`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function setStudentLevel(lessonId: string, studentId: string, jlptLevel: JlptLevel) {

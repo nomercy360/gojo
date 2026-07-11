@@ -48,6 +48,9 @@ const schema = z.object({
   SENTRY_DSN: z.string().optional(),
   YOOKASSA_SHOP_ID: z.string().optional(),
   YOOKASSA_SECRET_KEY: z.string().optional(),
+  // Claude first-pass homework review. Unset = submissions stay in
+  // "submitted" and the teacher reviews raw text without AI markup.
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);

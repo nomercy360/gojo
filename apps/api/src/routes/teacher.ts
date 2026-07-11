@@ -1,6 +1,7 @@
 import {
   bookings,
   homework,
+  homeworkSubmissions,
   leads,
   lessonCards,
   lessonMaterials,
@@ -10,6 +11,7 @@ import {
 } from "@gojo/db";
 import {
   addLessonCardInput,
+  reviewSubmissionInput,
   setHomeworkStatusInput,
   setStudentLevelInput,
   setStudentPlanInput,
@@ -23,7 +25,7 @@ import { type AuthContext, requireAuth, requireTeacher } from "../auth/middlewar
 import { db } from "../db.ts";
 import { materializeNewCardForBookings } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
-import { toLessonCardDto, toLessonDto } from "./mappers.ts";
+import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
 import { paymentPlans } from "./payments.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
@@ -540,6 +542,94 @@ teacherRoute.patch(
       status: row.status,
       markedAt: row.markedAt ? row.markedAt.toISOString() : null,
     });
+  },
+);
+
+// All homework submissions for a lesson (with AI markup), newest first.
+teacherRoute.get("/lessons/:id/submissions", async (c) => {
+  const u = c.get("user")!;
+  const lessonId = c.req.param("id");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
+
+  const rows = await db
+    .select({
+      submission: homeworkSubmissions,
+      nickname: userTable.nickname,
+      email: userTable.email,
+    })
+    .from(homeworkSubmissions)
+    .innerJoin(userTable, eq(userTable.id, homeworkSubmissions.studentId))
+    .where(eq(homeworkSubmissions.lessonId, lessonId))
+    .orderBy(desc(homeworkSubmissions.createdAt));
+
+  return c.json(
+    rows.map((r) => ({
+      ...toSubmissionDto(r.submission),
+      nickname: r.nickname ?? null,
+      email: r.email,
+    })),
+  );
+});
+
+teacherRoute.post(
+  "/submissions/:id/review",
+  zValidator("json", reviewSubmissionInput),
+  async (c) => {
+    const u = c.get("user")!;
+    const submissionId = c.req.param("id");
+    const { decision, comment } = c.req.valid("json");
+
+    const [submission] = await db
+      .select()
+      .from(homeworkSubmissions)
+      .where(eq(homeworkSubmissions.id, submissionId))
+      .limit(1);
+    if (!submission) throw new HTTPException(404, { message: "submission not found" });
+
+    const [lesson] = await db
+      .select()
+      .from(lessons)
+      .where(eq(lessons.id, submission.lessonId))
+      .limit(1);
+    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+    if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
+
+    const now = new Date();
+    const [row] = await db
+      .update(homeworkSubmissions)
+      .set({
+        status: decision,
+        teacherComment: comment ?? null,
+        reviewedBy: u.id,
+        reviewedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(homeworkSubmissions.id, submissionId))
+      .returning();
+    if (!row) throw new HTTPException(500, { message: "update failed" });
+
+    // Approval is the accountability gate — mirror it into the teacher-facing
+    // homework status so existing dashboards and stats pick it up.
+    if (decision === "approved") {
+      await db
+        .insert(homework)
+        .values({
+          lessonId: submission.lessonId,
+          studentId: submission.studentId,
+          status: "done",
+          markedBy: u.id,
+          markedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [homework.lessonId, homework.studentId],
+          set: { status: "done", markedBy: u.id, markedAt: now, updatedAt: now },
+        });
+    }
+
+    return c.json(toSubmissionDto(row));
   },
 );
 

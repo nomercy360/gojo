@@ -2,11 +2,21 @@
 
 import {
   type AttendanceStatus,
+  reviewSubmission,
   setHomeworkStatus,
   setStudentLevel,
+  submitHomework,
   updatePostLesson,
 } from "@/lib/api";
-import type { HomeworkStatus, JlptLevel } from "@gojo/shared";
+import type { HomeworkStatus, JlptLevel, ReviewSubmissionInput } from "@gojo/shared";
+
+export async function submitHomeworkAction(lessonId: string, content: string) {
+  return submitHomework(lessonId, content);
+}
+
+export async function reviewSubmissionAction(submissionId: string, body: ReviewSubmissionInput) {
+  return reviewSubmission(submissionId, body);
+}
 
 export async function setHomeworkStatusAction(
   lessonId: string,

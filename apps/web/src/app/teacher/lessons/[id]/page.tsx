@@ -7,13 +7,20 @@ import {
   fetchLessonCards,
   fetchLessonMaterials,
   fetchLessonStudents,
+  fetchLessonSubmissions,
 } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
-import type { LessonCardDto, LessonDto, LessonMaterialDto } from "@gojo/shared";
+import type {
+  LessonCardDto,
+  LessonDto,
+  LessonMaterialDto,
+  TeacherSubmissionDto,
+} from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MaterialUploadForm } from "./material-upload-form";
+import { SubmissionsReview } from "./submissions-review";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +36,14 @@ export default async function TeacherLessonPage({ params }: Props) {
   let students: LessonStudentDto[] = [];
   let cards: LessonCardDto[] = [];
   let materials: LessonMaterialDto[] = [];
+  let submissions: TeacherSubmissionDto[] = [];
   try {
     lesson = await fetchLesson(id);
-    [students, cards, materials] = await Promise.all([
+    [students, cards, materials, submissions] = await Promise.all([
       fetchLessonStudents(id),
       fetchLessonCards(id),
       fetchLessonMaterials(id),
+      fetchLessonSubmissions(id),
     ]);
   } catch (e) {
     return (
@@ -103,6 +112,8 @@ export default async function TeacherLessonPage({ params }: Props) {
             <HomeworkManager lessonId={id} initialStudents={students} />
           )}
         </section>
+
+        <SubmissionsReview initialSubmissions={submissions} />
 
         <LessonCardsManager lessonId={id} initialCards={cards} />
 

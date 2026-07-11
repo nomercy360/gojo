@@ -1,6 +1,8 @@
-import type { Flashcard, Kanji, Lesson, LessonCard, User } from "@gojo/db";
+import type { Flashcard, HomeworkSubmission, Kanji, Lesson, LessonCard, User } from "@gojo/db";
 import type {
   FlashcardDto,
+  HomeworkAiReview,
+  HomeworkSubmissionDto,
   KanjiDto,
   LessonCardDto,
   LessonDto,
@@ -109,5 +111,20 @@ export function toLessonDto(
     ...(opts?.studentCount !== undefined ? { studentCount: opts.studentCount } : {}),
     ...(joinState ? { joinState } : {}),
     ...(joinOpensAtStr ? { joinOpensAt: joinOpensAtStr } : {}),
+  };
+}
+
+export function toSubmissionDto(s: HomeworkSubmission): HomeworkSubmissionDto {
+  return {
+    id: s.id,
+    lessonId: s.lessonId,
+    studentId: s.studentId,
+    content: s.content,
+    status: s.status,
+    aiReview: (s.aiReview as HomeworkAiReview | null) ?? null,
+    aiReviewError: s.aiReviewError ?? null,
+    teacherComment: s.teacherComment ?? null,
+    reviewedAt: s.reviewedAt ? s.reviewedAt.toISOString() : null,
+    createdAt: s.createdAt.toISOString(),
   };
 }
