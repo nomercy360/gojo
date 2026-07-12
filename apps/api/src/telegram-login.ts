@@ -7,7 +7,12 @@ import { env } from "./env.ts";
 
 const STATE_COOKIE = "gojo_tg_state";
 const VERIFIER_COOKIE = "gojo_tg_verifier";
-const COOKIE_PATH = "/leads/telegram";
+// Path "/" (not "/leads/telegram"): in prod Caddy strips the "/api" prefix
+// before the API, so the API sets the cookie path from its own view while the
+// browser is actually at "/api/leads/telegram/callback". A scoped path would
+// never match there and the cookies wouldn't be sent back → invalid_state.
+// These are short-lived (600s), httpOnly and deleted at the callback.
+const COOKIE_PATH = "/";
 const DISCOVERY_URL = new URL("https://oauth.telegram.org/.well-known/openid-configuration");
 
 export type TelegramIdentity = {
