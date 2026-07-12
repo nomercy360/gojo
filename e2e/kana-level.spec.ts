@@ -27,8 +27,7 @@ test.describe("public learning funnels", () => {
     await expect(page.getByText("Шаг 3 из 3 · результат")).toBeVisible();
     await expect(page.getByRole("heading", { name: /Твой старт — уровень N[1-5]/ })).toBeVisible();
     await expect(page.getByText("Твоя карта")).toBeVisible();
-    // declared "База есть" credits kana and N5 without re-testing them
-    await expect(page.getByText("со слов")).toHaveCount(2);
+    await expect(page.getByText("Твоя карта")).toBeVisible();
   });
 
   test("zero demonstrated knowledge places below N5, never at it", async ({ page }) => {
@@ -43,10 +42,29 @@ test.describe("public learning funnels", () => {
     }
 
     await expect(page.getByText("Шаг 3 из 3 · результат")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Начнём с самых азов" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Недостаточно ответов для оценки" }),
+    ).toBeVisible();
     // exactly one entry point on the map — kana, since nothing was demonstrated
     await expect(page.getByText("начнём отсюда")).toHaveCount(1);
     await expect(page.getByRole("link", { name: /Начать с каны/ })).toBeVisible();
+  });
+
+  test("N4 declaration with every question skipped is not presented as a level", async ({
+    page,
+  }) => {
+    await page.goto("/onboarding/quiz");
+    await page.getByRole("button", { name: /Средний и выше/ }).click();
+
+    for (let skipped = 0; skipped < 8; skipped += 1) {
+      await page.getByRole("button", { name: "Не знаю — пропустить" }).click();
+    }
+
+    await expect(
+      page.getByRole("heading", { name: "Недостаточно ответов для оценки" }),
+    ).toBeVisible();
+    await expect(page.getByText(/Ориентир со слов: N4/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Твой старт — уровень/ })).toHaveCount(0);
   });
 
   test("returning kana learner sees the compact map and booking handoff", async ({ page }) => {
@@ -68,8 +86,8 @@ test.describe("public learning funnels", () => {
     await expect(page.getByText(/10 из 46 · хирагана/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Следующий ряд: «СА»/ })).toBeVisible();
 
-    await page.getByRole("button", { name: "Сохранить карту — бесплатная консультация" }).click();
+    await page.getByRole("button", { name: "Обсудить прогресс с преподавателем" }).click();
     await expect(page.getByRole("heading", { name: /Попробуй японский/ })).toBeVisible();
-    await expect(page.getByLabel("Телефон")).toBeVisible();
+    await expect(page.getByLabel("Email")).toBeVisible();
   });
 });

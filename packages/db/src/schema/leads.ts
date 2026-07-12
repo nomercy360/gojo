@@ -13,11 +13,10 @@ export const leads = pgTable("leads", {
   kind: text().notNull(), // 'booking' | 'guide'
   status: text().notNull().default("new"),
   name: text().notNull(),
-  // Nullable — booking leads now require a phone (in `contact`) but email is
-  // optional; only the "guide" kind still requires email for PDF delivery
-  // (enforced client-side).
+  // Email is required by public lead endpoints and normalized to lowercase.
+  // The column remains nullable for backwards compatibility with old rows.
   email: text(),
-  contact: text(), // phone (booking form, now required client-side) / telegram
+  contact: text(), // optional secondary contact (phone / Telegram)
   level: text(), // self-reported level (booking form)
   goal: text(), // goal (booking form)
   notes: text(),

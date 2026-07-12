@@ -1,7 +1,6 @@
 "use client";
 
 import { BookingModal } from "@/components/booking-modal";
-import { PhoneField } from "@/components/phone-field";
 import { track } from "@/lib/analytics";
 import type { JlptLevel, QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
 import type { FormEvent } from "react";
@@ -134,7 +133,7 @@ function Eyebrow({ children, hot }: { children: React.ReactNode; hot?: boolean }
   );
 }
 
-// ── Step 1 · declare — self-report prunes for free ────────────────────────────
+// ── Step 1 · declare — self-report frames the assessment ─────────────────────
 
 type StartChoice = "new" | "kana" | "n5" | "n4";
 
@@ -148,22 +147,9 @@ const START_OPTIONS: { key: StartChoice; jp: string; title: string; sub: string 
 /** Where the belief band starts on the N5→N1 scale, by self-declared level. */
 const BAND_BASE: Record<StartChoice, number> = { new: 12, kana: 18, n5: 34, n4: 52 };
 
-/**
- * Levels the declaration vouches for — not re-tested, credited "со слов".
- * Must mirror creditedLevels() on the API: the server scores exactly the
- * questions this filter leaves in.
- */
-const CREDITED: Record<StartChoice, readonly JlptLevel[]> = {
-  new: [],
-  kana: [],
-  n5: ["N5"],
-  n4: ["N5", "N4"],
-};
-
 function servedQuestions(questions: QuizQuestionDto[], declared: StartChoice | null) {
-  if (!declared) return questions;
-  const credited = new Set<JlptLevel>(CREDITED[declared]);
-  return questions.filter((q) => !credited.has(q.level));
+  void declared;
+  return questions;
 }
 
 function DeclareScreen({ onPick }: { onPick: (choice: StartChoice) => void }) {
@@ -611,23 +597,21 @@ function ResultScreen({
   const [bookingOpen, setBookingOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadEmailSent, setLeadEmailSent] = useState(true);
-  const [leadPhone, setLeadPhone] = useState<string | undefined>();
   const [leadPending, startLeadTransition] = useTransition();
 
   const blurb = LEVEL_BLURB[result.level];
   const isStart = result.level === "start";
+  const isDemonstrated = result.assessment === "demonstrated";
   const knowsKana = declared !== null && declared !== "new";
 
-  // Kana is self-declared, not tested — an honest row is still useful on the
-  // map, and declaration-credited levels show as "со слов", not as tested.
-  const credited = new Set<JlptLevel>(declared ? CREDITED[declared] : []);
+  // Kana is self-declared, not tested — keep that row explicitly separate
+  // from the JLPT bands, which are all verified by questions.
   const rows: MapRow[] = [
     ...(declared === null
       ? []
       : [{ key: "kana", label: "Кана", pct: knowsKana ? 100 : 0, declaredOnly: true }]),
     ...(["N5", "N4", "N3", "N2"] as const).map((level): MapRow => {
       const label = `${level} · ${LEVEL_TOPIC[level]}`;
-      if (credited.has(level)) return { key: level, label, pct: 100, declaredOnly: true };
       const scored = result.byLevel.find((b) => b.level === level);
       const pct =
         scored && scored.total > 0 ? Math.round((100 * scored.correct) / scored.total) : 0;
@@ -644,10 +628,6 @@ function ResultScreen({
     const form = new FormData(e.currentTarget);
     const name = String(form.get("name") ?? "").trim();
     const email = String(form.get("email") ?? "").trim();
-    if (!leadPhone) {
-      toast.error("Укажи телефон, чтобы мы отправили подробный результат");
-      return;
-    }
 
     startLeadTransition(async () => {
       try {
@@ -656,7 +636,6 @@ function ResultScreen({
           declared: declared ?? undefined,
           name,
           email,
-          contact: leadPhone,
         });
         localStorage.setItem("gojo:pending-lead-email", email);
         setLeadSent(true);
@@ -707,10 +686,18 @@ function ResultScreen({
             lineHeight: 1.15,
           }}
         >
-          {isStart ? "Начнём с самых азов" : `Твой старт — уровень ${result.level}`}
+          {!isDemonstrated
+            ? "Недостаточно ответов для оценки"
+            : isStart
+              ? "Начнём с самых азов"
+              : `Твой старт — уровень ${result.level}`}
         </h1>
         <p style={{ fontFamily: MANROPE, fontSize: 13, color: C.ink3, marginBottom: 20 }}>
-          {result.correct} из {result.total} правильных · {blurb.headline.toLowerCase()}
+          {result.assessment === "declared_only"
+            ? `Ориентир со слов: ${declared?.toUpperCase() ?? "уровень не указан"}. Подтвердим его на первом уроке.`
+            : result.assessment === "insufficient"
+              ? `${result.correct} из ${result.total} правильных · уровень пока не определён`
+              : `${result.correct} из ${result.total} правильных · ${blurb.headline.toLowerCase()}`}
         </p>
 
         {/* the map: what to skip, what to seed, where to start */}
@@ -797,7 +784,9 @@ function ResultScreen({
               lineHeight: 1.55,
             }}
           >
-            {blurb.body}
+            {isDemonstrated
+              ? blurb.body
+              : "Ответов недостаточно, чтобы честно присвоить уровень. Самооценку сохраним только как ориентир, а не как результат теста."}
           </p>
         </div>
 
@@ -906,7 +895,6 @@ function ResultScreen({
                   style={inputStyle}
                 />
               </div>
-              <PhoneField value={leadPhone} onChange={setLeadPhone} />
               <button
                 type="submit"
                 disabled={leadPending}
@@ -961,8 +949,8 @@ export function QuizClient({
     track("quiz_open");
   }, []);
 
-  // Declared-known levels are skipped — the declaration is information, so
-  // the probe budget goes to the levels that are actually in question.
+  // Declaration affects framing, but every JLPT band remains in the evidence
+  // set so self-confidence cannot silently become a test result.
   const served = useMemo(() => servedQuestions(questions, declared), [questions, declared]);
 
   const submit = useCallback(

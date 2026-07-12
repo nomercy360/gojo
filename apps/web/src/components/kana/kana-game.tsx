@@ -966,7 +966,7 @@ function MapScreen({
               }}
               style={btnSoft}
             >
-              Сохранить карту — бесплатная консультация
+              Обсудить прогресс с преподавателем
             </button>
           )}
           <button type="button" onClick={onReview} style={btnGhost}>

@@ -1,18 +1,19 @@
 import { bookings, leads, studentAccess, user as userTable } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { notifyLead } from "../lead-notifications.ts";
+import { sendEmail } from "../mailer.ts";
 
 const leadInput = z.object({
   kind: z.enum(["booking", "guide"]).default("booking"),
   name: z.string().trim().min(1).max(200),
-  // Required for "guide" (delivery address) but optional for "booking" —
-  // enforced client-side per kind rather than split into two schemas.
-  email: z.string().trim().email().max(200).optional(),
+  // Primary contact for every public lead flow. Normalization makes
+  // deduplication case-insensitive and deterministic.
+  email: z.string().trim().toLowerCase().email().max(200),
   contact: z.string().trim().max(200).optional(),
   level: z.string().trim().max(200).optional(),
   goal: z.string().trim().max(500).optional(),
@@ -26,10 +27,104 @@ export const leadsRoute = new Hono();
 
 leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
   const data = c.req.valid("json");
-  const [lead] = await db.insert(leads).values(data).returning({ id: leads.id });
-  void notifyLead(data); // best-effort; never blocks the response
-  return c.json({ ok: true, id: lead?.id }, 201);
+  const result = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${data.email}))`);
+
+    const [existingUser] = await tx
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.email, data.email))
+      .limit(1);
+    const [canonicalLead] = await tx
+      .select({ name: leads.name })
+      .from(leads)
+      .where(eq(leads.email, data.email))
+      .orderBy(asc(leads.createdAt))
+      .limit(1);
+    const canonicalName = canonicalLead?.name ?? data.name;
+    const [existingLead] = await tx
+      .select({ id: leads.id, userId: leads.userId })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.email, data.email),
+          eq(leads.kind, data.kind),
+          inArray(leads.status, ["new", "contacted", "trial_booked"]),
+        ),
+      )
+      .limit(1);
+
+    const [access] = existingUser
+      ? await tx
+          .select({ trialUsed: studentAccess.trialUsed })
+          .from(studentAccess)
+          .where(eq(studentAccess.userId, existingUser.id))
+          .limit(1)
+      : [];
+
+    if (existingLead) {
+      await tx
+        .update(leads)
+        .set({
+          name: canonicalName,
+          contact: data.contact ?? undefined,
+          goal: data.goal ?? undefined,
+          userId: existingLead.userId ?? existingUser?.id ?? null,
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, existingLead.id));
+      return { id: existingLead.id, alreadyExists: true, canonicalName };
+    }
+
+    if (access?.trialUsed) {
+      return {
+        id: undefined,
+        alreadyExists: true,
+        reason: "account_has_trial" as const,
+        canonicalName,
+      };
+    }
+
+    const [lead] = await tx
+      .insert(leads)
+      .values({ ...data, name: canonicalName, userId: existingUser?.id ?? null })
+      .returning({ id: leads.id });
+    return { id: lead?.id, alreadyExists: false, reason: undefined, canonicalName };
+  });
+
+  if (result.alreadyExists) {
+    return c.json({ ok: true, ...result, emailSent: false }, 200);
+  }
+
+  void notifyLead({ ...data, name: result.canonicalName });
+  let emailSent = false;
+  if (data.kind === "booking") {
+    try {
+      await sendEmail(
+        data.email,
+        "Заявка принята — Gojo Learn",
+        `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
+          <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
+          <h1>Заявка принята</h1>
+          <p>${escapeHtml(result.canonicalName)}, спасибо! Мы свяжемся в течение 24 часов, чтобы согласовать время.</p>
+          <p>Первый урок длится 25 минут онлайн: познакомимся, определим уровень и покажем план. Без продаж.</p>
+          <p style="font-size:12px;color:#6b6b6b">Gojo Learn · школа японского языка</p>
+        </div>`,
+      );
+      emailSent = true;
+    } catch (error) {
+      console.error("booking confirmation email failed:", error);
+    }
+  }
+  return c.json({ ok: true, ...result, emailSent }, 201);
 });
+
+function escapeHtml(value: string): string {
+  return value.replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]!,
+  );
+}
 
 leadsRoute.post("/link-current", requireAuth, async (c) => {
   const user = c.get("user");

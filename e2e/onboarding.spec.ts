@@ -21,9 +21,45 @@ test("guest can complete the level quiz", async ({ request }) => {
   });
   await expect(response).toBeOK();
   await expect(response.json()).resolves.toMatchObject({
-    level: expect.stringMatching(/^N[1-5]$/),
+    level: expect.stringMatching(/^(start|N[2-5])$/),
+    assessment: expect.stringMatching(/^(demonstrated|insufficient)$/),
     total: questions.length,
     correct: expect.any(Number),
+  });
+});
+
+test("one correct answer out of eight does not claim N5", async ({ request }) => {
+  const questionsResponse = await request.get(`${apiURL}/onboarding/quiz/questions`);
+  const questions = (await questionsResponse.json()) as Array<{ id: string }>;
+  const response = await request.post(`${apiURL}/onboarding/quiz`, {
+    data: {
+      declared: "n5",
+      answers: questions.map((question) => ({ questionId: question.id, choiceIndex: 0 })),
+    },
+  });
+  await expect(response).toBeOK();
+  await expect(response.json()).resolves.toMatchObject({
+    level: "start",
+    correct: 1,
+    total: 8,
+  });
+});
+
+test("all-skipped N4 declaration is marked declared-only, not assigned N4", async ({ request }) => {
+  const questionsResponse = await request.get(`${apiURL}/onboarding/quiz/questions`);
+  const questions = (await questionsResponse.json()) as Array<{ id: string }>;
+  const response = await request.post(`${apiURL}/onboarding/quiz`, {
+    data: {
+      declared: "n4",
+      answers: questions.map((question) => ({ questionId: question.id, choiceIndex: -1 })),
+    },
+  });
+  await expect(response).toBeOK();
+  await expect(response.json()).resolves.toMatchObject({
+    level: "start",
+    assessment: "declared_only",
+    correct: 0,
+    total: questions.length,
   });
 });
 

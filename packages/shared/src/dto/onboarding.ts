@@ -15,6 +15,9 @@ export type QuizStartChoice = z.infer<typeof quizStartChoiceSchema>;
 export const quizPlacementSchema = z.enum(["start", "N5", "N4", "N3", "N2"]);
 export type QuizPlacement = z.infer<typeof quizPlacementSchema>;
 
+export const quizAssessmentSchema = z.enum(["demonstrated", "declared_only", "insufficient"]);
+export type QuizAssessment = z.infer<typeof quizAssessmentSchema>;
+
 export const quizQuestionDto = z.object({
   id: z.string(),
   level: jlptLevelSchema,
@@ -28,9 +31,8 @@ export const quizSubmitInput = z.object({
   answers: z
     .array(z.object({ questionId: z.string(), choiceIndex: z.number().int().min(-1) }))
     .min(1),
-  // Declaration sets which levels get probed (declared-known levels are
-  // skipped and credited "со слов") — the server derives the same served
-  // subset from this, so client and server always score the same questions.
+  // Declaration is context for the result copy, not evidence. The server
+  // still verifies every level and can return declared_only/insufficient.
   declared: quizStartChoiceSchema.optional(),
 });
 export type QuizSubmitInput = z.infer<typeof quizSubmitInput>;
@@ -38,18 +40,17 @@ export type QuizSubmitInput = z.infer<typeof quizSubmitInput>;
 export const quizLeadInput = quizSubmitInput.extend({
   name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(200),
-  contact: z.string().trim().min(1).max(200),
+  contact: z.string().trim().max(200).optional(),
 });
 export type QuizLeadInput = z.infer<typeof quizLeadInput>;
 
 export const quizResultDto = z.object({
   level: quizPlacementSchema,
+  assessment: quizAssessmentSchema,
   correct: z.number().int().min(0),
   total: z.number().int().min(1),
-  // Per-JLPT-level breakdown of the *served* questions so the result screen
-  // can show an honest skip/seed/start map instead of a single opaque number.
-  // Levels skipped by declaration are absent — the client renders those as
-  // credited "со слов", not as tested.
+  // Per-JLPT-level breakdown so the result screen and email can distinguish
+  // demonstrated knowledge from a self-declaration.
   byLevel: z.array(
     z.object({
       level: jlptLevelSchema,

@@ -96,41 +96,30 @@ export const LEVEL_ORDER: readonly JlptLevel[] = ["N5", "N4", "N3", "N2"];
  * "со слов" on the map. Kana itself has no question in the bank, so "kana"
  * still probes from N5 up; it only moves the placement floor off "start".
  */
-export function creditedLevels(declared: QuizStartChoice | undefined): readonly JlptLevel[] {
-  if (declared === "n5") return ["N5"];
-  if (declared === "n4") return ["N5", "N4"];
-  return [];
-}
-
-/** The subset of the bank actually served, given the declaration. Must stay
- * a pure function of `declared`: the client filters by the same rule, and a
- * mismatch would score unserved questions as wrong. */
+/** The evidence bank served after declaration. Every level is retained: the
+ * self-report controls framing, but never silently grants correct answers. */
 export function questionsForDeclared(declared: QuizStartChoice | undefined): QuizQuestion[] {
-  const credited = new Set(creditedLevels(declared));
-  return QUIZ_QUESTIONS.filter((q) => !credited.has(q.level));
+  // Declaration changes the explanation, never the evidence. Re-test every
+  // band so a confident self-assessment can still be corrected by answers.
+  void declared;
+  return QUIZ_QUESTIONS;
 }
 
 /**
- * Placement = the lowest served level the user didn't fully clear.
- * Monotonic and honest by construction: 0 demonstrated never rounds up.
- * With nothing correct at N5 and no kana declared, the floor is "start"
- * (below N5) — the quiz can't claim a JLPT band from a blank slate.
+ * Placement = the highest level fully demonstrated in sequence. A partial N5
+ * score is still "start"; one lucky answer must never become an N5 claim.
  */
 export function placementFor(
   declared: QuizStartChoice | undefined,
   byLevel: { level: JlptLevel; correct: number; total: number }[],
 ): QuizPlacement {
-  const credited = new Set(creditedLevels(declared));
+  void declared;
+  let demonstrated: QuizPlacement = "start";
   for (const level of LEVEL_ORDER) {
-    if (credited.has(level)) continue;
     const scored = byLevel.find((b) => b.level === level);
     if (!scored || scored.total === 0) continue;
-    if (scored.correct < scored.total) {
-      const knowsKana = declared === "kana" || credited.size > 0;
-      if (level === "N5" && scored.correct === 0 && !knowsKana) return "start";
-      return level;
-    }
+    if (scored.correct < scored.total) return demonstrated;
+    demonstrated = level;
   }
-  // Cleared everything served — N2 is the bank's ceiling.
-  return "N2";
+  return demonstrated;
 }

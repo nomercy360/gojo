@@ -16,7 +16,12 @@ const transport = nodemailer.createTransport({
   socketTimeout: 5_000,
 });
 
-async function sendViaResend(to: string, subject: string, html: string): Promise<void> {
+async function sendViaResend(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
@@ -26,7 +31,7 @@ async function sendViaResend(to: string, subject: string, html: string): Promise
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: env.SMTP_FROM, to: [to], subject, html }),
+      body: JSON.stringify({ from: env.SMTP_FROM, to: [to], subject, html, text }),
       signal: controller.signal,
     });
     if (!res.ok) {
@@ -38,10 +43,35 @@ async function sendViaResend(to: string, subject: string, html: string): Promise
   }
 }
 
-export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  text = htmlToText(html),
+): Promise<void> {
   if (env.RESEND_API_KEY) {
-    await sendViaResend(to, subject, html);
+    await sendViaResend(to, subject, html, text);
     return;
   }
-  await transport.sendMail({ from: env.SMTP_FROM, to, subject, html });
+  await transport.sendMail({ from: env.SMTP_FROM, to, subject, html, text });
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/p>|<\/h[1-6]>|<\/li>|<\/div>/gi, "\n")
+    .replace(/<li\b[^>]*>/gi, "• ")
+    .replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, "$2 ($1)")
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&#039;", "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

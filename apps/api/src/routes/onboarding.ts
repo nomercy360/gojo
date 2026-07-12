@@ -8,7 +8,7 @@ import {
   quizSubmitInput,
 } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { eq } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AuthContext } from "../auth/middleware.ts";
@@ -19,6 +19,7 @@ import {
   questionsForDeclared,
 } from "../data/quiz-questions.ts";
 import { db } from "../db.ts";
+import { env } from "../env.ts";
 import { notifyLead } from "../lead-notifications.ts";
 import { sendEmail } from "../mailer.ts";
 
@@ -44,7 +45,7 @@ onboardingRoute.post("/quiz", zValidator("json", quizSubmitInput), async (c) => 
   // Indicative only — the official jlptLevel is set by a teacher after the
   // free consultation lesson (see PATCH /teacher/lessons/:id/students/:studentId/level).
   if (u) {
-    await persistQuizLevel(u.id, result.level);
+    await persistQuizLevel(u.id, result);
   }
 
   return c.json(result);
@@ -56,36 +57,77 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
   const result = scoreQuiz(data);
 
   if (u) {
-    await persistQuizLevel(u.id, result.level);
+    await persistQuizLevel(u.id, result);
   }
 
   const notes = buildQuizLeadNotes(data, result);
-  const [lead] = await db
-    .insert(leads)
-    .values({
-      kind: "quiz",
-      name: data.name,
-      email: data.email,
+  const lead = await db.transaction(async (tx) => {
+    const normalizedEmail = data.email.toLowerCase();
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${normalizedEmail}))`);
+    const [existingUser] = u
+      ? [{ id: u.id }]
+      : await tx
+          .select({ id: userTable.id })
+          .from(userTable)
+          .where(eq(userTable.email, normalizedEmail))
+          .limit(1);
+    const [canonicalLead] = await tx
+      .select({ name: leads.name })
+      .from(leads)
+      .where(eq(leads.email, normalizedEmail))
+      .orderBy(asc(leads.createdAt))
+      .limit(1);
+    const canonicalName = canonicalLead?.name ?? data.name;
+    const [existingLead] = await tx
+      .select({ id: leads.id })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.email, normalizedEmail),
+          eq(leads.kind, "quiz"),
+          inArray(leads.status, ["new", "contacted", "trial_booked"]),
+        ),
+      )
+      .limit(1);
+    const values = {
+      name: canonicalName,
+      email: normalizedEmail,
       contact: data.contact || null,
-      level: result.level,
+      level: result.assessment === "demonstrated" ? result.level : null,
       goal: "Получить подробный результат квиза и план обучения",
       notes,
-      userId: u?.id ?? null,
-    })
-    .returning({ id: leads.id });
-
-  void notifyLead({
-    kind: "quiz",
-    name: data.name,
-    email: data.email,
-    contact: data.contact,
-    level: result.level,
-    goal: `${result.correct}/${result.total} правильных; подробный результат отправлен на email`,
+      userId: existingUser?.id ?? null,
+      updatedAt: new Date(),
+    };
+    if (existingLead) {
+      const [updated] = await tx
+        .update(leads)
+        .set(values)
+        .where(eq(leads.id, existingLead.id))
+        .returning({ id: leads.id });
+      return { ...updated, created: false, canonicalName };
+    }
+    const [created] = await tx
+      .insert(leads)
+      .values({ kind: "quiz", ...values })
+      .returning({ id: leads.id });
+    return { ...created, created: true, canonicalName };
   });
+
+  if (lead.created) {
+    void notifyLead({
+      kind: "quiz",
+      name: lead.canonicalName,
+      email: data.email,
+      contact: data.contact,
+      level: result.assessment === "demonstrated" ? result.level : null,
+      goal: `${result.correct}/${result.total} правильных; подробный результат отправлен на email`,
+    });
+  }
 
   let emailSent = true;
   try {
-    await sendQuizResultEmail(data.email, data.name, result);
+    await sendQuizResultEmail(data.email, lead.canonicalName, result);
   } catch (err) {
     emailSent = false;
     console.error("sendQuizResultEmail failed:", err);
@@ -102,6 +144,7 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
 function scoreQuiz(input: QuizSubmitInput): QuizResultDto {
   const served = questionsForDeclared(input.declared);
   const answerById = new Map(input.answers.map((a) => [a.questionId, a.choiceIndex]));
+  const answered = served.filter((question) => (answerById.get(question.id) ?? -1) >= 0).length;
   let correct = 0;
   const byLevel: QuizResultDto["byLevel"] = [];
   for (const level of LEVEL_ORDER) {
@@ -114,16 +157,27 @@ function scoreQuiz(input: QuizSubmitInput): QuizResultDto {
 
   return {
     level: placementFor(input.declared, byLevel),
+    assessment:
+      answered === 0
+        ? input.declared && input.declared !== "new"
+          ? "declared_only"
+          : "insufficient"
+        : answered < Math.ceil(served.length / 2) || correct === 0
+          ? "insufficient"
+          : "demonstrated",
     correct,
     total: served.length,
     byLevel,
   };
 }
 
-async function persistQuizLevel(userId: string, level: QuizResultDto["level"]): Promise<void> {
+async function persistQuizLevel(userId: string, result: QuizResultDto): Promise<void> {
   const [row] = await db
     .update(userTable)
-    .set({ quizLevel: level, updatedAt: new Date() })
+    .set({
+      quizLevel: result.assessment === "demonstrated" ? result.level : null,
+      updatedAt: new Date(),
+    })
     .where(eq(userTable.id, userId))
     .returning();
   if (!row) throw new HTTPException(404, { message: "user not found" });
@@ -139,7 +193,8 @@ const DECLARED_LABEL: Record<NonNullable<QuizSubmitInput["declared"]>, string> =
 function buildQuizLeadNotes(data: QuizSubmitInput, result: QuizResultDto): string {
   const answerById = new Map(data.answers.map((a) => [a.questionId, a.choiceIndex]));
   const lines = [
-    `Квиз уровня: ${result.level === "start" ? "с нуля (ниже N5)" : result.level}`,
+    `Квиз: ${result.assessment === "demonstrated" ? (result.level === "start" ? "с нуля (ниже N5)" : result.level) : "недостаточно данных"}`,
+    `Статус оценки: ${result.assessment}`,
     `Со слов: ${data.declared ? DECLARED_LABEL[data.declared] : "не указано"}`,
     `Результат: ${result.correct}/${result.total}`,
     "",
@@ -160,20 +215,40 @@ function buildQuizLeadNotes(data: QuizSubmitInput, result: QuizResultDto): strin
 }
 
 async function sendQuizResultEmail(to: string, name: string, result: QuizResultDto): Promise<void> {
-  const levelLabel = result.level === "start" ? "старт с самых азов" : `примерно ${result.level}`;
-  const subject =
-    result.level === "start"
+  const demonstrated = result.assessment === "demonstrated";
+  const levelLabel = demonstrated
+    ? result.level === "start"
+      ? "старт с самых азов"
+      : `примерно ${result.level}`
+    : "пока недостаточно данных для оценки";
+  const subject = !demonstrated
+    ? "Результат теста японского — нужно больше ответов"
+    : result.level === "start"
       ? "Твой план: начинаем японский с самых азов"
       : `Твой примерный уровень японского — ${result.level}`;
   const escapedName = escapeHtml(name);
+  const breakdown = result.byLevel
+    .map(({ level, correct, total }) => {
+      const recommendation =
+        correct === total
+          ? "уровень подтверждён ответами"
+          : correct === 0
+            ? "стоит начать с основ этого уровня"
+            : "есть база, но отдельные темы нужно закрепить";
+      return `<li><strong>${level}</strong>: ${correct}/${total} — ${recommendation}</li>`;
+    })
+    .join("");
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #252525;">
-      <h1 style="margin: 0 0 12px;">${escapedName}, твой результат — ${levelLabel}</h1>
-      <p>Ты ответил(а) правильно на <strong>${result.correct} из ${result.total}</strong> вопросов.</p>
-      <p>${resultBlurb(result.level)}</p>
+      <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
+      <h1 style="margin: 0 0 12px;">${escapedName}, вот с чего лучше начать</h1>
+      <p>Предварительная оценка: <strong>${levelLabel}</strong>. Верных ответов: ${result.correct} из ${result.total}.</p>
+      <h2 style="font-size: 18px;">Разбор по уровням</h2>
+      <ul>${breakdown}</ul>
+      <p>${demonstrated ? resultBlurb(result.level) : "Мы не будем присваивать уровень только по самооценке или пропускам. Ответь на большее число вопросов либо уточни уровень с преподавателем."}</p>
       <p>Это предварительная оценка. На бесплатном первом уроке преподаватель проверит уровень точнее и предложит план занятий.</p>
-      <p><a href="https://t.me/gojoedu" style="color: #e8420a; font-weight: 700;">Записаться на бесплатный урок в Telegram →</a></p>
-      <p style="font-size: 12px; color: #6b6b6b;">Gojo Learn · школа японского</p>
+      <p><a href="${env.WEB_ORIGIN}/#pricing" style="color: #e8420a; font-weight: 700;">Записаться на бесплатный урок →</a></p>
+      <p style="font-size: 12px; color: #6b6b6b;">Gojo Learn · школа японского языка · <a href="https://t.me/gojoedu">связаться с нами</a><br><a href="mailto:hello@gojolearn.ru?subject=Отписаться">Не получать письма о результатах и обучении</a></p>
     </div>
   `;
   await sendEmail(to, subject, html);

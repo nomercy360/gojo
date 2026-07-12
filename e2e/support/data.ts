@@ -54,6 +54,11 @@ export async function deleteLead(id: string | undefined) {
   if (id) await db.delete(leads).where(eq(leads.id, id));
 }
 
+export async function findLead(id: string) {
+  const [row] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+  return row;
+}
+
 export async function deletePersonalEvent(id: string | undefined) {
   if (id) await db.delete(personalEvents).where(eq(personalEvents.id, id));
 }
@@ -75,4 +80,21 @@ export async function resetMutableStudent(userId: string) {
     })
     .where(eq(user.id, userId));
   await resetTraining(userId);
+  await db
+    .insert(studentAccess)
+    .values({ userId, trialUsed: false, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: studentAccess.userId,
+      set: { trialUsed: false, updatedAt: new Date() },
+    });
+}
+
+export async function setTrialUsed(userId: string, trialUsed: boolean) {
+  await db
+    .insert(studentAccess)
+    .values({ userId, trialUsed, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: studentAccess.userId,
+      set: { trialUsed, updatedAt: new Date() },
+    });
 }

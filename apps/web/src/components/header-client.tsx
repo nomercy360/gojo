@@ -48,6 +48,7 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
   const teacherUser = isTeacherUser(user);
+  const freeToolRoute = pathname === "/onboarding/quiz" || pathname === "/kana";
 
   async function handleLogout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -86,57 +87,59 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
         </Link>
 
         <nav className="g-body flex items-center gap-5 text-[13px] font-semibold">
-          {user ? teacherUser ? (
-            <>
-              <Link
-                href="/teacher"
-                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-              >
-                Учитель
-              </Link>
-              <Link
-                href="/teacher/students"
-                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-              >
-                Студенты
-              </Link>
-              <Link
-                href="/profile"
-                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-              >
-                <Avatar value={user.avatarUrl} size={26} fallback={user.nickname ?? user.email} />
-              </Link>
-              <form onSubmit={handleLogout}>
-                <button
-                  type="submit"
-                  disabled={loggingOut}
-                  className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+          {user ? (
+            teacherUser ? (
+              <>
+                <Link
+                  href="/teacher"
+                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                 >
-                  Выйти
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Link href="/" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>
-                На сайт
-              </Link>
-              <Link
-                href="/payments"
-                className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-              >
-                Оплата
-              </Link>
-              <form onSubmit={handleLogout}>
-                <button
-                  type="submit"
-                  disabled={loggingOut}
-                  className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+                  Учитель
+                </Link>
+                <Link
+                  href="/teacher/students"
+                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                 >
-                  Выйти
-                </button>
-              </form>
-            </>
+                  Студенты
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                >
+                  <Avatar value={user.avatarUrl} size={26} fallback={user.nickname ?? user.email} />
+                </Link>
+                <form onSubmit={handleLogout}>
+                  <button
+                    type="submit"
+                    disabled={loggingOut}
+                    className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+                  >
+                    Выйти
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Link href="/" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>
+                  На сайт
+                </Link>
+                <Link
+                  href={freeToolRoute ? "/dashboard" : "/payments"}
+                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                >
+                  {freeToolRoute ? "В кабинет" : "Оплата"}
+                </Link>
+                <form onSubmit={handleLogout}>
+                  <button
+                    type="submit"
+                    disabled={loggingOut}
+                    className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+                  >
+                    Выйти
+                  </button>
+                </form>
+              </>
+            )
           ) : (
             <Link
               href="/login"

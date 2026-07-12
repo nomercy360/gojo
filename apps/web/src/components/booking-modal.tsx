@@ -3,7 +3,6 @@
 import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { PhoneField } from "./phone-field";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
@@ -29,7 +28,9 @@ export function BookingModal({
   source?: string;
 }) {
   const [submitted, setSubmitted] = useState(false);
-  const [phone, setPhone] = useState<string | undefined>();
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [submissionReason, setSubmissionReason] = useState<string | undefined>();
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(true);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -52,8 +53,8 @@ export function BookingModal({
   }, [open, onClose]);
 
   const submitForm = async () => {
-    if (!readValue("bm-name") || !phone) {
-      toast.error("Пожалуйста, заполни имя и телефон");
+    if (!readValue("bm-name") || !readValue("bm-email")) {
+      toast.error("Пожалуйста, заполни имя и email");
       return;
     }
     try {
@@ -63,14 +64,21 @@ export function BookingModal({
         body: JSON.stringify({
           kind: "booking",
           name: readValue("bm-name"),
-          email: readValue("bm-email") || undefined,
-          contact: phone,
+          email: readValue("bm-email"),
           goal: readValue("bm-goal") || undefined,
         }),
       });
       if (!res.ok) throw new Error();
+      const data = (await res.json()) as {
+        alreadyExists?: boolean;
+        emailSent?: boolean;
+        reason?: string;
+      };
       const email = readValue("bm-email");
-      if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
+      localStorage.setItem(PENDING_LEAD_KEY, email);
+      setAlreadySubmitted(Boolean(data.alreadyExists));
+      setSubmissionReason(data.reason);
+      setConfirmationEmailSent(data.emailSent !== false);
       track("lead_submitted", { source });
       setSubmitted(true);
     } catch {
@@ -84,6 +92,9 @@ export function BookingModal({
         className={`modal-overlay ${open ? "open" : ""}`}
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
         }}
       >
         <div className="modal-box">
@@ -123,14 +134,8 @@ export function BookingModal({
                 />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="bm-phone">
-                  Телефон
-                </label>
-                <PhoneField id="bm-phone" value={phone} onChange={setPhone} />
-              </div>
-              <div className="form-group">
                 <label className="form-label" htmlFor="bm-email">
-                  Email <span className="form-optional">(необязательно)</span>
+                  Email
                 </label>
                 <input
                   className="form-input"
@@ -138,6 +143,7 @@ export function BookingModal({
                   placeholder="your@email.com"
                   id="bm-email"
                   autoComplete="email"
+                  required
                 />
               </div>
               <div className="form-group">
@@ -164,13 +170,24 @@ export function BookingModal({
 
           <div className="form-success" style={{ display: submitted ? "block" : "none" }}>
             <div className="form-success-icon">🎌</div>
-            <div className="form-success-title">Отлично, ждём тебя!</div>
+            <div className="form-success-title">
+              {submissionReason === "account_has_trial"
+                ? "У тебя уже был бесплатный урок"
+                : alreadySubmitted
+                  ? "Заявка уже принята"
+                  : "Отлично, ждём тебя!"}
+            </div>
             <p className="form-success-text">
-              Мы получили твою заявку и свяжемся в течение 24 часов, чтобы договориться о времени
-              первого урока.
+              {submissionReason === "account_has_trial"
+                ? "Этот email уже связан с аккаунтом, где бесплатный урок использован. Войди в кабинет или напиши нам в Telegram, если нужна помощь."
+                : alreadySubmitted
+                  ? "Повторно отправлять ничего не нужно — мы уже получили заявку и свяжемся в течение 24 часов."
+                  : confirmationEmailSent
+                    ? "Мы получили заявку и отправили подтверждение на email. Свяжемся в течение 24 часов, чтобы договориться о времени первого урока."
+                    : "Мы получили заявку, но подтверждение на email отправить не удалось. Заявка сохранена — свяжемся в течение 24 часов."}
               <br />
               <br />
-              Доступ в личный кабинет пришлём на email после того, как договоримся о времени.
+              Доступ в личный кабинет также пришлём на email после согласования времени.
             </p>
             <a
               href="https://t.me/gojoedu"
