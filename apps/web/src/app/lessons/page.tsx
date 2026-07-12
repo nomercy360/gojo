@@ -7,7 +7,6 @@ import type { LessonDto } from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { bookLessonAction } from "./actions";
 import { CalendarView } from "./calendar";
 import { ViewToggle } from "./view-toggle";
 
@@ -37,9 +36,7 @@ export default async function LessonsPage({
         </div>
         <h1 className="mt-2 font-serif text-[28px] font-bold">Ближайшие уроки</h1>
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-sm text-gojo-ink-muted">
-            Выбери урок и запишись. Группы до 8 студентов.
-          </p>
+          <p className="text-sm text-gojo-ink-muted">Твои занятия с преподавателем.</p>
           <Suspense>
             <ViewToggle />
           </Suspense>
@@ -51,7 +48,8 @@ export default async function LessonsPage({
           </div>
         ) : lessons.length === 0 ? (
           <div className="g-card mt-10 px-5 py-10 text-center text-gojo-ink-muted">
-            Пока нет запланированных уроков.
+            Пока нет запланированных занятий. Договоритесь о времени с преподавателем в Telegram —
+            уроки появятся здесь.
           </div>
         ) : view === "calendar" ? (
           <div className="mt-10">
@@ -78,10 +76,6 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
   const isTomorrow = starts.toDateString() === new Date(Date.now() + 86400000).toDateString();
   const dayLabel = isToday ? "СЕГОДНЯ" : isTomorrow ? "ЗАВТРА" : null;
   const durationMin = Math.round((ends.getTime() - starts.getTime()) / 60000);
-
-  const seats = lesson.studentCount ?? 0;
-  const max = lesson.maxStudents;
-  const isFull = seats >= max;
 
   return (
     <li className="g-card relative overflow-hidden p-5">
@@ -121,19 +115,12 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
               {lesson.title}
             </Link>
           </h3>
-          <p className="mt-1 flex items-center gap-3 text-sm text-gojo-ink-muted">
-            <span>{lesson.teacherNickname ?? "Teacher"}</span>
-            <span
-              className={`font-mono text-[12px] font-bold ${
-                isFull ? "text-gojo-error" : "text-gojo-ink-muted"
-              }`}
-            >
-              {seats}/{max} мест
-            </span>
+          <p className="mt-1 text-sm text-gojo-ink-muted">
+            {lesson.teacherNickname ?? "Преподаватель"}
           </p>
         </div>
 
-        <LessonAction lesson={lesson} authenticated={authenticated} isFull={isFull} />
+        <LessonAction lesson={lesson} authenticated={authenticated} />
       </div>
       {lesson.joinState === "waiting" && lesson.joinOpensAt ? (
         <div className="mt-3 flex justify-end">
@@ -147,11 +134,9 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
 function LessonAction({
   lesson,
   authenticated,
-  isFull,
 }: {
   lesson: LessonDto;
   authenticated: boolean;
-  isFull: boolean;
 }) {
   if (!authenticated) {
     return (
@@ -214,21 +199,12 @@ function LessonAction({
     );
   }
 
-  // state is "full" / "bookable" / undefined — fall back to booking controls.
-  if (state === "full" || (state === undefined && isFull)) {
-    return (
-      <span className="shrink-0 rounded-md border border-black/10 bg-gojo-paper-2 px-4 py-2 text-sm font-bold text-gojo-ink-ghost">
-        Мест нет
-      </span>
-    );
-  }
-
+  // Lessons here are always the student's own (teacher-assigned), so the only
+  // remaining state is "waiting" before the join window — handled above. Any
+  // other value just links to the lesson detail.
   return (
-    <form action={bookLessonAction}>
-      <input type="hidden" name="lessonId" value={lesson.id} />
-      <button type="submit" className="g-btn-secondary shrink-0 text-sm">
-        Записаться
-      </button>
-    </form>
+    <Link href={`/lessons/${lesson.id}`} className="g-btn-secondary shrink-0 text-sm">
+      Открыть ▸
+    </Link>
   );
 }

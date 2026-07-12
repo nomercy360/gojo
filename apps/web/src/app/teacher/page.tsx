@@ -1,5 +1,5 @@
-import type { TeacherLessonDto } from "@/lib/api";
-import { fetchTeacherLessons } from "@/lib/api";
+import type { StudentDirectoryEntry, TeacherLessonDto } from "@/lib/api";
+import { fetchStudentDirectory, fetchTeacherLessons } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
@@ -15,9 +15,10 @@ export default async function TeacherPage() {
   if (!isTeacherUser(user)) redirect("/dashboard");
 
   let lessons: TeacherLessonDto[] = [];
+  let students: StudentDirectoryEntry[] = [];
   let error: string | null = null;
   try {
-    lessons = await fetchTeacherLessons();
+    [lessons, students] = await Promise.all([fetchTeacherLessons(), fetchStudentDirectory()]);
   } catch (e) {
     error = e instanceof Error ? e.message : "unknown";
   }
@@ -88,7 +89,7 @@ export default async function TeacherPage() {
           </div>
 
           {/* Create form */}
-          <CreateLessonForm />
+          <CreateLessonForm students={students} />
         </div>
       </div>
     </main>

@@ -1,11 +1,12 @@
 "use client";
 
+import type { StudentDirectoryEntry } from "@/lib/api";
 import { useActionState } from "react";
 import { createLessonAction, type TeacherActionState } from "./actions";
 
 const initial: TeacherActionState = {};
 
-export function CreateLessonForm() {
+export function CreateLessonForm({ students }: { students: StudentDirectoryEntry[] }) {
   const [state, formAction, pending] = useActionState(createLessonAction, initial);
 
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
@@ -14,6 +15,36 @@ export function CreateLessonForm() {
     <div className="g-card p-6">
       <h2 className="font-serif text-[22px] font-bold">Новый урок</h2>
       <form action={formAction} className="mt-5 space-y-4">
+        <div>
+          <label
+            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
+            htmlFor="studentId"
+          >
+            Студент
+          </label>
+          {students.length === 0 ? (
+            <p className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm text-gojo-ink-muted">
+              Нет студентов. Сначала создай студента.
+            </p>
+          ) : (
+            <select
+              id="studentId"
+              name="studentId"
+              required
+              defaultValue=""
+              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
+            >
+              <option value="" disabled>
+                Выбери студента
+              </option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} · {s.email}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         <div>
           <label className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft" htmlFor="title">
             Название
@@ -89,18 +120,10 @@ export function CreateLessonForm() {
           />
         </div>
 
-        {state.error ? (
-          <p className="text-sm font-bold text-gojo-error">{state.error}</p>
-        ) : null}
-        {state.ok ? (
-          <p className="text-sm font-bold text-gojo-success">Урок создан!</p>
-        ) : null}
+        {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+        {state.ok ? <p className="text-sm font-bold text-gojo-success">Урок создан!</p> : null}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="g-btn-primary w-full text-sm"
-        >
+        <button type="submit" disabled={pending} className="g-btn-primary w-full text-sm">
           {pending ? "Создаём..." : "Создать урок"}
         </button>
       </form>

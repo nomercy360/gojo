@@ -54,12 +54,12 @@ export function CalendarView({
           >
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className={`font-serif text-lg font-bold ${isToday ? "text-gojo-orange" : ""}`}>
+                <span
+                  className={`font-serif text-lg font-bold ${isToday ? "text-gojo-orange" : ""}`}
+                >
                   {day.getDate()}
                 </span>
-                <span className="text-[11px] font-bold text-gojo-ink-muted">
-                  {DAYS_FULL[i]}
-                </span>
+                <span className="text-[11px] font-bold text-gojo-ink-muted">{DAYS_FULL[i]}</span>
               </div>
               {isToday ? (
                 <span className="-rotate-1 rounded-sm bg-gojo-orange px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
@@ -78,16 +78,11 @@ export function CalendarView({
                     hour: "2-digit",
                     minute: "2-digit",
                   });
-                  const seats = l.studentCount ?? 0;
                   return (
                     <Link
                       key={l.id}
                       href={`/lessons/${l.id}`}
-                      className={`flex items-center justify-between rounded-md border p-3 transition hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${
-                        l.booked
-                          ? "border-gojo-orange bg-gojo-surface"
-                          : "border-black/10 bg-gojo-surface hover:border-black/20"
-                      }`}
+                      className="flex items-center justify-between rounded-md border border-gojo-orange bg-gojo-surface p-3 transition hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
                     >
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-[13px] font-bold text-gojo-ink-muted">
@@ -100,16 +95,7 @@ export function CalendarView({
                         ) : null}
                         <span className="text-sm font-bold">{l.title}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px]">
-                        <span className="text-gojo-ink-muted">
-                          {seats}/{l.maxStudents}
-                        </span>
-                        {l.booked ? (
-                          <span className="rounded-sm bg-gojo-orange px-2 py-0.5 text-[9px] font-bold text-white">
-                            ЗАПИСАН
-                          </span>
-                        ) : null}
-                      </div>
+                      <span className="text-[13px] text-gojo-ink-ghost">▸</span>
                     </Link>
                   );
                 })}

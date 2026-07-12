@@ -17,29 +17,6 @@ export async function findUserId(email: string) {
   return row.id;
 }
 
-export async function grantBookingCredit(userId: string) {
-  await db
-    .insert(studentAccess)
-    .values({ userId, lessonCredits: 1, trialUsed: false, updatedAt: new Date() })
-    .onConflictDoUpdate({
-      target: studentAccess.userId,
-      set: { lessonCredits: 1, trialUsed: false, updatedAt: new Date() },
-    });
-}
-
-export async function setLessonCapacity(lessonId: string, maxStudents: number) {
-  await db.update(lessons).set({ maxStudents }).where(eq(lessons.id, lessonId));
-}
-
-export async function getBookingCredits(userId: string) {
-  const [access] = await db
-    .select({ lessonCredits: studentAccess.lessonCredits })
-    .from(studentAccess)
-    .where(eq(studentAccess.userId, userId))
-    .limit(1);
-  return access?.lessonCredits ?? 0;
-}
-
 export async function cleanLearningFlow(lessonId: string | undefined, userId: string | undefined) {
   if (lessonId) await db.delete(lessons).where(eq(lessons.id, lessonId));
   if (userId) {

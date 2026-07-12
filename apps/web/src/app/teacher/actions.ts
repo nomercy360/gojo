@@ -11,11 +11,13 @@ export async function createLessonAction(
   formData: FormData,
 ): Promise<TeacherActionState> {
   const title = String(formData.get("title") ?? "").trim();
+  const studentId = String(formData.get("studentId") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   const time = String(formData.get("time") ?? "");
   const durationMin = Number(formData.get("duration") ?? 60);
   const meetingUrl = String(formData.get("meetingUrl") ?? "").trim();
 
+  if (!studentId) return { error: "Выбери студента" };
   if (!title || !date || !time) return { error: "Заполни все поля" };
 
   const startsAt = new Date(`${date}T${time}`);
@@ -26,6 +28,7 @@ export async function createLessonAction(
   try {
     await createLesson({
       title,
+      studentId,
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
       ...(meetingUrl ? { meetingUrl } : {}),

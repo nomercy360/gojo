@@ -2192,6 +2192,25 @@ html:has(.landing-root) {
   margin-top: 0;
   line-height: 1.5;
 }
+/* Quiet fallback toggles inside the booking modal (Другой способ связи /
+   Хочу, чтобы позвонили). Deliberately low-contrast so they don't compete
+   with the primary Telegram path. */
+.landing-root .bm-alt-link {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 2px;
+  margin: 2px 0 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.landing-root .bm-alt-link:hover {
+  color: var(--ink);
+}
 .landing-root .form-success {
   display: none;
   text-align: center;

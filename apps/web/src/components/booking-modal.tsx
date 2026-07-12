@@ -31,7 +31,9 @@ export function BookingModal({
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [submissionReason, setSubmissionReason] = useState<string | undefined>();
   const [confirmationEmailSent, setConfirmationEmailSent] = useState(true);
-  // Phone is an opt-in "call me" rescue — hidden until the user asks for a call.
+  // Default view is just name + Telegram. Email/phone live behind a quiet link
+  // for the minority without Telegram; phone is a further opt-in "call me".
+  const [showAlt, setShowAlt] = useState(false);
   const [wantsCall, setWantsCall] = useState(false);
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export function BookingModal({
   useEffect(() => {
     if (open) {
       track("booking_open", { source });
+      setShowAlt(false);
       setWantsCall(false);
     }
   }, [open, source]);
@@ -84,7 +87,6 @@ export function BookingModal({
           telegram: telegram || undefined,
           email: email || undefined,
           phone: phone || undefined,
-          goal: readValue("bm-goal") || undefined,
         }),
       });
       if (!res.ok) throw new Error();
@@ -168,65 +170,65 @@ export function BookingModal({
                   Напишем сюда, чтобы договориться о времени — так быстрее всего.
                 </p>
               </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="bm-email">
-                  Email <span className="form-optional">(необязательно)</span>
-                </label>
-                <input
-                  className="form-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  id="bm-email"
-                  autoComplete="email"
-                />
-              </div>
-              {wantsCall ? (
-                <div className="form-group">
-                  <label className="form-label" htmlFor="bm-phone">
-                    Телефон для звонка
-                  </label>
-                  <input
-                    className="form-input"
-                    type="tel"
-                    placeholder="+7 900 000-00-00"
-                    id="bm-phone"
-                    autoComplete="tel"
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="form-link-button"
-                  onClick={() => setWantsCall(true)}
+              {showAlt ? (
+                <div
                   style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    color: "var(--orange)",
-                    fontFamily: "var(--font-body)",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    textAlign: "left",
+                    background: "var(--cream-dark)",
+                    borderRadius: "14px",
+                    padding: "15px 15px 16px",
+                    marginBottom: "4px",
                   }}
                 >
-                  Нет Telegram? Хочу, чтобы позвонили →
+                  <p className="form-note" style={{ margin: "0 0 12px" }}>
+                    Telegram быстрее, но можно и так — оставь что удобно.
+                  </p>
+                  <div className="form-group" style={{ marginBottom: wantsCall ? "12px" : 0 }}>
+                    <label className="form-label" htmlFor="bm-email">
+                      Email
+                    </label>
+                    <input
+                      className="form-input"
+                      type="email"
+                      placeholder="your@email.com"
+                      id="bm-email"
+                      autoComplete="email"
+                    />
+                  </div>
+                  {wantsCall ? (
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="bm-phone">
+                        Телефон
+                      </label>
+                      <input
+                        className="form-input"
+                        type="tel"
+                        placeholder="+7 (900) 000-00-00"
+                        id="bm-phone"
+                        autoComplete="tel"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="bm-alt-link"
+                      onClick={() => setWantsCall(true)}
+                    >
+                      Хочу, чтобы позвонили →
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button type="button" className="bm-alt-link" onClick={() => setShowAlt(true)}>
+                  Нет Telegram? Другой способ связи
                 </button>
               )}
-              <div className="form-group">
-                <label className="form-label" htmlFor="bm-goal">
-                  Что хочешь получить? <span className="form-optional">(необязательно)</span>
-                </label>
-                <select className="form-select form-input" id="bm-goal">
-                  <option value="">Можно выбрать позже</option>
-                  <option>Смотреть аниме / читать мангу в оригинале</option>
-                  <option>Переехать или учиться в Японии</option>
-                  <option>Работать с японскими партнёрами</option>
-                  <option>Просто интересно / хочу попробовать</option>
-                </select>
-              </div>
-              <button type="button" className="form-submit" onClick={submitForm}>
-                Записаться на бесплатный урок
+              <button
+                type="button"
+                className="form-submit"
+                style={{ marginTop: "18px" }}
+                onClick={submitForm}
+              >
+                Продолжить в Telegram
               </button>
               <p className="form-note">
                 Нажимая кнопку, ты соглашаешься с политикой конфиденциальности. Никакого спама —

@@ -1,11 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { adminAuthFile, e2eAccounts, studentAuthFile } from "./support/auth";
-import {
-  cleanLearningFlow,
-  findUserId,
-  getBookingCredits,
-  grantBookingCredit,
-} from "./support/data";
+import { cleanLearningFlow, findUserId } from "./support/data";
 import { expectPageHeading } from "./support/ui";
 
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
@@ -28,13 +23,12 @@ test.describe("connected learning journey", () => {
     await cleanLearningFlow(lessonId, studentId);
   });
 
-  test("lesson booking through homework approval creates a review card", async ({
+  test("teacher assignment through homework approval creates a review card", async ({
     browser,
     page,
   }) => {
     const assignedStudentId = await findUserId(e2eAccounts.student.email);
     studentId = assignedStudentId;
-    await grantBookingCredit(assignedStudentId);
 
     const adminContext = await browser.newContext({ storageState: adminAuthFile });
     const adminPage = await adminContext.newPage();
@@ -43,10 +37,11 @@ test.describe("connected learning journey", () => {
     const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
 
     try {
-      await test.step("admin creates the lesson and its review card", async () => {
+      await test.step("admin creates the lesson for the student and its review card", async () => {
         const lessonResponse = await adminPage.request.post(`${apiURL}/teacher/lessons`, {
           data: {
             title,
+            studentId: assignedStudentId,
             startsAt: startsAt.toISOString(),
             endsAt: endsAt.toISOString(),
           },
@@ -69,11 +64,11 @@ test.describe("connected learning journey", () => {
         await expect(cardResponse).toBeOK();
       });
 
-      await test.step("student books the lesson in the UI", async () => {
+      await test.step("student sees the assigned lesson with no booking action", async () => {
         await page.goto("/lessons");
         const lesson = page.locator("li").filter({ hasText: title });
         await expect(lesson).toBeVisible();
-        await lesson.getByRole("button", { name: "Записаться" }).click();
+        // Lessons are teacher-assigned; there is no self-serve booking button.
         await expect(lesson.getByRole("button", { name: "Записаться" })).toHaveCount(0);
 
         const studentsResponse = await adminPage.request.get(
@@ -83,10 +78,6 @@ test.describe("connected learning journey", () => {
         await expect(studentsResponse.json()).resolves.toEqual(
           expect.arrayContaining([expect.objectContaining({ studentId: assignedStudentId })]),
         );
-
-        const duplicateResponse = await page.request.post(`${apiURL}/lessons/${lessonId}/book`);
-        expect(duplicateResponse.status()).toBe(200);
-        expect(await getBookingCredits(assignedStudentId)).toBe(0);
       });
 
       await test.step("attendance materializes the teacher card", async () => {

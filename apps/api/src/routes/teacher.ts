@@ -31,6 +31,7 @@ import {
   materializeNewCardForAttendedBookings,
 } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
+import { sendBookingConfirmation } from "./lessons.ts";
 import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
 import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
 
@@ -40,6 +41,10 @@ const createLessonInput = z.object({
   title: z.string().min(1).max(200),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
+  // The student this personal (1:1) lesson is scheduled for. When present the
+  // lesson is capped to that one student and a booking is created immediately —
+  // there is no self-serve booking. Optional so a slot can be pre-created.
+  studentId: z.string().min(1).optional(),
   meetingUrl: z.string().url().max(500).optional(),
   metadata: z
     .object({
@@ -199,6 +204,26 @@ teacherRoute.post(
     return c.json(toLessonDto(lesson, null), 201);
   },
 );
+
+// Flat list of every student account, for the "assign a lesson" picker. Unlike
+// GET /students (which is derived from bookings), this includes students who
+// have no lessons yet — e.g. a freshly provisioned account.
+teacherRoute.get("/student-directory", async (c) => {
+  const rows = await db
+    .select({
+      id: userTable.id,
+      nickname: userTable.nickname,
+      name: userTable.name,
+      email: userTable.email,
+    })
+    .from(userTable)
+    .where(eq(userTable.role, "student"))
+    .orderBy(asc(userTable.nickname), asc(userTable.email));
+
+  return c.json(
+    rows.map((r) => ({ id: r.id, name: r.nickname ?? r.name ?? r.email, email: r.email })),
+  );
+});
 
 teacherRoute.get("/students", async (c) => {
   const u = c.get("user")!;
@@ -445,6 +470,17 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
   const u = c.get("user")!;
   const body = c.req.valid("json");
 
+  if (body.studentId) {
+    const [student] = await db
+      .select({ id: userTable.id, role: userTable.role })
+      .from(userTable)
+      .where(eq(userTable.id, body.studentId))
+      .limit(1);
+    if (!student || student.role !== "student") {
+      throw new HTTPException(400, { message: "unknown student" });
+    }
+  }
+
   const [row] = await db
     .insert(lessons)
     .values({
@@ -454,11 +490,28 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
       endsAt: new Date(body.endsAt),
       meetingUrl: body.meetingUrl,
       metadata: body.metadata,
+      // A personal lesson is 1:1; the assigned student is booked below.
+      ...(body.studentId ? { maxStudents: 1 } : {}),
     })
     .returning();
 
   if (!row) throw new HTTPException(500, { message: "failed to create lesson" });
-  return c.json(toLessonDto(row, null, { includeMeetingUrl: true }), 201);
+
+  if (body.studentId) {
+    const [booking] = await db
+      .insert(bookings)
+      .values({ lessonId: row.id, studentId: body.studentId })
+      .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
+      .returning();
+    if (booking) {
+      await sendBookingConfirmation(booking.id, body.studentId, row.title, row.startsAt);
+    }
+  }
+
+  return c.json(
+    toLessonDto(row, null, { includeMeetingUrl: true, studentCount: body.studentId ? 1 : 0 }),
+    201,
+  );
 });
 
 teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async (c) => {

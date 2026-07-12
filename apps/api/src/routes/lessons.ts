@@ -3,7 +3,6 @@ import {
   homework,
   lessonMaterials,
   lessons,
-  studentAccess,
   trainingTotals,
   user as userTable,
 } from "@gojo/db";
@@ -48,49 +47,40 @@ async function hasLessonContentAccess(
   return !!b;
 }
 
+// The student's own upcoming schedule. Lessons are teacher-assigned (there is
+// no self-serve booking), so this returns only lessons the viewer is booked on —
+// never a public marketplace feed. Logged-out or non-student viewers get [].
 lessonsRoute.get("/", async (c) => {
   const user = c.get("user");
   const now = new Date();
   await autoCompletePastLessons(now);
+  if (!user || user.role !== "student") return c.json([]);
 
   const rows = await db
-    .select({
-      lesson: lessons,
-      teacherNickname: userTable.nickname,
-      studentCount:
-        sql<number>`(SELECT COUNT(*) FROM ${bookings} WHERE ${bookings.lessonId} = ${lessons.id})`.as(
-          "student_count",
-        ),
-    })
-    .from(lessons)
+    .select({ lesson: lessons, teacherNickname: userTable.nickname })
+    .from(bookings)
+    .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
     .leftJoin(userTable, eq(userTable.id, lessons.teacherId))
-    .where(and(gte(lessons.endsAt, now), eq(lessons.status, "scheduled")))
+    .where(
+      and(
+        eq(bookings.studentId, user.id),
+        gte(lessons.endsAt, now),
+        inArray(lessons.status, ["scheduled", "in_progress"]),
+      ),
+    )
     .orderBy(asc(lessons.startsAt))
     .limit(50);
 
-  let bookedSet = new Set<string>();
-  if (user && rows.length > 0) {
-    const lessonIds = rows.map((r) => r.lesson.id);
-    const userBookings = await db
-      .select({ lessonId: bookings.lessonId })
-      .from(bookings)
-      .where(and(eq(bookings.studentId, user.id), inArray(bookings.lessonId, lessonIds)));
-    bookedSet = new Set(userBookings.map((b) => b.lessonId));
-  }
-
   return c.json(
-    rows.map((r) => {
-      const studentCount = Number(r.studentCount);
-      const booked = user ? bookedSet.has(r.lesson.id) : false;
-      const isOwner = !!user && user.id === r.lesson.teacherId;
-      return toLessonDto(r.lesson, r.teacherNickname, {
-        booked: user ? booked : undefined,
-        studentCount,
-        isParticipant: booked || isOwner,
+    rows.map((r) =>
+      toLessonDto(r.lesson, r.teacherNickname, {
+        booked: true,
+        studentCount: 1,
+        isParticipant: true,
         now,
-        includeMeetingUrl: booked || isOwner,
-      });
-    }),
+        includeMeetingUrl: true,
+      }),
+    ),
   );
 });
 
@@ -286,92 +276,11 @@ lessonsRoute.get("/:id", async (c) => {
   );
 });
 
-lessonsRoute.post("/:id/book", requireAuth, async (c) => {
-  const user = c.get("user")!;
-  if (user.role !== "student") {
-    throw new HTTPException(403, { message: "only students can book lessons" });
-  }
-  const lessonId = c.req.param("id");
-  const result = await db.transaction(async (tx) => {
-    // Serialize both sides of the decision: lesson capacity and the student's
-    // consumable access. This prevents concurrent requests from overbooking
-    // a lesson or spending the same credit/trial twice.
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lessonId}))`);
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`);
-
-    const [lesson] = await tx.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
-    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-    if (lesson.status !== "scheduled") {
-      throw new HTTPException(400, { message: "lesson is not bookable" });
-    }
-
-    const [existing] = await tx
-      .select()
-      .from(bookings)
-      .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, user.id)))
-      .limit(1);
-    if (existing) return { booking: existing, lesson, created: false };
-
-    const [occupancy] = await tx
-      .select({ value: count() })
-      .from(bookings)
-      .where(eq(bookings.lessonId, lessonId));
-    if ((occupancy?.value ?? 0) >= lesson.maxStudents) {
-      throw new HTTPException(409, { message: "lesson is full" });
-    }
-
-    const [access] = await tx
-      .select()
-      .from(studentAccess)
-      .where(eq(studentAccess.userId, user.id))
-      .limit(1);
-    const now = new Date();
-    const mode =
-      access?.activeUntil && access.activeUntil.getTime() > now.getTime()
-        ? "subscription"
-        : (access?.lessonCredits ?? 0) > 0
-          ? "credit"
-          : !access?.trialUsed
-            ? "trial"
-            : null;
-    if (!mode) throw new HTTPException(402, { message: "payment required" });
-
-    const [booking] = await tx
-      .insert(bookings)
-      .values({ lessonId, studentId: user.id })
-      .returning();
-    if (!booking) throw new HTTPException(500, { message: "booking failed" });
-
-    if (mode === "credit") {
-      await tx
-        .update(studentAccess)
-        .set({ lessonCredits: Math.max((access?.lessonCredits ?? 0) - 1, 0), updatedAt: now })
-        .where(eq(studentAccess.userId, user.id));
-    } else if (mode === "trial") {
-      await tx
-        .insert(studentAccess)
-        .values({ userId: user.id, trialUsed: true, updatedAt: now })
-        .onConflictDoUpdate({
-          target: studentAccess.userId,
-          set: { trialUsed: true, updatedAt: now },
-        });
-    }
-
-    return { booking, lesson, created: true };
-  });
-
-  if (result.created) {
-    await sendBookingConfirmation(
-      result.booking.id,
-      user.id,
-      result.lesson.title,
-      result.lesson.startsAt,
-    );
-  }
-  return c.json(result.booking, result.created ? 201 : 200);
-});
-
-async function sendBookingConfirmation(
+/**
+ * Notify a student (over Telegram) that they've been scheduled for a lesson.
+ * Called from the teacher-assignment path; students no longer self-book.
+ */
+export async function sendBookingConfirmation(
   bookingId: string,
   userId: string,
   title: string,

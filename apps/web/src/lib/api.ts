@@ -104,13 +104,6 @@ export async function uploadLessonMaterial(
   return (await res.json()) as LessonMaterialDto;
 }
 
-export function bookLesson(lessonId: string) {
-  return apiFetch<{ id: string; lessonId: string; studentId: string }>(
-    `/lessons/${lessonId}/book`,
-    { method: "POST" },
-  );
-}
-
 export function updateProfile(body: UpdateProfileInput) {
   return apiFetch<UserDto>("/users/me", {
     method: "PATCH",
@@ -144,12 +137,19 @@ export function createLesson(body: {
   title: string;
   startsAt: string;
   endsAt: string;
+  studentId?: string;
   meetingUrl?: string;
 }) {
   return apiFetch<LessonDto>("/teacher/lessons", {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export type StudentDirectoryEntry = { id: string; name: string; email: string };
+
+export function fetchStudentDirectory(): Promise<StudentDirectoryEntry[]> {
+  return apiFetch("/teacher/student-directory");
 }
 
 export function updateLessonMeetingUrl(lessonId: string, meetingUrl: string | null) {
