@@ -249,60 +249,84 @@ lessonsRoute.post("/:id/book", requireAuth, async (c) => {
     throw new HTTPException(403, { message: "only students can book lessons" });
   }
   const lessonId = c.req.param("id");
+  const result = await db.transaction(async (tx) => {
+    // Serialize both sides of the decision: lesson capacity and the student's
+    // consumable access. This prevents concurrent requests from overbooking
+    // a lesson or spending the same credit/trial twice.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lessonId}))`);
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`);
 
-  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
-  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
-  if (lesson.status !== "scheduled") {
-    throw new HTTPException(400, { message: "lesson is not bookable" });
+    const [lesson] = await tx.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+    if (lesson.status !== "scheduled") {
+      throw new HTTPException(400, { message: "lesson is not bookable" });
+    }
+
+    const [existing] = await tx
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, user.id)))
+      .limit(1);
+    if (existing) return { booking: existing, lesson, created: false };
+
+    const [occupancy] = await tx
+      .select({ value: count() })
+      .from(bookings)
+      .where(eq(bookings.lessonId, lessonId));
+    if ((occupancy?.value ?? 0) >= lesson.maxStudents) {
+      throw new HTTPException(409, { message: "lesson is full" });
+    }
+
+    const [access] = await tx
+      .select()
+      .from(studentAccess)
+      .where(eq(studentAccess.userId, user.id))
+      .limit(1);
+    const now = new Date();
+    const mode =
+      access?.activeUntil && access.activeUntil.getTime() > now.getTime()
+        ? "subscription"
+        : (access?.lessonCredits ?? 0) > 0
+          ? "credit"
+          : !access?.trialUsed
+            ? "trial"
+            : null;
+    if (!mode) throw new HTTPException(402, { message: "payment required" });
+
+    const [booking] = await tx
+      .insert(bookings)
+      .values({ lessonId, studentId: user.id })
+      .returning();
+    if (!booking) throw new HTTPException(500, { message: "booking failed" });
+
+    if (mode === "credit") {
+      await tx
+        .update(studentAccess)
+        .set({ lessonCredits: Math.max((access?.lessonCredits ?? 0) - 1, 0), updatedAt: now })
+        .where(eq(studentAccess.userId, user.id));
+    } else if (mode === "trial") {
+      await tx
+        .insert(studentAccess)
+        .values({ userId: user.id, trialUsed: true, updatedAt: now })
+        .onConflictDoUpdate({
+          target: studentAccess.userId,
+          set: { trialUsed: true, updatedAt: now },
+        });
+    }
+
+    return { booking, lesson, created: true };
+  });
+
+  if (result.created) {
+    await sendBookingConfirmation(
+      result.booking.id,
+      user.id,
+      result.lesson.title,
+      result.lesson.startsAt,
+    );
   }
-
-  const [existing] = await db
-    .select()
-    .from(bookings)
-    .where(and(eq(bookings.lessonId, lessonId), eq(bookings.studentId, user.id)))
-    .limit(1);
-  if (existing) return c.json(existing, 200);
-
-  const accessUse = await resolveBookingAccess(user.id);
-  if (!accessUse.allowed) {
-    throw new HTTPException(402, { message: "payment required" });
-  }
-
-  const [booking] = await db
-    .insert(bookings)
-    .values({ lessonId, studentId: user.id })
-    .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
-    .returning();
-  if (!booking) throw new HTTPException(500, { message: "booking failed" });
-
-  await consumeBookingAccess(user.id, accessUse.mode);
-  await sendBookingConfirmation(booking.id, user.id, lesson.title, lesson.startsAt);
-
-  return c.json(booking, 201);
+  return c.json(result.booking, result.created ? 201 : 200);
 });
-
-type BookingAccessUse =
-  | { allowed: true; mode: "subscription" | "credit" | "trial" }
-  | { allowed: false };
-
-async function resolveBookingAccess(userId: string): Promise<BookingAccessUse> {
-  const [access] = await db
-    .select()
-    .from(studentAccess)
-    .where(eq(studentAccess.userId, userId))
-    .limit(1);
-  const now = Date.now();
-  if (access?.activeUntil && access.activeUntil.getTime() > now) {
-    return { allowed: true, mode: "subscription" };
-  }
-  if ((access?.lessonCredits ?? 0) > 0) {
-    return { allowed: true, mode: "credit" };
-  }
-  if (!access?.trialUsed) {
-    return { allowed: true, mode: "trial" };
-  }
-  return { allowed: false };
-}
 
 async function sendBookingConfirmation(
   bookingId: string,
@@ -336,28 +360,4 @@ async function sendBookingConfirmation(
   } catch (err) {
     console.error(`booking confirmation failed for ${bookingId}:`, err);
   }
-}
-
-async function consumeBookingAccess(userId: string, mode: "subscription" | "credit" | "trial") {
-  const now = new Date();
-  if (mode === "subscription") return;
-  const [access] = await db
-    .select()
-    .from(studentAccess)
-    .where(eq(studentAccess.userId, userId))
-    .limit(1);
-  if (mode === "credit") {
-    await db
-      .update(studentAccess)
-      .set({ lessonCredits: Math.max((access?.lessonCredits ?? 0) - 1, 0), updatedAt: now })
-      .where(eq(studentAccess.userId, userId));
-    return;
-  }
-  await db
-    .insert(studentAccess)
-    .values({ userId, trialUsed: true, updatedAt: now })
-    .onConflictDoUpdate({
-      target: studentAccess.userId,
-      set: { trialUsed: true, updatedAt: now },
-    });
 }
