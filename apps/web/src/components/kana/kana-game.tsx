@@ -69,6 +69,17 @@ const btnGhost: React.CSSProperties = {
   padding: "13px",
   fontSize: 14,
 };
+// Soft-filled secondary: for the revenue action. Louder than a ghost button,
+// quieter than the primary — the lead capture must not be the least visible
+// element on the screen.
+const btnSoft: React.CSSProperties = {
+  ...btnBase,
+  background: "rgba(232,66,10,0.08)",
+  border: "1.5px solid rgba(232,66,10,0.35)",
+  color: C.orange,
+  padding: "13px",
+  fontSize: 14,
+};
 const quietLink: React.CSSProperties = {
   display: "block",
   width: "100%",
@@ -665,12 +676,19 @@ function QuizEngine({
 function WordScreen({
   word,
   isFirst,
+  offerTeacher,
+  learnedTotal,
   onNext,
 }: {
   word: KanaWord;
   isFirst: boolean;
+  /** Guests past the first word get a non-blocking capture entry right at the
+   * peak — the moment competence is felt — instead of only back on the map. */
+  offerTeacher: boolean;
+  learnedTotal: number;
   onNext: () => void;
 }) {
+  const [bookingOpen, setBookingOpen] = useState(false);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // A focused button already advances on Enter/Space via its click.
@@ -765,7 +783,20 @@ function WordScreen({
         <button type="button" onClick={onNext} style={{ ...btnInk, marginTop: 28 }}>
           Дальше →
         </button>
+        {offerTeacher && (
+          <button
+            type="button"
+            onClick={() => {
+              track("kana_save_clicked", { learned: learnedTotal, placement: "word" });
+              setBookingOpen(true);
+            }}
+            style={quietLink}
+          >
+            Закрепить с преподавателем — бесплатный урок →
+          </button>
+        )}
       </div>
+      <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="kana_word" />
     </Shell>
   );
 }
@@ -851,32 +882,36 @@ function MapScreen({
           </span>
         </div>
 
-        {/* the map itself — flat, 10 per row, so it fits above the fold with
-            the buttons still visible (matches the funnel mockup) */}
+        {/* the map itself — 5 columns, one gojūon row per line, so the map
+            mirrors the real a-i-u-e-o chart the learner is internalizing
+            (and the tap targets survive a 380px screen). Short rows (や, わ)
+            sit in their traditional a/u/o columns. */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(10, 1fr)",
-            gap: 5,
-            maxWidth: 440,
-            margin: "20px auto 0",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: 4,
+            maxWidth: 250,
+            margin: "18px auto 0",
           }}
         >
           {rows.flatMap((row, ri) =>
-            row.map((k) => {
+            row.map((k, ci) => {
               const isLearned = learned.has(k.kana);
               const isNext = ri === nextRowIndex;
               return (
                 <span
                   key={k.kana}
                   style={{
+                    gridRow: ri + 1,
+                    gridColumn: row.length === 3 ? ci * 2 + 1 : ci + 1,
                     aspectRatio: "1",
-                    borderRadius: 6,
+                    borderRadius: 7,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontFamily: NOTO,
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: 700,
                     background: isLearned ? C.orange : C.white,
                     color: isLearned ? C.white : isNext ? C.orange : "transparent",
@@ -919,25 +954,26 @@ function MapScreen({
               Что учить дальше →
             </button>
           )}
+          {/* the save ask appears only when the map is worth saving; accounts
+              are admin-provisioned, so for a guest "save" means becoming a
+              lead — which is why it outranks free mode in visual weight */}
+          {!isLoggedIn && learnedTotal >= 10 && (
+            <button
+              type="button"
+              onClick={() => {
+                track("kana_save_clicked", { learned: learnedTotal, placement: "map" });
+                setBookingOpen(true);
+              }}
+              style={btnSoft}
+            >
+              Сохранить карту — бесплатная консультация
+            </button>
+          )}
           <button type="button" onClick={onReview} style={btnGhost}>
             Свободный режим — 25 случайных знаков
           </button>
         </div>
 
-        {/* the save ask appears only when the map is worth saving; accounts are
-            admin-provisioned, so for a guest "save" means becoming a lead */}
-        {!isLoggedIn && learnedTotal >= 10 && (
-          <button
-            type="button"
-            onClick={() => {
-              track("kana_save_clicked", { learned: learnedTotal });
-              setBookingOpen(true);
-            }}
-            style={quietLink}
-          >
-            Сохранить карту — записаться на бесплатную консультацию
-          </button>
-        )}
         {isLoggedIn && (
           <a href="/dashboard" style={quietLink}>
             ← Личный кабинет
@@ -1636,6 +1672,8 @@ export function KanaGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         <WordScreen
           word={screen.word}
           isFirst={screen.isFirst}
+          offerTeacher={!isLoggedIn && !screen.isFirst}
+          learnedTotal={learnedTotal}
           onNext={() => afterRow(progress, screen.accuracy, screen.script)}
         />
       )}
