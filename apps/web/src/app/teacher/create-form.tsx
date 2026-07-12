@@ -2,7 +2,7 @@
 
 import type { StudentDirectoryEntry } from "@/lib/api";
 import { useActionState } from "react";
-import { createLessonAction, type TeacherActionState } from "./actions";
+import { type TeacherActionState, createLessonAction } from "./actions";
 
 const initial: TeacherActionState = {};
 

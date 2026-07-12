@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import type { LessonDto } from "@gojo/shared";
+import Link from "next/link";
 
 const DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 const DAYS_FULL = [

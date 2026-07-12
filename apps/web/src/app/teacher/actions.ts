@@ -1,8 +1,8 @@
 "use server";
 
+import { ApiError, cancelLesson, createLesson, updateLessonMeetingUrl } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ApiError, cancelLesson, createLesson, updateLessonMeetingUrl } from "@/lib/api";
 
 export type TeacherActionState = { error?: string; ok?: boolean };
 
