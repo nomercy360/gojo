@@ -7,3 +7,4 @@ export * from "./dto/progress";
 export * from "./dto/personal-events";
 export * from "./dto/payments";
 export * from "./dto/curriculum";
+export * from "./dto/events";

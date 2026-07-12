@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PhoneField } from "./phone-field";
@@ -17,7 +18,16 @@ const readValue = (id: string) =>
  * renders inside a `.landing-root` wrapper of its own to pick up the modal
  * styles regardless of where it's mounted).
  */
-export function BookingModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function BookingModal({
+  open,
+  onClose,
+  source = "landing",
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Which surface opened the modal — lands in funnel-event props. */
+  source?: string;
+}) {
   const [submitted, setSubmitted] = useState(false);
   const [phone, setPhone] = useState<string | undefined>();
 
@@ -27,6 +37,10 @@ export function BookingModal({ open, onClose }: { open: boolean; onClose: () => 
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  useEffect(() => {
+    if (open) track("booking_open", { source });
+  }, [open, source]);
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +71,7 @@ export function BookingModal({ open, onClose }: { open: boolean; onClose: () => 
       if (!res.ok) throw new Error();
       const email = readValue("bm-email");
       if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
+      track("lead_submitted", { source });
       setSubmitted(true);
     } catch {
       toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
