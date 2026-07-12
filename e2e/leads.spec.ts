@@ -11,8 +11,8 @@ test("guest creates a booking lead", async ({ request }) => {
       data: {
         kind: "booking",
         name: "Максуд",
+        telegram: "@maksud_e2e",
         email: `e2e-lead-${Date.now()}@gojo.local`,
-        contact: "@e2e",
       },
     });
     expect(response.status()).toBe(201);
@@ -22,6 +22,30 @@ test("guest creates a booking lead", async ({ request }) => {
   } finally {
     await deleteLead(leadId);
   }
+});
+
+test("guest creates a Telegram-only booking lead without email", async ({ request }) => {
+  let leadId: string | undefined;
+  try {
+    const response = await request.post(`${apiURL}/leads`, {
+      data: { kind: "booking", name: "Аня", telegram: `@anya_${Date.now()}` },
+    });
+    expect(response.status()).toBe(201);
+    const body = (await response.json()) as { id: string; emailSent: boolean };
+    // Telegram is normalized to a bare lowercase handle; no email means no email sent.
+    expect(body.emailSent).toBe(false);
+    leadId = body.id;
+    await expect(findLead(leadId)).resolves.toMatchObject({ email: null });
+  } finally {
+    await deleteLead(leadId);
+  }
+});
+
+test("rejects a booking lead with no contact channel", async ({ request }) => {
+  const response = await request.post(`${apiURL}/leads`, {
+    data: { kind: "booking", name: "Без контакта" },
+  });
+  expect(response.status()).toBe(400);
 });
 
 test("repeated active booking submission updates one lead", async ({ request }) => {

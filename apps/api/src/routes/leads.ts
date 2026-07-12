@@ -1,6 +1,6 @@
 import { bookings, leads, studentAccess, user as userTable } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { type SQL, and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../auth/middleware.ts";
@@ -8,16 +8,64 @@ import { db } from "../db.ts";
 import { notifyLead } from "../lead-notifications.ts";
 import { sendEmail } from "../mailer.ts";
 
-const leadInput = z.object({
-  kind: z.enum(["booking", "guide"]).default("booking"),
-  name: z.string().trim().min(1).max(200),
-  // Primary contact for every public lead flow. Normalization makes
-  // deduplication case-insensitive and deterministic.
-  email: z.string().trim().toLowerCase().email().max(200),
-  contact: z.string().trim().max(200).optional(),
-  level: z.string().trim().max(200).optional(),
-  goal: z.string().trim().max(500).optional(),
-});
+// Empty strings from the web form mean "not provided" — collapse them so the
+// per-channel validators only run on real input and `.optional()` holds.
+const blankToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
+
+// Telegram is the primary channel: a bare lowercase @-handle. We accept the
+// handle with or without a leading @ / t.me link and normalize to the handle.
+const telegramField = z.preprocess(
+  blankToUndefined,
+  z
+    .string()
+    .trim()
+    .transform((v) =>
+      v
+        .replace(/^https?:\/\//i, "")
+        .replace(/^t\.me\//i, "")
+        .replace(/^@/, "")
+        .toLowerCase(),
+    )
+    .refine((v) => /^[a-z0-9_]{3,32}$/.test(v), "Некорректный ник Telegram")
+    .optional(),
+);
+
+// Opt-in callback number. Normalize to +digits (RU 8… → +7…) and reject
+// junk like the free-text numbers the old open field let through.
+const phoneField = z.preprocess(
+  blankToUndefined,
+  z
+    .string()
+    .trim()
+    .transform((v) => {
+      const digits = v.replace(/\D/g, "").replace(/^8(?=\d{10}$)/, "7");
+      return digits ? `+${digits}` : "";
+    })
+    .refine((v) => /^\+\d{10,15}$/.test(v), "Некорректный номер телефона")
+    .optional(),
+);
+
+const emailField = z.preprocess(
+  blankToUndefined,
+  z.string().trim().toLowerCase().email().max(200).optional(),
+);
+
+const leadInput = z
+  .object({
+    kind: z.enum(["booking", "guide"]).default("booking"),
+    name: z.string().trim().min(1).max(200),
+    // Contact channels in priority order: Telegram primary, email optional
+    // durable fallback, phone opt-in callback. At least one must be present.
+    telegram: telegramField,
+    email: emailField,
+    phone: phoneField,
+    level: z.string().trim().max(200).optional(),
+    goal: z.string().trim().max(500).optional(),
+  })
+  .refine((d) => Boolean(d.telegram || d.email || d.phone), {
+    message: "Укажи хотя бы один способ связи",
+    path: ["telegram"],
+  });
 
 type LeadInput = z.infer<typeof leadInput>;
 
@@ -27,18 +75,38 @@ export const leadsRoute = new Hono();
 
 leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
   const data = c.req.valid("json");
-  const result = await db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${data.email}))`);
 
-    const [existingUser] = await tx
-      .select({ id: userTable.id })
-      .from(userTable)
-      .where(eq(userTable.email, data.email))
-      .limit(1);
+  // Canonical identity for the advisory lock, in channel priority. The `!`s are
+  // safe: leadInput guarantees at least one of telegram/email/phone.
+  const lockKey = data.telegram
+    ? `tg:${data.telegram}`
+    : data.email
+      ? `em:${data.email}`
+      : `ph:${data.phone!}`;
+  // A lead matches an existing one if it shares ANY contact channel.
+  const idMatch = or(
+    ...([
+      data.telegram ? eq(leads.telegram, data.telegram) : undefined,
+      data.email ? eq(leads.email, data.email) : undefined,
+      data.phone ? eq(leads.phone, data.phone) : undefined,
+    ].filter(Boolean) as SQL[]),
+  );
+
+  const result = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
+
+    // Users are keyed by email, so we can only auto-link when an email is given.
+    const [existingUser] = data.email
+      ? await tx
+          .select({ id: userTable.id })
+          .from(userTable)
+          .where(eq(userTable.email, data.email))
+          .limit(1)
+      : [];
     const [canonicalLead] = await tx
       .select({ name: leads.name })
       .from(leads)
-      .where(eq(leads.email, data.email))
+      .where(idMatch)
       .orderBy(asc(leads.createdAt))
       .limit(1);
     const canonicalName = canonicalLead?.name ?? data.name;
@@ -47,7 +115,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
       .from(leads)
       .where(
         and(
-          eq(leads.email, data.email),
+          idMatch,
           eq(leads.kind, data.kind),
           inArray(leads.status, ["new", "contacted", "trial_booked"]),
         ),
@@ -67,7 +135,9 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
         .update(leads)
         .set({
           name: canonicalName,
-          contact: data.contact ?? undefined,
+          telegram: data.telegram ?? undefined,
+          email: data.email ?? undefined,
+          phone: data.phone ?? undefined,
           goal: data.goal ?? undefined,
           userId: existingLead.userId ?? existingUser?.id ?? null,
           updatedAt: new Date(),
@@ -98,7 +168,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
 
   void notifyLead({ ...data, name: result.canonicalName });
   let emailSent = false;
-  if (data.kind === "booking") {
+  if (data.kind === "booking" && data.email) {
     try {
       await sendEmail(
         data.email,

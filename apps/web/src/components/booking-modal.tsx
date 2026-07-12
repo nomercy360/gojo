@@ -31,6 +31,8 @@ export function BookingModal({
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [submissionReason, setSubmissionReason] = useState<string | undefined>();
   const [confirmationEmailSent, setConfirmationEmailSent] = useState(true);
+  // Phone is an opt-in "call me" rescue — hidden until the user asks for a call.
+  const [wantsCall, setWantsCall] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -40,7 +42,10 @@ export function BookingModal({
   }, [open]);
 
   useEffect(() => {
-    if (open) track("booking_open", { source });
+    if (open) {
+      track("booking_open", { source });
+      setWantsCall(false);
+    }
   }, [open, source]);
 
   useEffect(() => {
@@ -53,8 +58,20 @@ export function BookingModal({
   }, [open, onClose]);
 
   const submitForm = async () => {
-    if (!readValue("bm-name") || !readValue("bm-email")) {
-      toast.error("Пожалуйста, заполни имя и email");
+    const name = readValue("bm-name");
+    const telegram = readValue("bm-telegram");
+    const email = readValue("bm-email");
+    const phone = wantsCall ? readValue("bm-phone") : "";
+    if (!name) {
+      toast.error("Пожалуйста, заполни имя");
+      return;
+    }
+    if (!telegram && !email && !phone) {
+      toast.error("Оставь Telegram, email или телефон — куда написать?");
+      return;
+    }
+    if (wantsCall && !phone) {
+      toast.error("Укажи номер для звонка");
       return;
     }
     try {
@@ -63,8 +80,10 @@ export function BookingModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kind: "booking",
-          name: readValue("bm-name"),
-          email: readValue("bm-email"),
+          name,
+          telegram: telegram || undefined,
+          email: email || undefined,
+          phone: phone || undefined,
           goal: readValue("bm-goal") || undefined,
         }),
       });
@@ -74,11 +93,11 @@ export function BookingModal({
         emailSent?: boolean;
         reason?: string;
       };
-      const email = readValue("bm-email");
-      localStorage.setItem(PENDING_LEAD_KEY, email);
+      // Only email links a guest lead to an account later (leads/link-current).
+      if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
       setAlreadySubmitted(Boolean(data.alreadyExists));
       setSubmissionReason(data.reason);
-      setConfirmationEmailSent(data.emailSent !== false);
+      setConfirmationEmailSent(Boolean(email) && data.emailSent !== false);
       track("lead_submitted", { source });
       setSubmitted(true);
     } catch {
@@ -134,8 +153,24 @@ export function BookingModal({
                 />
               </div>
               <div className="form-group">
+                <label className="form-label" htmlFor="bm-telegram">
+                  Telegram
+                </label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="@username"
+                  id="bm-telegram"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                />
+                <p className="form-note" style={{ marginTop: "6px" }}>
+                  Напишем сюда, чтобы договориться о времени — так быстрее всего.
+                </p>
+              </div>
+              <div className="form-group">
                 <label className="form-label" htmlFor="bm-email">
-                  Email
+                  Email <span className="form-optional">(необязательно)</span>
                 </label>
                 <input
                   className="form-input"
@@ -143,9 +178,41 @@ export function BookingModal({
                   placeholder="your@email.com"
                   id="bm-email"
                   autoComplete="email"
-                  required
                 />
               </div>
+              {wantsCall ? (
+                <div className="form-group">
+                  <label className="form-label" htmlFor="bm-phone">
+                    Телефон для звонка
+                  </label>
+                  <input
+                    className="form-input"
+                    type="tel"
+                    placeholder="+7 900 000-00-00"
+                    id="bm-phone"
+                    autoComplete="tel"
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="form-link-button"
+                  onClick={() => setWantsCall(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    color: "var(--orange)",
+                    fontFamily: "var(--font-body)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  Нет Telegram? Хочу, чтобы позвонили →
+                </button>
+              )}
               <div className="form-group">
                 <label className="form-label" htmlFor="bm-goal">
                   Что хочешь получить? <span className="form-optional">(необязательно)</span>
@@ -184,10 +251,7 @@ export function BookingModal({
                   ? "Повторно отправлять ничего не нужно — мы уже получили заявку и свяжемся в течение 24 часов."
                   : confirmationEmailSent
                     ? "Мы получили заявку и отправили подтверждение на email. Свяжемся в течение 24 часов, чтобы договориться о времени первого урока."
-                    : "Мы получили заявку, но подтверждение на email отправить не удалось. Заявка сохранена — свяжемся в течение 24 часов."}
-              <br />
-              <br />
-              Доступ в личный кабинет также пришлём на email после согласования времени.
+                    : "Мы получили заявку и свяжемся в течение 24 часов, чтобы договориться о времени первого урока."}
             </p>
             <a
               href="https://t.me/gojoedu"

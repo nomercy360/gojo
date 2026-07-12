@@ -92,7 +92,6 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
     const values = {
       name: canonicalName,
       email: normalizedEmail,
-      contact: data.contact || null,
       level: result.assessment === "demonstrated" ? result.level : null,
       goal: "Получить подробный результат квиза и план обучения",
       notes,
@@ -119,7 +118,6 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
       kind: "quiz",
       name: lead.canonicalName,
       email: data.email,
-      contact: data.contact,
       level: result.assessment === "demonstrated" ? result.level : null,
       goal: `${result.correct}/${result.total} правильных; подробный результат отправлен на email`,
     });

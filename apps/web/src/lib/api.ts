@@ -4,8 +4,6 @@ import type {
   FlashcardDto,
   HomeworkStatus,
   HomeworkSubmissionDto,
-  ReviewSubmissionInput,
-  TeacherSubmissionDto,
   JlptLevel,
   KanjiBreakdownEntry,
   KanjiDto,
@@ -23,8 +21,10 @@ import type {
   QuizResultDto,
   QuizSubmitInput,
   ReviewQueueDto,
+  ReviewSubmissionInput,
   StudentStatsDto,
   SubmitReviewInput,
+  TeacherSubmissionDto,
   TrackTrainingInput,
   TrainingTotalsDto,
   UpdateProfileInput,
@@ -253,8 +253,9 @@ export type TeacherLeadDto = {
   kind: string;
   status: string;
   name: string;
+  telegram: string | null;
   email: string | null;
-  contact: string | null;
+  phone: string | null;
   level: string | null;
   goal: string | null;
   notes: string | null;
@@ -310,8 +311,9 @@ export type TeacherStudentProfileDto = {
     status: string;
     kind: string;
     name: string;
+    telegram: string | null;
     email: string;
-    contact: string | null;
+    phone: string | null;
     level: string | null;
     goal: string | null;
     notes: string | null;

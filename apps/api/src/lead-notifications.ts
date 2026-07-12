@@ -3,8 +3,9 @@ import { env } from "./env.ts";
 export type LeadNotification = {
   kind: string;
   name: string;
+  telegram?: string | null;
   email?: string | null;
-  contact?: string | null;
+  phone?: string | null;
   level?: string | null;
   goal?: string | null;
 };
@@ -16,8 +17,9 @@ export async function notifyLead(l: LeadNotification): Promise<void> {
   const lines = [
     `🎯 Новая заявка (${l.kind})`,
     `Имя: ${l.name}`,
+    ...(l.telegram ? [`Telegram: @${l.telegram}`] : []),
     ...(l.email ? [`Email: ${l.email}`] : []),
-    ...(l.contact ? [`Контакт: ${l.contact}`] : []),
+    ...(l.phone ? [`Телефон: ${l.phone}`] : []),
     ...(l.level ? [`Уровень: ${l.level}`] : []),
     ...(l.goal ? [`Цель: ${l.goal}`] : []),
   ];

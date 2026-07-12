@@ -13,10 +13,15 @@ export const leads = pgTable("leads", {
   kind: text().notNull(), // 'booking' | 'guide'
   status: text().notNull().default("new"),
   name: text().notNull(),
-  // Email is required by public lead endpoints and normalized to lowercase.
-  // The column remains nullable for backwards compatibility with old rows.
+  // Contact channels for the booking funnel, in priority order: Telegram is the
+  // primary reachable channel, email an optional durable fallback, phone an
+  // opt-in "call me" rescue. At least one is present; a lead can carry several.
+  // `telegram` is stored as a bare lowercase @-handle (no leading @).
+  telegram: text(),
+  // Email is optional and normalized to lowercase. Still the dedup/link key
+  // whenever it's present, and the channel the quiz result email uses.
   email: text(),
-  contact: text(), // optional secondary contact (phone / Telegram)
+  phone: text(), // opt-in callback number, digits normalized
   level: text(), // self-reported level (booking form)
   goal: text(), // goal (booking form)
   notes: text(),

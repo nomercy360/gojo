@@ -26,7 +26,10 @@ import { auth } from "../auth.ts";
 import { type AuthContext, requireAuth, requireTeacher } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
-import { materializeCardsForAttendance, materializeNewCardForAttendedBookings } from "../lib/materialize.ts";
+import {
+  materializeCardsForAttendance,
+  materializeNewCardForAttendedBookings,
+} from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
 import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
 import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
@@ -116,8 +119,9 @@ teacherRoute.get("/leads", async (c) => {
       kind: r.lead.kind,
       status: r.lead.status,
       name: r.lead.name,
+      telegram: r.lead.telegram,
       email: r.lead.email,
-      contact: r.lead.contact,
+      phone: r.lead.phone,
       level: r.lead.level,
       goal: r.lead.goal,
       notes: r.lead.notes,
@@ -328,8 +332,9 @@ teacherRoute.get("/students/:studentId", async (c) => {
       status: l.status,
       kind: l.kind,
       name: l.name,
+      telegram: l.telegram,
       email: l.email,
-      contact: l.contact,
+      phone: l.phone,
       level: l.level,
       goal: l.goal,
       notes: l.notes,

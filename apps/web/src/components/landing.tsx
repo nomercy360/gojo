@@ -159,7 +159,7 @@ export function Landing() {
           kind: "guide",
           name: readValue("g-name"),
           email: readValue("g-email"),
-          contact: readValue("g-tg") || undefined,
+          telegram: readValue("g-tg") || undefined,
         }),
       });
       if (!res.ok) throw new Error();
@@ -858,8 +858,8 @@ export function Landing() {
                 <span className="faq-q-icon">+</span>
               </summary>
               <div className="faq-a">
-                Для первой когорты действуют <strong>специальные цены</strong>. Финальные
-                тарифы озвучим перед стартом набора. Запишись сейчас и мы закрепим цену за тобой.
+                Для первой когорты действуют <strong>специальные цены</strong>. Финальные тарифы
+                озвучим перед стартом набора. Запишись сейчас и мы закрепим цену за тобой.
               </div>
             </details>
 
@@ -1202,7 +1202,6 @@ export function Landing() {
       </div>
 
       <BookingModal open={bookingOpen} onClose={closeModal} />
-
     </div>
   );
 }

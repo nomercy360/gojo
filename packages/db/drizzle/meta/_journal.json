@@ -36,6 +36,20 @@
       "when": 1783816180981,
       "tag": "0004_tiny_menace",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783855747717,
+      "tag": "0005_many_kat_farrell",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783855760275,
+      "tag": "0006_lyrical_lilandra",
+      "breakpoints": true
     }
   ]
 }
