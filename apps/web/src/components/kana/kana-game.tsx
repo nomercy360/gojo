@@ -803,6 +803,7 @@ function MapScreen({
   onReview: () => void;
   onAsk: (() => void) | null;
 }) {
+  const [bookingOpen, setBookingOpen] = useState(false);
   const learned = useMemo(() => new Set(learnedArr), [learnedArr]);
   const rows = scriptRows(script);
   const idx = rows.findIndex((row) => row.some((k) => !learned.has(k.kana)));
@@ -930,15 +931,19 @@ function MapScreen({
           </button>
         </div>
 
-        {/* the save ask appears only when the map is worth saving */}
+        {/* the save ask appears only when the map is worth saving; accounts are
+            admin-provisioned, so for a guest "save" means becoming a lead */}
         {!isLoggedIn && learnedTotal >= 10 && (
-          <a
-            href="/login"
-            onClick={() => track("kana_save_clicked", { learned: learnedTotal })}
-            style={{ ...quietLink, textDecoration: "underline" }}
+          <button
+            type="button"
+            onClick={() => {
+              track("kana_save_clicked", { learned: learnedTotal });
+              setBookingOpen(true);
+            }}
+            style={quietLink}
           >
-            Уже есть аккаунт? Войди — карта сохранится
-          </a>
+            Сохранить карту — записаться на бесплатную консультацию
+          </button>
         )}
         {isLoggedIn && (
           <a href="/dashboard" style={quietLink}>
@@ -946,6 +951,7 @@ function MapScreen({
           </a>
         )}
       </div>
+      <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="kana_map" />
     </Shell>
   );
 }
