@@ -40,6 +40,31 @@ bun run --cwd packages/db seed
 bun run dev               # web :3000 + api :3001
 ```
 
+## E2E tests
+
+The Playwright suite starts the API and web development servers, provisions isolated student and
+admin browser sessions through the development login endpoint, and runs in Chromium. Postgres must
+be available locally; the standard development infrastructure provides it.
+
+Coverage includes public and protected-route smoke tests, role routing, real form login, booking
+capacity enforcement, and a connected learning journey from lesson creation and booking through
+attendance, card materialization, homework submission, and teacher approval. Mutating scenarios use
+unique lessons and remove their database records in teardown.
+
+Additional coverage includes onboarding persistence, profile editing, password-reset delivery via
+Mailpit, public leads and account linking, personal-event ownership, training totals, payment access
+boundaries, and lesson-material authorization. The suite runs with one worker because it exercises a
+shared integration database.
+
+```sh
+bun run infra:up
+bunx playwright install chromium  # first run only
+bun run test:e2e
+```
+
+Use `bun run test:e2e:headed` to watch the browser, `bun run test:e2e:ui` for Playwright UI mode,
+and `E2E_EXTERNAL_SERVERS=1` with `E2E_WEB_URL`/`E2E_API_URL` to target servers managed elsewhere.
+
 ## Deploy (auto via GitHub Actions)
 
 Push to `main` → workflow builds Docker images → pushes to GHCR → SSH's to VM → pulls & restarts.
