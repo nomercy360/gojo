@@ -52,8 +52,8 @@ export function BookingModal({
   }, [open, onClose]);
 
   const submitForm = async () => {
-    if (!readValue("bm-name") || !phone || !readValue("bm-goal")) {
-      toast.error("Пожалуйста, заполни имя, телефон и цель");
+    if (!readValue("bm-name") || !phone) {
+      toast.error("Пожалуйста, заполни имя и телефон");
       return;
     }
     try {
@@ -65,7 +65,7 @@ export function BookingModal({
           name: readValue("bm-name"),
           email: readValue("bm-email") || undefined,
           contact: phone,
-          goal: readValue("bm-goal"),
+          goal: readValue("bm-goal") || undefined,
         }),
       });
       if (!res.ok) throw new Error();
@@ -87,7 +87,7 @@ export function BookingModal({
         }}
       >
         <div className="modal-box">
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Закрыть" onClick={onClose}>
             ✕
           </button>
 
@@ -99,9 +99,15 @@ export function BookingModal({
               <em>без обязательств</em>
             </h2>
             <p className="modal-sub">
-              Запишись на бесплатный первый урок. Никакой оплаты — просто познакомимся и определим
-              твой уровень.
+              Урок 25 минут онлайн — познакомимся, определим уровень и покажем план. Без продаж.
             </p>
+            <div className="modal-trust">
+              <img src="/founder.webp" alt="Руслан Рустаев" />
+              <div>
+                <strong>Руслан Рустаев</strong>
+                <span>Сооснователь Gojo · топ-преподаватель Profi.ru</span>
+              </div>
+            </div>
 
             <div className="modal-form">
               <div className="form-group">
@@ -113,6 +119,7 @@ export function BookingModal({
                   type="text"
                   placeholder="Как тебя зовут?"
                   id="bm-name"
+                  autoComplete="name"
                 />
               </div>
               <div className="form-group">
@@ -122,27 +129,28 @@ export function BookingModal({
                 <PhoneField id="bm-phone" value={phone} onChange={setPhone} />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="bm-goal">
-                  Что хочешь получить от японского?
-                </label>
-                <select className="form-select form-input" id="bm-goal">
-                  <option value="">Выбери вариант</option>
-                  <option>Смотреть аниме / читать мангу в оригинале</option>
-                  <option>Переехать или учиться в Японии</option>
-                  <option>Работать с японскими партнёрами</option>
-                  <option>Просто интересно / хочу попробовать</option>
-                </select>
-              </div>
-              <div className="form-group">
                 <label className="form-label" htmlFor="bm-email">
-                  Email <span style={{ fontWeight: 400, opacity: 0.6 }}>(необязательно)</span>
+                  Email <span className="form-optional">(необязательно)</span>
                 </label>
                 <input
                   className="form-input"
                   type="email"
                   placeholder="your@email.com"
                   id="bm-email"
+                  autoComplete="email"
                 />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="bm-goal">
+                  Что хочешь получить? <span className="form-optional">(необязательно)</span>
+                </label>
+                <select className="form-select form-input" id="bm-goal">
+                  <option value="">Можно выбрать позже</option>
+                  <option>Смотреть аниме / читать мангу в оригинале</option>
+                  <option>Переехать или учиться в Японии</option>
+                  <option>Работать с японскими партнёрами</option>
+                  <option>Просто интересно / хочу попробовать</option>
+                </select>
               </div>
               <button type="button" className="form-submit" onClick={submitForm}>
                 Записаться на бесплатный урок

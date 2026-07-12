@@ -369,6 +369,21 @@ html:has(.landing-root) {
 .landing-root .nav-link:hover {
   color: var(--orange);
 }
+.landing-root .nav-login {
+  color: var(--ink);
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+.landing-root .nav-login:hover {
+  color: var(--orange);
+  border-color: var(--orange);
+  background: var(--orange-dim);
+}
 .landing-root .nav-cta {
   background: var(--orange);
   color: var(--white);
@@ -1123,22 +1138,14 @@ html:has(.landing-root) {
   object-position: center top;
   display: block;
 }
-.landing-root .section-mission:not(.section-mission-alt) .mteam-photo {
+.landing-root .section-mission .mteam-photo {
   width: 112px;
   height: 143px;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center top;
   align-self: center;
-  margin: 6px 8px;
-}
-.landing-root .section-mission-alt .mteam-photo {
-  width: 86px;
-  height: 110px;
-  object-fit: contain;
-  object-position: center top;
-  align-self: center;
-  margin: 6px 8px;
-  border-radius: 4px;
+  margin: 0 0 0 12px;
+  border-radius: 8px;
 }
 .landing-root .mteam-info {
   padding: 20px 20px;
@@ -2077,7 +2084,39 @@ html:has(.landing-root) {
   font-size: 14px;
   color: var(--ink-2);
   line-height: 1.5;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+.landing-root .modal-trust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  margin-bottom: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--cream-soft);
+}
+.landing-root .modal-trust img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+}
+.landing-root .modal-trust div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.landing-root .modal-trust strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+.landing-root .modal-trust span {
+  color: var(--ink-3);
+  font-size: 11px;
+  line-height: 1.35;
 }
 .landing-root .modal-form {
   display: flex;
@@ -2096,6 +2135,11 @@ html:has(.landing-root) {
   color: var(--ink);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.landing-root .form-optional {
+  font-weight: 400;
+  opacity: 0.6;
+  text-transform: none;
 }
 .landing-root .form-input,
 .landing-root .form-select {
@@ -3090,6 +3134,9 @@ html:has(.landing-root) {
     gap: 14px;
   }
   .landing-root .nav-link {
+    display: none;
+  }
+  .landing-root .nav-login {
     display: none;
   }
   .landing-root .hero {

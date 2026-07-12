@@ -196,64 +196,50 @@ export function Landing() {
           <span className="nav-logo-sub">Школа японского языка</span>
         </a>
         <div className="nav-links">
-          <a href="#mission" className="nav-link">
-            Команда
-          </a>
           <a href="#how" className="nav-link">
             Как работает
           </a>
           <a href="#pricing" className="nav-link">
             Цены
           </a>
+          <a href="#mission" className="nav-link">
+            Команда
+          </a>
           <a href="#faq" className="nav-link">
             Вопросы
           </a>
-          <a href="/kana" className="nav-link">
-            Тренажёр
+          <a href="/login" className="nav-login">
+            Войти
           </a>
-          <a href="/onboarding/quiz" className="nav-link">
-            Квиз уровня
-          </a>
-          <a href="/dashboard" className="nav-link">
-            Личный кабинет
-          </a>
-          <a
-            href="#"
-            className="nav-cta"
-            onClick={(e) => {
-              e.preventDefault();
-              openModal();
-            }}
-          >
+          <a href="/onboarding/quiz" className="nav-cta">
             Попробовать бесплатно
           </a>
           <button
             type="button"
             className="nav-burger"
             aria-label="Меню"
+            aria-expanded={navOpen}
+            aria-controls="landing-mobile-nav"
             onClick={() => setNavOpen((o) => !o)}
           >
             {navOpen ? "✕" : "☰"}
           </button>
         </div>
-        <div className={`nav-mobile ${navOpen ? "open" : ""}`}>
-          <a href="#mission" onClick={() => setNavOpen(false)}>
-            Команда
-          </a>
+        <div id="landing-mobile-nav" className={`nav-mobile ${navOpen ? "open" : ""}`}>
           <a href="#how" onClick={() => setNavOpen(false)}>
             Как работает
           </a>
           <a href="#pricing" onClick={() => setNavOpen(false)}>
             Цены
           </a>
+          <a href="#mission" onClick={() => setNavOpen(false)}>
+            Команда
+          </a>
           <a href="#faq" onClick={() => setNavOpen(false)}>
             Вопросы
           </a>
-          <a href="/kana" onClick={() => setNavOpen(false)}>
-            Тренажёр
-          </a>
-          <a href="/onboarding/quiz" onClick={() => setNavOpen(false)}>
-            Квиз уровня
+          <a href="/login" onClick={() => setNavOpen(false)}>
+            Войти
           </a>
         </div>
       </nav>
@@ -630,7 +616,7 @@ export function Landing() {
           <div className="mission-merged-team">
             {/* Ruslan — founder, featured */}
             <div className="mteam-card mteam-featured">
-              <img className="mteam-photo" src="/founder.png" alt="Руслан Рустаев" />
+              <img className="mteam-photo" src="/founder.webp" alt="Руслан Рустаев" />
               <div className="mteam-info">
                 <div className="mteam-badge">Со-основатель</div>
                 <div className="mteam-name">Руслан Рустаев</div>
@@ -653,7 +639,7 @@ export function Landing() {
           {/* Left: Maksim card */}
           <div className="mission-merged-team">
             <div className="mteam-card mteam-featured">
-              <img className="mteam-photo" src="/maksim.jpg" alt="Максим Кадочников" />
+              <img className="mteam-photo" src="/maksim.webp" alt="Максим Кадочников" />
               <div className="mteam-info">
                 <div className="mteam-badge">Со-основатель и технический директор</div>
                 <div className="mteam-name">Максим Кадочников</div>
