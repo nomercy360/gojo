@@ -2,11 +2,13 @@
 
 import { Avatar } from "@/components/avatar";
 import { authClient } from "@/lib/auth-client";
+import { linkPendingBookingLead, migrateGuestTrainerProgress } from "@/lib/post-login-sync";
 import { isTeacherUser } from "@/lib/roles";
 import type { UserDto } from "@gojo/shared";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 /**
  * Site header. Two modes:
@@ -31,6 +33,24 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [overlayRoute]);
+
+  // Post-login sync. Telegram OIDC and magic-link both redirect away from the
+  // login page, so this (formerly inline in the password login) runs here on
+  // the first authenticated page load. Both helpers are idempotent.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      if (migrateGuestTrainerProgress(user.id) && !cancelled) {
+        toast.success("Прогресс тренажёра сохранён");
+      }
+      const linked = await linkPendingBookingLead();
+      if (linked > 0 && !cancelled) toast.success("Заявка привязана к аккаунту");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Landing has its own nav built into the Landing component.
   if (pathname === "/") return null;

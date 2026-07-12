@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { e2eAccounts } from "./support/auth";
 import { deleteLead } from "./support/data";
-import { expectPageHeading } from "./support/ui";
 
 const mailpitURL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
+const webURL = process.env.E2E_WEB_URL ?? "http://localhost:3000";
 
 type MailpitMessages = {
   messages: Array<{
@@ -14,23 +14,17 @@ type MailpitMessages = {
   }>;
 };
 
-test("reset-password page rejects a missing token", async ({ page }) => {
-  await page.goto("/reset-password");
-  await expectPageHeading(page, "Новый пароль");
-  await expect(page.getByText(/Ссылка недействительна или устарела/)).toBeVisible();
-});
+test("magic-link sign-in sends an email through Mailpit", async ({ request }) => {
+  const email = e2eAccounts.mutableStudent.email;
+  const before = await mailCount(request, email);
 
-test("forgot-password sends an email through Mailpit", async ({ page, request }) => {
-  const before = await mailCount(request, e2eAccounts.mutableStudent.email);
+  const response = await request.post(`${apiURL}/auth/sign-in/magic-link`, {
+    data: { email, callbackURL: "/dashboard" },
+    headers: { Origin: webURL },
+  });
+  expect(response.ok()).toBeTruthy();
 
-  await page.goto("/forgot-password");
-  await page.getByLabel("Email").fill(e2eAccounts.mutableStudent.email);
-  await page.getByRole("button", { name: "Отправить ссылку" }).click();
-  await expect(page.getByText(/мы отправили на него ссылку/)).toBeVisible();
-
-  await expect
-    .poll(() => mailCount(request, e2eAccounts.mutableStudent.email), { timeout: 10_000 })
-    .toBeGreaterThan(before);
+  await expect.poll(() => mailCount(request, email), { timeout: 10_000 }).toBeGreaterThan(before);
 });
 
 test("booking submission sends a confirmation email", async ({ request }) => {

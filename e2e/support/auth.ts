@@ -22,8 +22,6 @@ export const e2eAccounts = {
   },
 } as const;
 
-export const devPassword = "dev-password-123";
-
 export async function authenticate(
   request: APIRequestContext,
   account: (typeof e2eAccounts)[keyof typeof e2eAccounts],

@@ -4,19 +4,18 @@ import { auth } from "../auth.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 
-// Local-only accounts with real Better Auth password hashes. This script is
-// run automatically before the development servers start, but is never part
-// of migrations or the production entrypoint.
+// Local-only passwordless accounts (auth is Telegram/magic-link). Sign in to
+// these in dev via POST /dev-auth/dev-login. This script runs automatically
+// before the development servers start, but is never part of migrations or the
+// production entrypoint.
 const LOCAL_USERS = [
   {
     email: "admin.test@gojolearn.ru",
-    password: "AdminTest123-",
     nickname: "Админ",
     role: "admin",
   },
   {
     email: "student.test@gojolearn.ru",
-    password: "StudentTest123-",
     nickname: "Студент",
     role: "student",
   },
@@ -27,6 +26,8 @@ if (env.NODE_ENV === "production") {
   process.exit(1);
 }
 
+const ctx = await auth.$context;
+
 for (const localUser of LOCAL_USERS) {
   const [existing] = await db
     .select({ id: userTable.id })
@@ -35,14 +36,12 @@ for (const localUser of LOCAL_USERS) {
     .limit(1);
 
   if (!existing) {
-    await auth.api.signUpEmail({
-      body: {
-        email: localUser.email,
-        password: localUser.password,
-        name: localUser.nickname,
-        // biome-ignore lint/suspicious/noExplicitAny: Better Auth additional fields are dynamic
-        ...({ nickname: localUser.nickname, role: localUser.role } as any),
-      },
+    await ctx.internalAdapter.createUser({
+      email: localUser.email,
+      name: localUser.nickname,
+      emailVerified: true,
+      role: localUser.role,
+      nickname: localUser.nickname,
     });
     console.log(`Created local ${localUser.role}: ${localUser.email}`);
     continue;

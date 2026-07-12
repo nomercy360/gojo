@@ -4,67 +4,45 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { auth } from "../auth.ts";
-import { type AuthContext } from "../auth/middleware.ts";
+import type { AuthContext } from "../auth/middleware.ts";
+import { createSessionCookie, findOrCreateUserByEmail } from "../auth/session.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 
 export const authRoute = new Hono<AuthContext>();
 
 /**
- * Dev-only login. Creates or reuses a user by email via better-auth and returns a session.
- * Gated by NODE_ENV + ALLOW_DEV_LOGIN env flag.
+ * Dev-only login. Creates or reuses a user by email and returns a passwordless
+ * better-auth session (auth is Telegram/magic-link only in prod). Gated by
+ * NODE_ENV + ALLOW_DEV_LOGIN env flag.
  */
 authRoute.post("/dev-login", zValidator("json", devLoginInput), async (c) => {
   if (env.NODE_ENV === "production" && !env.ALLOW_DEV_LOGIN) {
     throw new HTTPException(404, { message: "not found" });
   }
   const body = c.req.valid("json");
-  const password = "dev-password-123";
 
-  const [existing] = await db
-    .select()
-    .from(userTable)
-    .where(eq(userTable.email, body.email))
-    .limit(1);
-
-  if (!existing) {
-    await auth.api.signUpEmail({
-      body: {
-        email: body.email,
-        password,
-        name: body.nickname ?? body.email.split("@")[0] ?? "user",
-        // biome-ignore lint/suspicious/noExplicitAny: better-auth additionalFields dynamic
-        ...({ role: body.role, nickname: body.nickname } as any),
-      },
-    });
-  }
-
-  const result = await auth.api.signInEmail({
-    body: { email: body.email, password },
-    returnHeaders: true,
+  const userId = await findOrCreateUserByEmail({
+    email: body.email,
+    name: body.nickname ?? body.email.split("@")[0] ?? "user",
+    role: body.role,
+    nickname: body.nickname,
   });
 
-  // Copy auth cookies to Hono response
-  const setCookie = result.headers.getSetCookie?.() ?? [];
-  for (const cookie of setCookie) {
-    c.header("Set-Cookie", cookie, { append: true });
-  }
+  c.header("Set-Cookie", await createSessionCookie(userId), { append: true });
 
+  const [u] = await db.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
   return c.json({
-    token: result.response.token ?? "",
+    token: "",
     user: {
-      id: result.response.user.id,
-      email: result.response.user.email,
-      nickname: (result.response.user as { nickname?: string }).nickname ?? null,
-      avatarUrl: result.response.user.image ?? null,
-      role: (result.response.user as { role?: string }).role ?? "student",
-      jlptLevel: (result.response.user as { jlptLevel?: string }).jlptLevel ?? null,
-      quizLevel: (result.response.user as { quizLevel?: string }).quizLevel ?? null,
-      createdAt:
-        typeof result.response.user.createdAt === "string"
-          ? result.response.user.createdAt
-          : new Date(result.response.user.createdAt).toISOString(),
+      id: userId,
+      email: u?.email ?? body.email,
+      nickname: u?.nickname ?? body.nickname ?? null,
+      avatarUrl: u?.image ?? null,
+      role: u?.role ?? body.role,
+      jlptLevel: u?.jlptLevel ?? null,
+      quizLevel: u?.quizLevel ?? null,
+      createdAt: (u?.createdAt ?? new Date()).toISOString(),
     },
   });
 });

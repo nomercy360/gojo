@@ -1,5 +1,14 @@
 {$DOMAIN:localhost} {
-	# API — all backend routes under /api/*
+	# better-auth routes (basePath /auth) served at the origin root — NOT under
+	# /api and NOT stripped — so better-auth's baseURL-derived URLs (the OAuth
+	# redirect_uri gojolearn.ru/auth/oauth2/callback/telegram, and magic-link
+	# links) resolve without a prefix. The container's basePath is /auth, so no
+	# strip. The web SPA has no /auth/* routes, so there's no collision.
+	handle /auth/* {
+		reverse_proxy api:3001
+	}
+
+	# API — all other backend routes under /api/*
 	handle /api/* {
 		uri strip_prefix /api
 		reverse_proxy api:3001

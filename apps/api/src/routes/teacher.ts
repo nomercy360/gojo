@@ -369,42 +369,40 @@ teacherRoute.get("/students/:studentId", async (c) => {
 });
 
 // Accounts are admin-provisioned only (no public self-signup) — this is the
-// one path that creates a student login. The admin never sets or sees a
-// password: signUpEmail gets a throwaway random one, then
-// requestPasswordReset immediately emails an activation link through the
-// same mechanism a normal "forgot password" uses (see auth.ts
-// sendResetPassword, which branches its copy on emailVerified).
+// one path that creates a student login. Auth is passwordless: we create the
+// user directly, then email a magic-link invite that both activates the account
+// and signs them in. (They can also sign in with Telegram afterwards.)
 teacherRoute.post("/students", zValidator("json", createStudentInput), async (c) => {
   const { email, name, nickname, planId } = c.req.valid("json");
   if (!paymentPlans.some((p) => p.id === planId)) {
     throw new HTTPException(400, { message: "unknown plan" });
   }
-  const throwawayPassword = crypto.randomUUID() + crypto.randomUUID();
 
-  const created = await auth.api.signUpEmail({
-    body: {
-      email,
-      password: throwawayPassword,
-      name,
-      // biome-ignore lint/suspicious/noExplicitAny: additional fields beyond the base schema
-      ...({ nickname, role: "student" } as any),
-    },
+  const ctx = await auth.$context;
+  if (await ctx.internalAdapter.findUserByEmail(email.toLowerCase())) {
+    throw new HTTPException(400, { message: "email already registered" });
+  }
+  const created = await ctx.internalAdapter.createUser({
+    email,
+    name,
+    emailVerified: false,
+    role: "student",
+    ...(nickname ? { nickname } : {}),
   });
 
   await db.insert(studentAccess).values({
-    userId: created.user.id,
+    userId: created.id,
     assignedPlanId: planId,
     updatedAt: new Date(),
   });
 
-  await auth.api.requestPasswordReset({
-    body: {
-      email,
-      redirectTo: `${env.WEB_ORIGIN}/reset-password`,
-    },
+  // Passwordless activation: a magic link that signs them straight in.
+  await auth.api.signInMagicLink({
+    body: { email, name, callbackURL: `${env.WEB_ORIGIN}/dashboard` },
+    headers: c.req.raw.headers,
   });
 
-  return c.json({ ok: true, userId: created.user.id }, 201);
+  return c.json({ ok: true, userId: created.id }, 201);
 });
 
 teacherRoute.patch(

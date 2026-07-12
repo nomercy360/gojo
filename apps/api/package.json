@@ -17,7 +17,7 @@
     "@gojo/shared": "workspace:*",
     "@hono/zod-validator": "^0.8.0",
     "@sentry/bun": "^10.63.0",
-    "better-auth": "^1.2.9",
+    "better-auth": "1.6.23",
     "drizzle-orm": "^0.38.3",
     "hono": "^4.6.14",
     "jose": "^5.9.6",

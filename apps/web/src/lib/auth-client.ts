@@ -1,4 +1,8 @@
-import { inferAdditionalFields } from "better-auth/client/plugins";
+import {
+  genericOAuthClient,
+  inferAdditionalFields,
+  magicLinkClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -6,6 +10,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 export const authClient = createAuthClient({
   baseURL: `${API_URL}/auth`,
   plugins: [
+    genericOAuthClient(),
+    magicLinkClient(),
     inferAdditionalFields({
       user: {
         role: { type: "string", defaultValue: "student" },
