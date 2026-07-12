@@ -1,8 +1,7 @@
 "use client";
 
-import type { LessonDto, PersonalEventDto } from "@gojo/shared";
+import type { LessonDto } from "@gojo/shared";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -13,8 +12,6 @@ interface Session {
   time: string;
   duration: string;
   topic: string;
-  source: "internal" | "personal";
-  id?: string;
 }
 
 function formatLesson(l: LessonDto): Session {
@@ -31,28 +28,18 @@ function formatLesson(l: LessonDto): Session {
     time: start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
     duration: h > 0 ? `${h}ч${m ? ` ${m}м` : ""}` : `${mins} мин`,
     topic: l.title,
-    source: "internal",
   };
 }
 
-function formatPersonalEvent(e: PersonalEventDto): Session {
-  const start = new Date(e.startsAt);
-  const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-  const h = Math.floor(e.durationMinutes / 60);
-  const m = e.durationMinutes % 60;
-  return {
-    key: `personal:${e.id}`,
-    day: days[start.getDay()],
-    date: start.getDate().toString(),
-    time: start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
-    duration: h > 0 ? `${h}ч${m ? ` ${m}м` : ""}` : `${e.durationMinutes} мин`,
-    topic: e.title,
-    source: "personal",
-    id: e.id,
-  };
+function getWeekStart(offset: number) {
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + offset * 7);
+  return monday;
 }
 
-function buildWeekFromDates(isoDates: string[]) {
+function buildWeekFromDates(monday: Date, isoDates: string[]) {
   const today = new Date();
   const dateKeys = new Set(
     isoDates.map((iso) => {
@@ -60,8 +47,6 @@ function buildWeekFromDates(isoDates: string[]) {
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     }),
   );
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   const labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
@@ -77,14 +62,9 @@ function buildWeekFromDates(isoDates: string[]) {
 
 export function CalendarSection() {
   const [bookedLessons, setBookedLessons] = useState<LessonDto[]>([]);
-  const [personalEvents, setPersonalEvents] = useState<PersonalEventDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [hidden, setHidden] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addTitle, setAddTitle] = useState("");
-  const [addWhen, setAddWhen] = useState("");
-  const [addDuration, setAddDuration] = useState(30);
-  const [adding, setAdding] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   useEffect(() => {
     setHidden(localStorage.getItem("gojo:calendar-hidden") === "1");
@@ -100,76 +80,33 @@ export function CalendarSection() {
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/lessons`, { credentials: "include" })
+    const from = getWeekStart(weekOffset);
+    const to = new Date(from);
+    to.setDate(from.getDate() + 7);
+    setLoading(true);
+    fetch(
+      `${API_URL}/lessons/my-calendar?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`,
+      { credentials: "include" },
+    )
       .then(async (r) => {
         if (!r.ok) return [];
         const all: unknown = await r.json();
         return Array.isArray(all) ? all : [];
       })
-      .then((all: LessonDto[]) => setBookedLessons(all.filter((l) => l.booked)))
+      .then((all: LessonDto[]) => setBookedLessons(all))
       .catch(() => setBookedLessons([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [weekOffset]);
 
-  const loadPersonalEvents = () => {
-    fetch(`${API_URL}/personal-events`, { credentials: "include" })
-      .then(async (r) => {
-        if (!r.ok) return [];
-        const rows: unknown = await r.json();
-        return Array.isArray(rows) ? rows : [];
-      })
-      .then((rows: PersonalEventDto[]) => setPersonalEvents(rows))
-      .catch(() => setPersonalEvents([]));
-  };
-
-  useEffect(loadPersonalEvents, []);
-
-  const handleAddTraining = async () => {
-    if (!addTitle.trim() || !addWhen) {
-      toast.error("Укажи название и дату/время");
-      return;
-    }
-    setAdding(true);
-    try {
-      const res = await fetch(`${API_URL}/personal-events`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: addTitle.trim(),
-          startsAt: new Date(addWhen).toISOString(),
-          durationMinutes: addDuration,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setAddTitle("");
-      setAddWhen("");
-      setAddDuration(30);
-      setAddOpen(false);
-      loadPersonalEvents();
-    } catch {
-      toast.error("Не удалось добавить тренировку");
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const handleDeletePersonal = async (id: string) => {
-    try {
-      await fetch(`${API_URL}/personal-events/${id}`, { method: "DELETE", credentials: "include" });
-      loadPersonalEvents();
-    } catch {
-      toast.error("Не удалось удалить");
-    }
-  };
-
-  const internalItems = [
-    ...bookedLessons.map((l) => ({ startsAt: l.startsAt, session: formatLesson(l) })),
-    ...personalEvents.map((e) => ({ startsAt: e.startsAt, session: formatPersonalEvent(e) })),
-  ].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-
-  const sessions: Session[] = internalItems.slice(0, 5).map((i) => i.session);
-  const week = buildWeekFromDates(internalItems.map((i) => i.startsAt));
+  const monday = getWeekStart(weekOffset);
+  const sessions = bookedLessons.map(formatLesson);
+  const week = buildWeekFromDates(
+    monday,
+    bookedLessons.map((lesson) => lesson.startsAt),
+  );
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const weekLabel = `${monday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
 
   if (hidden) {
     return (
@@ -224,77 +161,44 @@ export function CalendarSection() {
 
       <div className="p-7">
         {/* Header */}
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div
             className="g-mono text-[11px] font-bold uppercase tracking-[0.16em]"
             style={{ color: "#e8420a" }}
           >
             Расписание занятий
           </div>
-          <button
-            type="button"
-            onClick={() => setAddOpen((o) => !o)}
-            className="g-body flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-white transition-opacity hover:opacity-90"
-            style={{ background: "#e8420a" }}
-          >
-            + Добавить свою тренировку
-          </button>
-        </div>
-        <p className="mb-5 text-[12px]" style={{ color: "#a0a0a0" }}>
-          Своя тренировка — личная практика, которую ты сам планируешь (например, повторение слов
-          или каны). Появится в расписании ниже, и Telegram напомнит о ней за 15 минут.
-        </p>
-
-        {/* Add own training */}
-        {addOpen && (
-          <div
-            className="mb-5 rounded-xl p-4"
-            style={{ background: "#f8f4ec", border: "1px dashed rgba(232,66,10,0.25)" }}
-          >
-            <div className="mb-3 flex flex-wrap gap-2">
-              <input
-                type="text"
-                placeholder="Название (напр. Повторить кандзи)"
-                value={addTitle}
-                onChange={(e) => setAddTitle(e.target.value)}
-                className="g-body flex-1 rounded-lg border px-3 py-2 text-[13px]"
-                style={{ borderColor: "rgba(0,0,0,0.12)", minWidth: 180 }}
-              />
-              <input
-                type="datetime-local"
-                value={addWhen}
-                onChange={(e) => setAddWhen(e.target.value)}
-                className="g-body rounded-lg border px-3 py-2 text-[13px]"
-                style={{ borderColor: "rgba(0,0,0,0.12)" }}
-              />
-              <select
-                value={addDuration}
-                onChange={(e) => setAddDuration(Number(e.target.value))}
-                className="g-body rounded-lg border px-3 py-2 text-[13px]"
-                style={{ borderColor: "rgba(0,0,0,0.12)" }}
-              >
-                <option value={15}>15 мин</option>
-                <option value={30}>30 мин</option>
-                <option value={60}>60 мин</option>
-                <option value={90}>90 мин</option>
-              </select>
-            </div>
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={handleAddTraining}
-              disabled={adding}
-              className="g-body rounded-lg px-4 py-2 text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ background: "#e8420a" }}
+              aria-label="Предыдущая неделя"
+              onClick={() => setWeekOffset((offset) => offset - 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 text-[16px] text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
             >
-              {adding ? "Добавляю..." : "Добавить в расписание"}
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => setWeekOffset(0)}
+              className="g-body min-w-36 rounded-lg px-3 py-1.5 text-[12px] font-bold text-gojo-ink-muted transition-colors hover:text-gojo-orange"
+            >
+              {weekOffset === 0 ? "Эта неделя" : weekLabel}
+            </button>
+            <button
+              type="button"
+              aria-label="Следующая неделя"
+              onClick={() => setWeekOffset((offset) => offset + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 text-[16px] text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
+            >
+              →
             </button>
           </div>
-        )}
+        </div>
 
         {/* Week strip */}
         <div className="mb-5 grid grid-cols-7 gap-1.5">
           {week.map((d) => (
-            <div key={d.label} className="flex flex-col items-center gap-1">
+            <div key={`${d.label}-${d.date}`} className="flex flex-col items-center gap-1">
               <div
                 className="g-mono text-[10px] font-bold uppercase tracking-wider"
                 style={{ color: "#a0a0a0" }}
@@ -341,7 +245,7 @@ export function CalendarSection() {
               予
             </div>
             <p className="g-body text-[13px]" style={{ color: "#a0a0a0" }}>
-              Нет предстоящих занятий
+              На этой неделе занятий нет
             </p>
           </div>
         )}
@@ -383,32 +287,12 @@ export function CalendarSection() {
                     {s.time} · {s.duration}
                   </div>
                 </div>
-                {s.source === "personal" ? (
-                  <div
-                    className="g-mono shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                    style={{ background: "rgba(107,127,191,0.12)", color: "#6B7FBF" }}
-                  >
-                    Своё
-                  </div>
-                ) : (
-                  <div
-                    className="g-mono shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                    style={{ background: "rgba(232,66,10,0.1)", color: "#e8420a" }}
-                  >
-                    Инд.
-                  </div>
-                )}
-                {s.source === "personal" && s.id && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeletePersonal(s.id!)}
-                    aria-label="Удалить тренировку"
-                    className="g-mono shrink-0 text-[14px] transition-colors hover:opacity-60"
-                    style={{ color: "#a0a0a0" }}
-                  >
-                    ✕
-                  </button>
-                )}
+                <div
+                  className="g-mono shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                  style={{ background: "rgba(232,66,10,0.1)", color: "#e8420a" }}
+                >
+                  Урок
+                </div>
               </div>
             ))}
           </div>

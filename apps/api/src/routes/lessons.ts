@@ -94,6 +94,49 @@ lessonsRoute.get("/", async (c) => {
   );
 });
 
+// A student's calendar is week-based and needs both past and upcoming booked
+// lessons. Keep it separate from the public upcoming-lessons feed above.
+lessonsRoute.get("/my-calendar", requireAuth, async (c) => {
+  const user = c.get("user")!;
+  const from = new Date(c.req.query("from") ?? "");
+  const to = new Date(c.req.query("to") ?? "");
+
+  if (
+    Number.isNaN(from.getTime()) ||
+    Number.isNaN(to.getTime()) ||
+    to <= from ||
+    to.getTime() - from.getTime() > 8 * 24 * 60 * 60 * 1000
+  ) {
+    return c.json({ error: "invalid calendar range" }, 400);
+  }
+
+  const rows = await db
+    .select({ lesson: lessons })
+    .from(bookings)
+    .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
+    .where(
+      and(
+        eq(bookings.studentId, user.id),
+        gte(lessons.startsAt, from),
+        lt(lessons.startsAt, to),
+        inArray(lessons.status, ["scheduled", "completed"]),
+      ),
+    )
+    .orderBy(asc(lessons.startsAt));
+
+  const now = new Date();
+  return c.json(
+    rows.map(({ lesson }) =>
+      toLessonDto(lesson, null, {
+        booked: true,
+        isParticipant: true,
+        now,
+        includeMeetingUrl: true,
+      }),
+    ),
+  );
+});
+
 lessonsRoute.get("/my-stats", requireAuth, async (c) => {
   const user = c.get("user")!;
   const now = new Date();
