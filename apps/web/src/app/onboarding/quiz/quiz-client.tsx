@@ -1,18 +1,532 @@
 "use client";
 
+import { BookingModal } from "@/components/booking-modal";
 import { PhoneField } from "@/components/phone-field";
+import { track } from "@/lib/analytics";
 import type { QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { submitQuizAction, submitQuizLeadAction } from "./actions";
+
+// ── Design tokens (landing policy, same as the kana trainer) ─────────────────
+const C = {
+  cream: "#f8f4ec",
+  cream2: "#efe7d8",
+  white: "#ffffff",
+  orange: "#e8420a",
+  ink: "#252525",
+  ink2: "#4a4a4a",
+  ink3: "#6b6b6b",
+  muted: "#a0a0a0",
+  border: "rgba(0,0,0,0.06)",
+  green: "#4a8f3a",
+  greenBg: "#e5f0de",
+};
+
+const MONO = "var(--font-jetbrains-mono), monospace";
+const MANROPE = "var(--font-manrope), system-ui, sans-serif";
+const FRAUNCES = "var(--font-fraunces), Georgia, serif";
+const NOTO = "var(--font-noto-serif-jp), serif";
+
+const btnBase: React.CSSProperties = {
+  width: "100%",
+  padding: "15px",
+  borderRadius: 10,
+  border: "none",
+  cursor: "pointer",
+  fontFamily: MANROPE,
+  fontSize: 15,
+  fontWeight: 700,
+  letterSpacing: "0.01em",
+  transition: "opacity 0.15s",
+};
+const btnPrimary: React.CSSProperties = { ...btnBase, background: C.orange, color: C.white };
+const btnInk: React.CSSProperties = { ...btnBase, background: C.ink, color: C.white };
+const btnGhost: React.CSSProperties = {
+  ...btnBase,
+  background: "transparent",
+  border: "1px solid rgba(0,0,0,0.14)",
+  color: C.ink2,
+  fontWeight: 600,
+  padding: "13px",
+  fontSize: 14,
+};
+const quietLink: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  marginTop: 14,
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  textAlign: "center",
+  fontFamily: MANROPE,
+  fontSize: 13,
+  color: C.ink3,
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+};
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: 10,
+  border: "1px solid rgba(0,0,0,0.12)",
+  background: C.white,
+  fontFamily: MANROPE,
+  fontSize: 14,
+  color: C.ink,
+  outline: "none",
+};
+
+function QuizStyles() {
+  return (
+    <style>{`
+      @keyframes gojo-quiz-stamp {
+        0% { transform: scale(1.9) rotate(-18deg); opacity: 0; }
+        55% { transform: scale(0.86) rotate(6deg); opacity: 1; }
+        75% { transform: scale(1.06) rotate(-2deg); }
+        100% { transform: scale(1) rotate(-4deg); opacity: 1; }
+      }
+      .gojo-quiz-stamp { animation: gojo-quiz-stamp 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
+      @keyframes gojo-quiz-rise {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+      }
+      .gojo-quiz-rise { animation: gojo-quiz-rise 0.35s ease both; }
+      @media (prefers-reduced-motion: reduce) {
+        .gojo-quiz-stamp, .gojo-quiz-rise { animation: none; }
+      }
+    `}</style>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: C.cream,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 24px",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 520 }}>{children}</div>
+    </div>
+  );
+}
+
+function Eyebrow({ children, hot }: { children: React.ReactNode; hot?: boolean }) {
+  return (
+    <div
+      style={{
+        fontFamily: MONO,
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.16em",
+        textTransform: "uppercase",
+        color: hot ? C.orange : C.muted,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── Step 1 · declare — self-report prunes for free ────────────────────────────
+
+type StartChoice = "new" | "kana" | "n5" | "n4";
+
+const START_OPTIONS: { key: StartChoice; jp: string; title: string; sub: string }[] = [
+  { key: "new", jp: "はじめて", title: "Совсем с нуля", sub: "Пока не знаю ни одного символа" },
+  { key: "kana", jp: "かな", title: "Читаю кану", sub: "Хирагана и катакана уже знакомы" },
+  { key: "n5", jp: "N5", title: "База есть", sub: "Простая грамматика, первые кандзи" },
+  { key: "n4", jp: "N4+", title: "Средний и выше", sub: "Уверенная грамматика, читаю тексты" },
+];
+
+/** Where the belief band starts on the N5→N1 scale, by self-declared level. */
+const BAND_BASE: Record<StartChoice, number> = { new: 12, kana: 18, n5: 34, n4: 52 };
+
+function DeclareScreen({ onPick }: { onPick: (choice: StartChoice) => void }) {
+  return (
+    <Shell>
+      <div className="gojo-quiz-rise">
+        <Eyebrow hot>Шаг 1 из 3 · тест уровня</Eyebrow>
+        <h1
+          style={{
+            fontFamily: FRAUNCES,
+            fontSize: "clamp(28px, 5vw, 38px)",
+            fontWeight: 800,
+            letterSpacing: "-0.025em",
+            color: C.ink,
+            margin: "10px 0 6px",
+            lineHeight: 1.1,
+          }}
+        >
+          С чего начинаешь?
+        </h1>
+        <p style={{ fontFamily: MANROPE, fontSize: 14, color: C.ink3, marginBottom: 24 }}>
+          Примерно — этого достаточно. Дальше уточним за пару минут.
+        </p>
+
+        <div style={{ display: "grid", gap: 10 }}>
+          {START_OPTIONS.map((o) => (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => onPick(o.key)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                textAlign: "left",
+                padding: "16px 18px",
+                borderRadius: 12,
+                border: `1px solid ${C.border}`,
+                background: C.white,
+                cursor: "pointer",
+                transition: "border-color 0.15s",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: NOTO,
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: C.orange,
+                  minWidth: 84,
+                }}
+              >
+                {o.jp}
+              </span>
+              <span>
+                <span
+                  style={{
+                    display: "block",
+                    fontFamily: MANROPE,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: C.ink,
+                  }}
+                >
+                  {o.title}
+                </span>
+                <span
+                  style={{
+                    display: "block",
+                    fontFamily: MANROPE,
+                    fontSize: 12.5,
+                    color: C.ink3,
+                    marginTop: 2,
+                  }}
+                >
+                  {o.sub}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+// ── Beginner handoff — the quiz can't help a true beginner, kana can ──────────
+
+function BeginnerScreen({ onTakeQuizAnyway }: { onTakeQuizAnyway: () => void }) {
+  return (
+    <Shell>
+      <div className="gojo-quiz-rise" style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 58,
+            height: 58,
+            borderRadius: 10,
+            margin: "0 auto",
+            border: `3px solid ${C.orange}`,
+            color: C.orange,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: NOTO,
+            fontSize: 29,
+            fontWeight: 700,
+            background: "rgba(232,66,10,0.05)",
+            transform: "rotate(-4deg)",
+          }}
+        >
+          始
+        </div>
+        <h2
+          style={{
+            fontFamily: FRAUNCES,
+            fontSize: 26,
+            fontWeight: 800,
+            color: C.ink,
+            letterSpacing: "-0.02em",
+            marginTop: 20,
+          }}
+        >
+          Тест тебе пока не нужен.
+        </h2>
+        <p
+          style={{
+            fontFamily: MANROPE,
+            fontSize: 14,
+            color: C.ink3,
+            margin: "14px 8px 0",
+            lineHeight: 1.6,
+          }}
+        >
+          Он различает уровни от N5 и выше. Твой первый шаг — кана: 46 знаков хираганы, и первое
+          японское слово ты прочитаешь уже через несколько минут. Бесплатно, без регистрации.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 26 }}>
+          <a
+            href="/kana"
+            onClick={() => track("quiz_to_kana")}
+            style={{ ...btnPrimary, display: "block", textAlign: "center", textDecoration: "none" }}
+          >
+            Начать с каны →
+          </a>
+          <button type="button" onClick={onTakeQuizAnyway} style={btnGhost}>
+            Всё равно пройти тест
+          </button>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+// ── Step 2 · calibrate — belief band narrows as answers come in ───────────────
+
+function BeliefBand({ answered, total, base }: { answered: number; total: number; base: number }) {
+  // Width shrinks with every answer; the server owns correctness, so the band
+  // communicates "estimate converging", not a running score.
+  const width = Math.max(12, 62 - (answered / total) * 48);
+  const left = Math.min(Math.max(base - width / 2, 1), 99 - width);
+  const label =
+    answered === 0 ? "широкая оценка" : answered < total ? "уточняем…" : "оценка готова";
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ position: "relative", height: 44 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 18,
+            left: 0,
+            right: 0,
+            height: 6,
+            background: C.cream2,
+            borderRadius: 3,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            left: `${left}%`,
+            width: `${width}%`,
+            height: 10,
+            background: "rgba(232,66,10,0.25)",
+            border: `1px solid ${C.orange}`,
+            borderRadius: 5,
+            transition:
+              "left 0.5s cubic-bezier(0.2,0.8,0.2,1), width 0.5s cubic-bezier(0.2,0.8,0.2,1)",
+          }}
+        />
+        {["N5", "N4", "N3", "N2", "N1"].map((l, i) => (
+          <span
+            key={l}
+            style={{
+              position: "absolute",
+              top: 30,
+              left: `${i * 25}%`,
+              transform: i === 0 ? "none" : i === 4 ? "translateX(-100%)" : "translateX(-50%)",
+              fontFamily: MONO,
+              fontSize: 10,
+              fontWeight: 700,
+              color: C.muted,
+            }}
+          >
+            {l}
+          </span>
+        ))}
+      </div>
+      <div
+        style={{
+          fontFamily: MONO,
+          fontSize: 11,
+          fontWeight: 700,
+          color: C.ink3,
+          textAlign: "right",
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function QuizScreen({
+  questions,
+  base,
+  pending,
+  onSubmit,
+}: {
+  questions: QuizQuestionDto[];
+  base: number;
+  pending: boolean;
+  onSubmit: (answers: QuizSubmitInput["answers"]) => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const total = questions.length;
+  const current = questions[index];
+
+  const pick = useCallback(
+    (choiceIndex: number) => {
+      if (!current || pending) return;
+      const next = { ...answers, [current.id]: choiceIndex };
+      setAnswers(next);
+      if (index < total - 1) {
+        setIndex(index + 1);
+      } else {
+        onSubmit(questions.map((q) => ({ questionId: q.id, choiceIndex: next[q.id] ?? -1 })));
+      }
+    },
+    [current, pending, answers, index, total, questions, onSubmit],
+  );
+
+  useEffect(() => {
+    if (!current) return;
+    const handler = (e: KeyboardEvent) => {
+      const idx = ["1", "2", "3", "4"].indexOf(e.key);
+      if (idx !== -1 && current.choices[idx] !== undefined) pick(idx);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [current, pick]);
+
+  if (!current) return null;
+
+  return (
+    <Shell>
+      <div className="gojo-quiz-rise" key={current.id}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: 14,
+          }}
+        >
+          <Eyebrow hot>Шаг 2 из 3</Eyebrow>
+          <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: C.ink3 }}>
+            вопрос {index + 1} / {total}
+          </span>
+        </div>
+
+        <BeliefBand answered={index} total={total} base={base} />
+
+        <div
+          style={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            padding: "26px 22px",
+            textAlign: "center",
+            backgroundImage:
+              "linear-gradient(rgba(0,0,0,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.035) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: MANROPE,
+              fontSize: 19,
+              fontWeight: 700,
+              color: C.ink,
+              lineHeight: 1.45,
+            }}
+          >
+            {current.prompt}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+          {current.choices.map((choice, i) => (
+            <button
+              key={choice}
+              type="button"
+              disabled={pending}
+              onClick={() => pick(i)}
+              style={{
+                position: "relative",
+                width: "100%",
+                textAlign: "center",
+                padding: "14px 40px",
+                borderRadius: 12,
+                border: "1px solid rgba(0,0,0,0.08)",
+                background: C.white,
+                color: C.ink,
+                fontFamily: MANROPE,
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: pending ? "default" : "pointer",
+                opacity: pending ? 0.5 : 1,
+                transition: "border-color 0.15s",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontFamily: MONO,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  opacity: 0.55,
+                }}
+              >
+                {i + 1}
+              </span>
+              {choice}
+            </button>
+          ))}
+        </div>
+
+        <button type="button" onClick={() => pick(-1)} disabled={pending} style={quietLink}>
+          {pending ? "Считаем результат…" : "Не знаю — пропустить"}
+        </button>
+
+        <p
+          style={{
+            marginTop: 16,
+            fontFamily: MONO,
+            fontSize: 10,
+            color: C.muted,
+            letterSpacing: "0.06em",
+            textAlign: "center",
+          }}
+        >
+          Клавиши 1–4 для быстрого ответа · пропуск честнее случайного тыка
+        </p>
+      </div>
+    </Shell>
+  );
+}
+
+// ── Step 3 · result — skip/seed/start map + teacher handoff ───────────────────
 
 const LEVEL_BLURB: Record<QuizResultDto["level"], { headline: string; body: string }> = {
   N5: {
     headline: "Старт с самых основ",
-    body: "Хирагана, катакана, базовые фразы. Подберём группу для начинающих и пойдём с нуля.",
+    body: "Хирагана, катакана, базовые фразы. Начнём с нуля и быстро дойдём до первых диалогов.",
   },
   N4: {
     headline: "Уверенный новичок",
@@ -28,54 +542,45 @@ const LEVEL_BLURB: Record<QuizResultDto["level"], { headline: string; body: stri
   },
 };
 
-export function QuizClient({
-  questions,
+function levelTag(pct: number): { text: string; color: string } {
+  if (pct >= 100) return { text: "уже знаешь", color: C.green };
+  if (pct >= 50) return { text: "закрепим", color: C.ink2 };
+  return { text: "начнём отсюда", color: C.orange };
+}
+
+function ResultScreen({
+  result,
+  declared,
+  submittedAnswers,
   isLoggedIn,
+  onRetake,
 }: {
-  questions: QuizQuestionDto[];
+  result: QuizResultDto;
+  declared: StartChoice | null;
+  submittedAnswers: QuizSubmitInput["answers"];
   isLoggedIn: boolean;
+  onRetake: () => void;
 }) {
-  const router = useRouter();
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [submittedAnswers, setSubmittedAnswers] = useState<QuizSubmitInput["answers"] | null>(null);
-  const [result, setResult] = useState<QuizResultDto | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadEmailSent, setLeadEmailSent] = useState(true);
   const [leadPhone, setLeadPhone] = useState<string | undefined>();
-  const [pending, startTransition] = useTransition();
   const [leadPending, startLeadTransition] = useTransition();
 
-  const total = questions.length;
-  const current = questions[index];
+  const blurb = LEVEL_BLURB[result.level];
 
-  function pick(choiceIndex: number) {
-    if (!current) return;
-    const next = { ...answers, [current.id]: choiceIndex };
-    setAnswers(next);
-    if (index < total - 1) {
-      setIndex(index + 1);
-    } else {
-      submit(next);
-    }
-  }
-
-  function submit(final: Record<string, number>) {
-    const payload = buildQuizPayload(final, questions);
-    startTransition(async () => {
-      try {
-        const r = await submitQuizAction(payload);
-        setSubmittedAnswers(payload.answers);
-        setResult(r);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");
-      }
-    });
-  }
+  // Kana is self-declared, not tested — an honest row is still useful on the map.
+  const kanaPct = declared === null ? null : declared === "new" ? 0 : 100;
+  const rows = [
+    ...(kanaPct === null ? [] : [{ label: "Кана", pct: kanaPct }]),
+    ...result.byLevel.map((l) => ({
+      label: `${l.level} · ${l.level === "N5" ? "база" : l.level === "N4" ? "грамматика" : l.level === "N3" ? "чтение" : "нюансы"}`,
+      pct: l.total > 0 ? Math.round((100 * l.correct) / l.total) : 0,
+    })),
+  ];
 
   function submitLead(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!submittedAnswers) return;
     const form = new FormData(e.currentTarget);
     const name = String(form.get("name") ?? "").trim();
     const email = String(form.get("email") ?? "").trim();
@@ -94,6 +599,7 @@ export function QuizClient({
         });
         setLeadSent(true);
         setLeadEmailSent(r.emailSent);
+        track("quiz_lead_submitted", { level: result.level });
         toast.success(r.emailSent ? "Подробный результат отправлен на email" : "Заявка сохранена");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не удалось отправить результат");
@@ -101,167 +607,323 @@ export function QuizClient({
     });
   }
 
-  if (result) {
-    const blurb = LEVEL_BLURB[result.level];
-    return (
-      <main className="min-h-screen bg-gojo-paper">
-        <div className="mx-auto max-w-xl px-6 py-16">
-          <div className="g-mono text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Интересно!
-          </div>
-          <h1 className="g-display mt-2 text-[36px] font-bold leading-tight text-gojo-ink">
-            Похоже, твой уровень — примерно {result.level}
-          </h1>
-          <p className="g-body mt-2 text-sm text-gojo-ink-muted">
-            {result.correct} из {result.total} правильных ответов · это лишь предварительная оценка
-          </p>
-
-          <div className="g-card mt-8 p-6">
-            <div className="g-display text-[22px] font-bold text-gojo-ink">{blurb.headline}</div>
-            <p className="g-body mt-2 text-[15px] leading-relaxed text-gojo-ink-muted">
-              {blurb.body}
-            </p>
-          </div>
-
-          <div className="mt-6 rounded-xl border border-dashed border-black/15 bg-gojo-paper-2 p-5">
-            <p className="g-body text-[14px] font-bold text-gojo-ink">
-              Получи подробный разбор и план на email
-            </p>
-            <p className="g-body mt-1.5 text-[13px] leading-relaxed text-gojo-ink-muted">
-              Пришлём результат, что подтянуть дальше, и сохраним заявку для преподавателя.
-            </p>
-            {leadSent ? (
-              <div className="mt-4 rounded-md bg-gojo-success-soft px-4 py-3 text-sm font-bold text-gojo-success">
-                {leadEmailSent
-                  ? "Готово. Проверь почту, а если хочешь быстрее договориться о времени — напиши в Telegram."
-                  : "Готово. Заявка сохранена, преподаватель увидит твой результат и сможет связаться с тобой."}
-              </div>
-            ) : (
-              <form onSubmit={submitLead} className="mt-4 grid gap-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input
-                    name="name"
-                    required
-                    maxLength={200}
-                    placeholder="Имя"
-                    className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
-                  />
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    maxLength={200}
-                    placeholder="Email"
-                    className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft"
-                  />
-                </div>
-                <PhoneField value={leadPhone} onChange={setLeadPhone} />
-                <button type="submit" disabled={leadPending} className="g-btn-primary text-sm">
-                  {leadPending ? "Отправляем..." : "Получить подробный результат"}
-                </button>
-              </form>
-            )}
-          </div>
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="https://t.me/gojoedu"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="g-btn-primary flex-1 text-sm"
-            >
-              Записаться на консультацию
-            </a>
-            {isLoggedIn ? (
-              <Link
-                href="/lessons"
-                className="g-btn-secondary flex-1 text-sm"
-                onClick={() => router.refresh()}
-              >
-                Посмотреть уроки
-              </Link>
-            ) : (
-              <Link href="/login" className="g-btn-secondary flex-1 text-sm">
-                Войти
-              </Link>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIndex(0);
-              setAnswers({});
-              setSubmittedAnswers(null);
-              setResult(null);
-              setLeadSent(false);
-              setLeadEmailSent(true);
-            }}
-            className="g-body mt-3 text-[13px] font-bold text-gojo-ink underline decoration-black/20 underline-offset-4 hover:decoration-gojo-orange hover:text-gojo-orange"
-          >
-            Пройти заново
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  if (!current) return null;
-  const progress = Math.round(((index + (pending ? 1 : 0)) / total) * 100);
-
   return (
-    <main className="min-h-screen bg-gojo-paper">
-      <div className="mx-auto max-w-xl px-6 py-16">
-        <div className="g-mono text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-          Квиз уровня · {index + 1} / {total}
-        </div>
-        <h1 className="g-display mt-2 text-[28px] font-bold leading-tight text-gojo-ink">
-          Прикинем твой уровень JLPT за 2 минуты
-        </h1>
-
-        <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-gojo-paper-2">
+    <Shell>
+      <div className="gojo-quiz-rise" style={{ position: "relative" }}>
+        <div style={{ position: "absolute", top: -8, right: 0 }}>
           <div
-            className="h-full bg-gojo-orange transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        <div className="g-card mt-8 p-6">
-          <p className="g-display text-[20px] font-bold leading-snug text-gojo-ink">
-            {current.prompt}
-          </p>
-          <div className="mt-5 space-y-2.5">
-            {current.choices.map((choice, i) => (
-              <button
-                key={choice}
-                type="button"
-                disabled={pending}
-                onClick={() => pick(i)}
-                className="g-body block w-full rounded-md border border-black/10 bg-gojo-paper px-4 py-3 text-left text-[15px] font-bold text-gojo-ink transition-all hover:border-gojo-orange hover:bg-gojo-orange-soft disabled:opacity-50"
-              >
-                {choice}
-              </button>
-            ))}
+            className="gojo-quiz-stamp"
+            aria-hidden="true"
+            style={{
+              width: 58,
+              height: 58,
+              borderRadius: 10,
+              border: `3px solid ${C.orange}`,
+              color: C.orange,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: NOTO,
+              fontSize: 29,
+              fontWeight: 700,
+              background: "rgba(232,66,10,0.05)",
+            }}
+          >
+            級
           </div>
         </div>
 
-        <p className="g-body mt-6 text-[11px] text-gojo-ink-muted">
-          Не угадываешь — жми любой вариант. Это лишь ориентир: финальный уровень определит
-          преподаватель на бесплатной консультации.
+        <Eyebrow hot>Шаг 3 из 3 · результат</Eyebrow>
+        <h1
+          style={{
+            fontFamily: FRAUNCES,
+            fontSize: "clamp(26px, 5vw, 34px)",
+            fontWeight: 800,
+            letterSpacing: "-0.025em",
+            color: C.ink,
+            margin: "10px 48px 4px 0",
+            lineHeight: 1.15,
+          }}
+        >
+          Твой уровень — примерно {result.level}
+        </h1>
+        <p style={{ fontFamily: MANROPE, fontSize: 13, color: C.ink3, marginBottom: 20 }}>
+          {result.correct} из {result.total} правильных · {blurb.headline.toLowerCase()}
         </p>
+
+        {/* the map: what to skip, what to seed, where to start */}
+        <div
+          style={{
+            background: C.white,
+            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            padding: "20px 22px",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: MONO,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: C.muted,
+              marginBottom: 14,
+            }}
+          >
+            Твоя карта
+          </div>
+          <div style={{ display: "grid", gap: 11 }}>
+            {rows.map((r) => {
+              const tag = levelTag(r.pct);
+              return (
+                <div key={r.label}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span
+                      style={{ fontFamily: MANROPE, fontSize: 13, fontWeight: 700, color: C.ink }}
+                    >
+                      {r.label}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: MONO,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: tag.color,
+                      }}
+                    >
+                      {tag.text}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 7,
+                      background: C.cream2,
+                      borderRadius: 99,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${Math.max(r.pct, 4)}%`,
+                        background: tag.color,
+                        borderRadius: 99,
+                        transition: "width 0.6s ease",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p
+            style={{
+              fontFamily: MANROPE,
+              fontSize: 12.5,
+              color: C.ink3,
+              marginTop: 14,
+              lineHeight: 1.55,
+            }}
+          >
+            {blurb.body}
+          </p>
+        </div>
+
+        {/* teacher handoff — why the free lesson is the next step */}
+        <div
+          style={{
+            marginTop: 12,
+            padding: "14px 18px",
+            borderRadius: 12,
+            background: "rgba(232,66,10,0.05)",
+            border: "1px solid rgba(232,66,10,0.25)",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: MANROPE,
+              fontSize: 13,
+              color: C.ink,
+              margin: 0,
+              lineHeight: 1.55,
+            }}
+          >
+            Это ориентир по {result.total} вопросам. На бесплатном первом уроке преподаватель
+            уточнит картину и соберёт план — чтобы ты не тратил время на то, что уже знаешь.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setBookingOpen(true)}
+          style={{ ...btnPrimary, marginTop: 14 }}
+        >
+          Бесплатный урок с преподавателем
+        </button>
+
+        {/* lower-commitment ask: detailed result by email */}
+        <div
+          style={{
+            marginTop: 12,
+            padding: "18px 20px",
+            borderRadius: 14,
+            border: "1px dashed rgba(0,0,0,0.16)",
+            background: C.cream2,
+          }}
+        >
+          <p
+            style={{ fontFamily: MANROPE, fontSize: 14, fontWeight: 700, color: C.ink, margin: 0 }}
+          >
+            Не готов к уроку? Получи подробный разбор на email
+          </p>
+          <p
+            style={{
+              fontFamily: MANROPE,
+              fontSize: 12.5,
+              color: C.ink3,
+              margin: "5px 0 0",
+              lineHeight: 1.5,
+            }}
+          >
+            Пришлём результат по темам и что подтянуть дальше.
+          </p>
+          {leadSent ? (
+            <div
+              style={{
+                marginTop: 12,
+                borderRadius: 10,
+                background: C.greenBg,
+                padding: "12px 14px",
+                fontFamily: MANROPE,
+                fontSize: 13,
+                fontWeight: 700,
+                color: C.green,
+              }}
+            >
+              {leadEmailSent
+                ? "Готово. Проверь почту — а если хочешь быстрее, напиши нам в Telegram."
+                : "Готово. Заявка сохранена, преподаватель увидит твой результат и свяжется."}
+            </div>
+          ) : (
+            <form onSubmit={submitLead} style={{ display: "grid", gap: 10, marginTop: 14 }}>
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
+                <input name="name" required maxLength={200} placeholder="Имя" style={inputStyle} />
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  maxLength={200}
+                  placeholder="Email"
+                  style={inputStyle}
+                />
+              </div>
+              <PhoneField value={leadPhone} onChange={setLeadPhone} />
+              <button
+                type="submit"
+                disabled={leadPending}
+                style={{ ...btnInk, padding: "13px", fontSize: 14 }}
+              >
+                {leadPending ? "Отправляем…" : "Получить разбор на email"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {isLoggedIn ? (
+          <a href="/lessons" style={quietLink}>
+            ← Мои уроки
+          </a>
+        ) : (
+          <a href="/kana" style={quietLink}>
+            Тренажёр каны — учись бесплатно
+          </a>
+        )}
+        <button type="button" onClick={onRetake} style={{ ...quietLink, marginTop: 6 }}>
+          Пройти заново
+        </button>
       </div>
-    </main>
+      <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="quiz" />
+    </Shell>
   );
 }
 
-function buildQuizPayload(
-  answers: Record<string, number>,
-  questions: QuizQuestionDto[],
-): QuizSubmitInput {
-  return {
-    answers: questions.map((q) => ({
-      questionId: q.id,
-      choiceIndex: answers[q.id] ?? 0,
-    })),
-  };
+// ── Flow state machine: declare → (beginner | quiz) → result ─────────────────
+
+type Stage =
+  | { kind: "declare" }
+  | { kind: "beginner" }
+  | { kind: "quiz" }
+  | { kind: "result"; result: QuizResultDto; answers: QuizSubmitInput["answers"] };
+
+export function QuizClient({
+  questions,
+  isLoggedIn,
+}: {
+  questions: QuizQuestionDto[];
+  isLoggedIn: boolean;
+}) {
+  const [stage, setStage] = useState<Stage>({ kind: "declare" });
+  const [declared, setDeclared] = useState<StartChoice | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    track("quiz_open");
+  }, []);
+
+  const submit = useCallback((answers: QuizSubmitInput["answers"]) => {
+    startTransition(async () => {
+      try {
+        const result = await submitQuizAction({ answers });
+        track("quiz_completed", { level: result.level, correct: result.correct });
+        setStage({ kind: "result", result, answers });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");
+      }
+    });
+  }, []);
+
+  return (
+    <>
+      <QuizStyles />
+      {stage.kind === "declare" && (
+        <DeclareScreen
+          onPick={(choice) => {
+            setDeclared(choice);
+            track("quiz_declared", { start: choice });
+            setStage(choice === "new" ? { kind: "beginner" } : { kind: "quiz" });
+          }}
+        />
+      )}
+      {stage.kind === "beginner" && (
+        <BeginnerScreen onTakeQuizAnyway={() => setStage({ kind: "quiz" })} />
+      )}
+      {stage.kind === "quiz" && (
+        <QuizScreen
+          questions={questions}
+          base={BAND_BASE[declared ?? "kana"]}
+          pending={pending}
+          onSubmit={submit}
+        />
+      )}
+      {stage.kind === "result" && (
+        <ResultScreen
+          result={stage.result}
+          declared={declared}
+          submittedAnswers={stage.answers}
+          isLoggedIn={isLoggedIn}
+          onRetake={() => setStage({ kind: "declare" })}
+        />
+      )}
+    </>
+  );
 }

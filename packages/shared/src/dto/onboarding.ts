@@ -11,8 +11,9 @@ export const quizQuestionDto = z.object({
 export type QuizQuestionDto = z.infer<typeof quizQuestionDto>;
 
 export const quizSubmitInput = z.object({
+  // choiceIndex -1 = «не знаю»: an explicit skip that always scores as wrong.
   answers: z
-    .array(z.object({ questionId: z.string(), choiceIndex: z.number().int().min(0) }))
+    .array(z.object({ questionId: z.string(), choiceIndex: z.number().int().min(-1) }))
     .min(1),
 });
 export type QuizSubmitInput = z.infer<typeof quizSubmitInput>;
@@ -28,6 +29,15 @@ export const quizResultDto = z.object({
   level: jlptLevelSchema,
   correct: z.number().int().min(0),
   total: z.number().int().min(1),
+  // Per-JLPT-level breakdown so the result screen can show an honest
+  // skip/seed/start map instead of a single opaque number.
+  byLevel: z.array(
+    z.object({
+      level: jlptLevelSchema,
+      correct: z.number().int().min(0),
+      total: z.number().int().min(1),
+    }),
+  ),
 });
 export type QuizResultDto = z.infer<typeof quizResultDto>;
 

@@ -12,78 +12,80 @@ export type QuizQuestion = {
  * Onboarding quiz bank. Two questions per JLPT level (N5 → N2).
  * Order is fixed: client sees them in the order they ship.
  * Correct answer stays on the server — submission only sends the picked index.
+ * Choice order is pre-shuffled here: correctIndex must vary between questions,
+ * otherwise "always pick A" scores a perfect result.
  */
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "n5-1",
     level: "N5",
     prompt: "Как читается かわ?",
-    choices: ["kawa", "kaba", "kowa", "gawa"],
-    correctIndex: 0,
+    choices: ["kaba", "kawa", "gawa", "kowa"],
+    correctIndex: 1,
   },
   {
     id: "n5-2",
     level: "N5",
     prompt: "わたし＿にほんじんです。 (Я японец.)",
-    choices: ["は", "を", "が", "に"],
-    correctIndex: 0,
+    choices: ["を", "に", "は", "が"],
+    correctIndex: 2,
   },
   {
     id: "n4-1",
     level: "N4",
     prompt: "Прошедшая простая форма глагола 食べる:",
-    choices: ["食べた", "食べろ", "食べない", "食べよう"],
-    correctIndex: 0,
+    choices: ["食べろ", "食べない", "食べた", "食べよう"],
+    correctIndex: 2,
   },
   {
     id: "n4-2",
     level: "N4",
     prompt: "Конструкция 〜てから означает:",
     choices: [
-      "«после того, как…»",
       "«до того, как…»",
-      "«вместо того, чтобы…»",
+      "«после того, как…»",
       "«пока… (длительность)»",
+      "«вместо того, чтобы…»",
     ],
-    correctIndex: 0,
+    correctIndex: 1,
   },
   {
     id: "n3-1",
     level: "N3",
     prompt: "Выбери правильное использование 〜ように (намерение):",
     choices: [
-      "忘れないようにメモする",
       "忘れないようにメモの",
       "忘れないようにメモになる",
       "忘れないようにメモだ",
+      "忘れないようにメモする",
     ],
-    correctIndex: 0,
+    correctIndex: 3,
   },
   {
     id: "n3-2",
     level: "N3",
     prompt: "Чтение слова 経済:",
-    choices: ["けいざい", "けいえい", "せいじ", "きょうざい"],
-    correctIndex: 0,
+    choices: ["けいえい", "きょうざい", "せいじ", "けいざい"],
+    correctIndex: 3,
   },
   {
     id: "n2-1",
     level: "N2",
     prompt: "〜にもかかわらず по значению ближе всего к:",
-    choices: ["«несмотря на»", "«благодаря»", "«в связи с»", "«в то же время»"],
-    correctIndex: 0,
+    choices: ["«благодаря»", "«в связи с»", "«несмотря на»", "«в то же время»"],
+    correctIndex: 2,
   },
   {
     id: "n2-2",
     level: "N2",
     prompt: "Грамматически корректный вариант с 〜わけではない:",
     choices: [
-      "全部嫌いなわけではない",
       "全部嫌いわけではない",
-      "全部嫌いだわけではない",
+      "全部嫌いなわけではない",
       "全部嫌いなわけがない",
+      "全部嫌いだわけではない",
     ],
-    correctIndex: 0,
+    correctIndex: 1,
   },
 ];
 

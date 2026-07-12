@@ -7,6 +7,9 @@ import { z } from "zod";
  * Kana funnel reads in order: open → first_answer → row_complete →
  * word_unlocked → save_clicked / wall_shown → ask_shown → ask_clicked →
  * lead_submitted.
+ *
+ * Quiz funnel reads in order: open → declared → (to_kana | completed) →
+ * lead_submitted / booking_open.
  */
 export const funnelEventNameSchema = z.enum([
   // kana trainer
@@ -19,6 +22,12 @@ export const funnelEventNameSchema = z.enum([
   "kana_wall_shown",
   "kana_ask_shown",
   "kana_ask_clicked",
+  // level quiz
+  "quiz_open",
+  "quiz_declared",
+  "quiz_to_kana",
+  "quiz_completed",
+  "quiz_lead_submitted",
   // lead capture (booking modal, any source)
   "booking_open",
   "lead_submitted",

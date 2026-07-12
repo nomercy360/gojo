@@ -4,6 +4,11 @@ import { getCurrentUser } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { QuizClient } from "./quiz-client";
 
+export const metadata = {
+  title: "Тест уровня японского · Gojo",
+  description: "Определи свой уровень японского за 2 минуты",
+};
+
 // Public lead-magnet: works for guests and logged-in students alike, and can
 // be revisited/retaken any time — it's a suggestion, not a signup gate.
 export default async function OnboardingQuizPage() {

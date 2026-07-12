@@ -94,18 +94,24 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
   return c.json(response, 201);
 });
 
+const LEVEL_ORDER = ["N5", "N4", "N3", "N2"] as const;
+
 function scoreQuiz(input: QuizSubmitInput): QuizResultDto {
-  const byId = new Map(QUIZ_QUESTIONS.map((q) => [q.id, q]));
+  const answerById = new Map(input.answers.map((a) => [a.questionId, a.choiceIndex]));
   let correct = 0;
-  for (const a of input.answers) {
-    const q = byId.get(a.questionId);
-    if (q && a.choiceIndex === q.correctIndex) correct += 1;
+  const byLevel: QuizResultDto["byLevel"] = [];
+  for (const level of LEVEL_ORDER) {
+    const questions = QUIZ_QUESTIONS.filter((q) => q.level === level);
+    const levelCorrect = questions.filter((q) => answerById.get(q.id) === q.correctIndex).length;
+    correct += levelCorrect;
+    byLevel.push({ level, correct: levelCorrect, total: questions.length });
   }
 
   return {
     level: scoreToLevel(correct),
     correct,
     total: QUIZ_QUESTIONS.length,
+    byLevel,
   };
 }
 
@@ -129,7 +135,11 @@ function buildQuizLeadNotes(answers: QuizSubmitInput["answers"], result: QuizRes
   for (const q of QUIZ_QUESTIONS) {
     const picked = answerById.get(q.id);
     const pickedLabel =
-      picked === undefined ? "нет ответа" : (q.choices[picked] ?? `вариант ${picked}`);
+      picked === undefined
+        ? "нет ответа"
+        : picked === -1
+          ? "не знаю (пропустил)"
+          : (q.choices[picked] ?? `вариант ${picked}`);
     const marker = picked === q.correctIndex ? "✓" : "×";
     lines.push(`${marker} ${q.id} (${q.level}): ${pickedLabel}`);
   }
