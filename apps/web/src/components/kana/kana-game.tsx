@@ -851,55 +851,48 @@ function MapScreen({
           </span>
         </div>
 
-        {/* the map itself */}
+        {/* the map itself — flat, 10 per row, so it fits above the fold with
+            the buttons still visible (matches the funnel mockup) */}
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            maxWidth: 320,
+            display: "grid",
+            gridTemplateColumns: "repeat(10, 1fr)",
+            gap: 5,
+            maxWidth: 440,
             margin: "20px auto 0",
           }}
         >
-          {rows.map((row, ri) => (
-            <div
-              key={ROW_NAMES[ri]}
-              style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}
-            >
-              {Array.from({ length: 5 }, (_, ci) => {
-                const k = row[ci];
-                if (!k)
-                  return <span key={`pad-${ROW_NAMES[ri]}-${ci}`} style={{ aspectRatio: "1" }} />;
-                const isLearned = learned.has(k.kana);
-                const isNext = ri === nextRowIndex;
-                return (
-                  <span
-                    key={k.kana}
-                    style={{
-                      aspectRatio: "1",
-                      borderRadius: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontFamily: NOTO,
-                      fontSize: 20,
-                      fontWeight: 700,
-                      background: isLearned ? C.orange : C.white,
-                      color: isLearned ? C.white : isNext ? C.orange : "transparent",
-                      border: isLearned
-                        ? "none"
-                        : isNext
-                          ? `1.5px dashed ${C.orange}80`
-                          : `1px solid ${C.border}`,
-                      transition: "background 0.3s",
-                    }}
-                  >
-                    {isLearned || isNext ? k.kana : "·"}
-                  </span>
-                );
-              })}
-            </div>
-          ))}
+          {rows.flatMap((row, ri) =>
+            row.map((k) => {
+              const isLearned = learned.has(k.kana);
+              const isNext = ri === nextRowIndex;
+              return (
+                <span
+                  key={k.kana}
+                  style={{
+                    aspectRatio: "1",
+                    borderRadius: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: NOTO,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    background: isLearned ? C.orange : C.white,
+                    color: isLearned ? C.white : isNext ? C.orange : "transparent",
+                    border: isLearned
+                      ? "none"
+                      : isNext
+                        ? `1.5px dashed ${C.orange}80`
+                        : `1px solid ${C.border}`,
+                    transition: "background 0.3s",
+                  }}
+                >
+                  {isLearned || isNext ? k.kana : "·"}
+                </span>
+              );
+            }),
+          )}
         </div>
 
         <p style={{ fontFamily: MANROPE, fontSize: 12.5, color: C.ink3, marginTop: 14 }}>
