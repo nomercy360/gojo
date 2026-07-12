@@ -166,7 +166,7 @@ export function BookingModal({
                   autoComplete="off"
                   autoCapitalize="off"
                 />
-                <p className="form-note" style={{ marginTop: "6px" }}>
+                <p className="form-note" style={{ marginTop: "6px", textAlign: "left" }}>
                   Напишем сюда, чтобы договориться о времени — так быстрее всего.
                 </p>
               </div>
@@ -179,7 +179,7 @@ export function BookingModal({
                     marginBottom: "4px",
                   }}
                 >
-                  <p className="form-note" style={{ margin: "0 0 12px" }}>
+                  <p className="form-note" style={{ margin: "0 0 12px", textAlign: "left" }}>
                     Telegram быстрее, но можно и так — оставь что удобно.
                   </p>
                   <div className="form-group" style={{ marginBottom: wantsCall ? "12px" : 0 }}>

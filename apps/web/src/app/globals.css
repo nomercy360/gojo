@@ -2196,7 +2196,7 @@ html:has(.landing-root) {
    Хочу, чтобы позвонили). Deliberately low-contrast so they don't compete
    with the primary Telegram path. */
 .landing-root .bm-alt-link {
-  display: inline-block;
+  align-self: flex-start;
   background: none;
   border: none;
   padding: 2px;
@@ -2205,6 +2205,7 @@ html:has(.landing-root) {
   font-family: inherit;
   font-size: 13px;
   color: var(--ink-3);
+  text-align: left;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
