@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/avatar";
 import { ApiError, type TeacherStudentDto, fetchTeacherStudents } from "@/lib/api";
+import { quizLevelLabel } from "@/lib/quiz-level";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
@@ -82,7 +83,7 @@ export default async function TeacherStudentsPage() {
                   </span>
                   {s.quizLevel ? (
                     <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
-                      Квиз: {s.quizLevel}
+                      Квиз: {quizLevelLabel(s.quizLevel)}
                     </span>
                   ) : null}
                   <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">

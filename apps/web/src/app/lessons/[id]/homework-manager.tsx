@@ -1,6 +1,7 @@
 "use client";
 
 import type { AttendanceStatus, LessonStudentDto } from "@/lib/api";
+import { quizLevelLabel } from "@/lib/quiz-level";
 import type { HomeworkStatus, JlptLevel } from "@gojo/shared";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -131,7 +132,9 @@ export function HomeworkManager({
                 <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-gojo-ink-muted">
                   <span>{STATUS_LABEL[s.homeworkStatus]}</span>
                   <span>· посещение: {ATTENDANCE_LABEL[s.attendanceStatus]}</span>
-                  {s.quizLevel ? <span>· ориентир по квизу: {s.quizLevel}</span> : null}
+                  {s.quizLevel ? (
+                    <span>· ориентир по квизу: {quizLevelLabel(s.quizLevel)}</span>
+                  ) : null}
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">

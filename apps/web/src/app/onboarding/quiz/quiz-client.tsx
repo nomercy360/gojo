@@ -3,9 +3,9 @@
 import { BookingModal } from "@/components/booking-modal";
 import { PhoneField } from "@/components/phone-field";
 import { track } from "@/lib/analytics";
-import type { QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
+import type { JlptLevel, QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { submitQuizAction, submitQuizLeadAction } from "./actions";
 
@@ -147,6 +147,24 @@ const START_OPTIONS: { key: StartChoice; jp: string; title: string; sub: string 
 
 /** Where the belief band starts on the N5→N1 scale, by self-declared level. */
 const BAND_BASE: Record<StartChoice, number> = { new: 12, kana: 18, n5: 34, n4: 52 };
+
+/**
+ * Levels the declaration vouches for — not re-tested, credited "со слов".
+ * Must mirror creditedLevels() on the API: the server scores exactly the
+ * questions this filter leaves in.
+ */
+const CREDITED: Record<StartChoice, readonly JlptLevel[]> = {
+  new: [],
+  kana: [],
+  n5: ["N5"],
+  n4: ["N5", "N4"],
+};
+
+function servedQuestions(questions: QuizQuestionDto[], declared: StartChoice | null) {
+  if (!declared) return questions;
+  const credited = new Set<JlptLevel>(CREDITED[declared]);
+  return questions.filter((q) => !credited.has(q.level));
+}
 
 function DeclareScreen({ onPick }: { onPick: (choice: StartChoice) => void }) {
   return (
@@ -524,9 +542,13 @@ function QuizScreen({
 // ── Step 3 · result — skip/seed/start map + teacher handoff ───────────────────
 
 const LEVEL_BLURB: Record<QuizResultDto["level"], { headline: string; body: string }> = {
+  start: {
+    headline: "Уровень уточним на первом уроке",
+    body: "Первый шаг — кана: 46 знаков хираганы, первое слово прочитаешь уже через несколько минут. Дальше базовые фразы и грамматика.",
+  },
   N5: {
     headline: "Старт с самых основ",
-    body: "Хирагана, катакана, базовые фразы. Начнём с нуля и быстро дойдём до первых диалогов.",
+    body: "Базовые фразы и первая грамматика — фундамент, на который ложится всё остальное. Быстро дойдём до первых диалогов.",
   },
   N4: {
     headline: "Уверенный новичок",
@@ -542,10 +564,35 @@ const LEVEL_BLURB: Record<QuizResultDto["level"], { headline: string; body: stri
   },
 };
 
-function levelTag(pct: number): { text: string; color: string } {
-  if (pct >= 100) return { text: "уже знаешь", color: C.green };
-  if (pct >= 50) return { text: "закрепим", color: C.ink2 };
-  return { text: "начнём отсюда", color: C.orange };
+const LEVEL_TOPIC: Record<JlptLevel, string> = {
+  N5: "база",
+  N4: "грамматика",
+  N3: "чтение",
+  N2: "нюансы",
+};
+
+type MapRow = { key: string; label: string; pct: number; declaredOnly: boolean };
+
+/**
+ * The map must tell one story: everything below the placement is known
+ * (tested or taken on the user's word), exactly one row is the entry point,
+ * everything above comes later. A row's tag follows from its position
+ * relative to the placement — not from its own percentage alone.
+ */
+function rowTag(row: MapRow, i: number, placementIdx: number): { text: string; color: string } {
+  if (i < placementIdx) {
+    return row.declaredOnly
+      ? { text: "со слов", color: C.ink2 }
+      : { text: "уже знаешь", color: C.green };
+  }
+  if (i === placementIdx) {
+    return row.pct >= 100
+      ? { text: "уже знаешь", color: C.green }
+      : { text: "начнём отсюда", color: C.orange };
+  }
+  return row.pct >= 100
+    ? { text: "уже знаешь", color: C.green }
+    : { text: "дальше", color: C.muted };
 }
 
 function ResultScreen({
@@ -568,16 +615,29 @@ function ResultScreen({
   const [leadPending, startLeadTransition] = useTransition();
 
   const blurb = LEVEL_BLURB[result.level];
+  const isStart = result.level === "start";
+  const knowsKana = declared !== null && declared !== "new";
 
-  // Kana is self-declared, not tested — an honest row is still useful on the map.
-  const kanaPct = declared === null ? null : declared === "new" ? 0 : 100;
-  const rows = [
-    ...(kanaPct === null ? [] : [{ label: "Кана", pct: kanaPct }]),
-    ...result.byLevel.map((l) => ({
-      label: `${l.level} · ${l.level === "N5" ? "база" : l.level === "N4" ? "грамматика" : l.level === "N3" ? "чтение" : "нюансы"}`,
-      pct: l.total > 0 ? Math.round((100 * l.correct) / l.total) : 0,
-    })),
+  // Kana is self-declared, not tested — an honest row is still useful on the
+  // map, and declaration-credited levels show as "со слов", not as tested.
+  const credited = new Set<JlptLevel>(declared ? CREDITED[declared] : []);
+  const rows: MapRow[] = [
+    ...(declared === null
+      ? []
+      : [{ key: "kana", label: "Кана", pct: knowsKana ? 100 : 0, declaredOnly: true }]),
+    ...(["N5", "N4", "N3", "N2"] as const).map((level): MapRow => {
+      const label = `${level} · ${LEVEL_TOPIC[level]}`;
+      if (credited.has(level)) return { key: level, label, pct: 100, declaredOnly: true };
+      const scored = result.byLevel.find((b) => b.level === level);
+      const pct =
+        scored && scored.total > 0 ? Math.round((100 * scored.correct) / scored.total) : 0;
+      return { key: level, label, pct, declaredOnly: false };
+    }),
   ];
+  // Without kana the entry point is kana, whatever the band says — you can't
+  // start N5 grammar before you can read it.
+  const placementKey = isStart || !knowsKana ? "kana" : result.level;
+  const placementIdx = rows.findIndex((r) => r.key === placementKey);
 
   function submitLead(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -593,6 +653,7 @@ function ResultScreen({
       try {
         const r = await submitQuizLeadAction({
           answers: submittedAnswers,
+          declared: declared ?? undefined,
           name,
           email,
           contact: leadPhone,
@@ -645,7 +706,7 @@ function ResultScreen({
             lineHeight: 1.15,
           }}
         >
-          Твой уровень — примерно {result.level}
+          {isStart ? "Начнём с самых азов" : `Твой старт — уровень ${result.level}`}
         </h1>
         <p style={{ fontFamily: MANROPE, fontSize: 13, color: C.ink3, marginBottom: 20 }}>
           {result.correct} из {result.total} правильных · {blurb.headline.toLowerCase()}
@@ -674,10 +735,10 @@ function ResultScreen({
             Твоя карта
           </div>
           <div style={{ display: "grid", gap: 11 }}>
-            {rows.map((r) => {
-              const tag = levelTag(r.pct);
+            {rows.map((r, i) => {
+              const tag = rowTag(r, i, placementIdx);
               return (
-                <div key={r.label}>
+                <div key={r.key}>
                   <div
                     style={{
                       display: "flex",
@@ -771,6 +832,23 @@ function ResultScreen({
           Бесплатный урок с преподавателем
         </button>
 
+        {/* a "start" placement hands off to kana, same as the declare screen */}
+        {isStart && (
+          <a
+            href="/kana"
+            onClick={() => track("quiz_to_kana")}
+            style={{
+              ...btnGhost,
+              display: "block",
+              textAlign: "center",
+              textDecoration: "none",
+              marginTop: 10,
+            }}
+          >
+            Начать с каны — бесплатно, без регистрации
+          </a>
+        )}
+
         {/* lower-commitment ask: detailed result by email */}
         <div
           style={{
@@ -844,9 +922,11 @@ function ResultScreen({
             ← Мои уроки
           </a>
         ) : (
-          <a href="/kana" style={quietLink}>
-            Тренажёр каны — учись бесплатно
-          </a>
+          !isStart && (
+            <a href="/kana" style={quietLink}>
+              Тренажёр каны — учись бесплатно
+            </a>
+          )
         )}
         <button type="button" onClick={onRetake} style={{ ...quietLink, marginTop: 6 }}>
           Пройти заново
@@ -880,17 +960,24 @@ export function QuizClient({
     track("quiz_open");
   }, []);
 
-  const submit = useCallback((answers: QuizSubmitInput["answers"]) => {
-    startTransition(async () => {
-      try {
-        const result = await submitQuizAction({ answers });
-        track("quiz_completed", { level: result.level, correct: result.correct });
-        setStage({ kind: "result", result, answers });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");
-      }
-    });
-  }, []);
+  // Declared-known levels are skipped — the declaration is information, so
+  // the probe budget goes to the levels that are actually in question.
+  const served = useMemo(() => servedQuestions(questions, declared), [questions, declared]);
+
+  const submit = useCallback(
+    (answers: QuizSubmitInput["answers"]) => {
+      startTransition(async () => {
+        try {
+          const result = await submitQuizAction({ answers, declared: declared ?? undefined });
+          track("quiz_completed", { level: result.level, correct: result.correct });
+          setStage({ kind: "result", result, answers });
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");
+        }
+      });
+    },
+    [declared],
+  );
 
   return (
     <>
@@ -909,7 +996,7 @@ export function QuizClient({
       )}
       {stage.kind === "quiz" && (
         <QuizScreen
-          questions={questions}
+          questions={served}
           base={BAND_BASE[declared ?? "kana"]}
           pending={pending}
           onSubmit={submit}

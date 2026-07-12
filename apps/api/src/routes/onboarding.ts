@@ -12,7 +12,12 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AuthContext } from "../auth/middleware.ts";
-import { QUIZ_QUESTIONS, scoreToLevel } from "../data/quiz-questions.ts";
+import {
+  LEVEL_ORDER,
+  QUIZ_QUESTIONS,
+  placementFor,
+  questionsForDeclared,
+} from "../data/quiz-questions.ts";
 import { db } from "../db.ts";
 import { notifyLead } from "../lead-notifications.ts";
 import { sendEmail } from "../mailer.ts";
@@ -22,6 +27,7 @@ export const onboardingRoute = new Hono<AuthContext>();
 onboardingRoute.get("/quiz/questions", (c) => {
   const questions: QuizQuestionDto[] = QUIZ_QUESTIONS.map((q) => ({
     id: q.id,
+    level: q.level,
     prompt: q.prompt,
     choices: q.choices,
   }));
@@ -33,8 +39,7 @@ onboardingRoute.get("/quiz/questions", (c) => {
 // the indicative result back (nothing to persist without an account).
 onboardingRoute.post("/quiz", zValidator("json", quizSubmitInput), async (c) => {
   const u = c.get("user");
-  const { answers } = c.req.valid("json");
-  const result = scoreQuiz({ answers });
+  const result = scoreQuiz(c.req.valid("json"));
 
   // Indicative only — the official jlptLevel is set by a teacher after the
   // free consultation lesson (see PATCH /teacher/lessons/:id/students/:studentId/level).
@@ -54,7 +59,7 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
     await persistQuizLevel(u.id, result.level);
   }
 
-  const notes = buildQuizLeadNotes(data.answers, result);
+  const notes = buildQuizLeadNotes(data, result);
   const [lead] = await db
     .insert(leads)
     .values({
@@ -94,23 +99,23 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
   return c.json(response, 201);
 });
 
-const LEVEL_ORDER = ["N5", "N4", "N3", "N2"] as const;
-
 function scoreQuiz(input: QuizSubmitInput): QuizResultDto {
+  const served = questionsForDeclared(input.declared);
   const answerById = new Map(input.answers.map((a) => [a.questionId, a.choiceIndex]));
   let correct = 0;
   const byLevel: QuizResultDto["byLevel"] = [];
   for (const level of LEVEL_ORDER) {
-    const questions = QUIZ_QUESTIONS.filter((q) => q.level === level);
+    const questions = served.filter((q) => q.level === level);
+    if (questions.length === 0) continue;
     const levelCorrect = questions.filter((q) => answerById.get(q.id) === q.correctIndex).length;
     correct += levelCorrect;
     byLevel.push({ level, correct: levelCorrect, total: questions.length });
   }
 
   return {
-    level: scoreToLevel(correct),
+    level: placementFor(input.declared, byLevel),
     correct,
-    total: QUIZ_QUESTIONS.length,
+    total: served.length,
     byLevel,
   };
 }
@@ -124,15 +129,23 @@ async function persistQuizLevel(userId: string, level: QuizResultDto["level"]): 
   if (!row) throw new HTTPException(404, { message: "user not found" });
 }
 
-function buildQuizLeadNotes(answers: QuizSubmitInput["answers"], result: QuizResultDto): string {
-  const answerById = new Map(answers.map((a) => [a.questionId, a.choiceIndex]));
+const DECLARED_LABEL: Record<NonNullable<QuizSubmitInput["declared"]>, string> = {
+  new: "совсем с нуля",
+  kana: "читает кану",
+  n5: "база есть (~N5)",
+  n4: "средний и выше (~N4+)",
+};
+
+function buildQuizLeadNotes(data: QuizSubmitInput, result: QuizResultDto): string {
+  const answerById = new Map(data.answers.map((a) => [a.questionId, a.choiceIndex]));
   const lines = [
-    `Квиз уровня: ${result.level}`,
+    `Квиз уровня: ${result.level === "start" ? "с нуля (ниже N5)" : result.level}`,
+    `Со слов: ${data.declared ? DECLARED_LABEL[data.declared] : "не указано"}`,
     `Результат: ${result.correct}/${result.total}`,
     "",
     "Ответы:",
   ];
-  for (const q of QUIZ_QUESTIONS) {
+  for (const q of questionsForDeclared(data.declared)) {
     const picked = answerById.get(q.id);
     const pickedLabel =
       picked === undefined
@@ -147,11 +160,15 @@ function buildQuizLeadNotes(answers: QuizSubmitInput["answers"], result: QuizRes
 }
 
 async function sendQuizResultEmail(to: string, name: string, result: QuizResultDto): Promise<void> {
-  const subject = `Твой примерный уровень японского — ${result.level}`;
+  const levelLabel = result.level === "start" ? "старт с самых азов" : `примерно ${result.level}`;
+  const subject =
+    result.level === "start"
+      ? "Твой план: начинаем японский с самых азов"
+      : `Твой примерный уровень японского — ${result.level}`;
   const escapedName = escapeHtml(name);
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #252525;">
-      <h1 style="margin: 0 0 12px;">${escapedName}, твой примерный уровень — ${result.level}</h1>
+      <h1 style="margin: 0 0 12px;">${escapedName}, твой результат — ${levelLabel}</h1>
       <p>Ты ответил(а) правильно на <strong>${result.correct} из ${result.total}</strong> вопросов.</p>
       <p>${resultBlurb(result.level)}</p>
       <p>Это предварительная оценка. На бесплатном первом уроке преподаватель проверит уровень точнее и предложит план занятий.</p>
@@ -163,6 +180,8 @@ async function sendQuizResultEmail(to: string, name: string, result: QuizResultD
 }
 
 function resultBlurb(level: QuizResultDto["level"]): string {
+  if (level === "start")
+    return "Начни с каны: 46 знаков хираганы в нашем бесплатном тренажёре, первое слово прочитаешь уже через несколько минут. Уровень уточним на первом уроке.";
   if (level === "N5")
     return "Лучше начать с базы: хирагана, катакана, простые фразы и первые грамматические конструкции.";
   if (level === "N4")

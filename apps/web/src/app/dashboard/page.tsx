@@ -293,7 +293,7 @@ export default async function DashboardPage() {
             ) : user.quizLevel ? (
               <>
                 <div className="g-display text-[56px] font-extrabold leading-none tracking-[-0.04em] text-gojo-ink">
-                  ~{user.quizLevel}
+                  {user.quizLevel === "start" ? "с нуля" : `~${user.quizLevel}`}
                 </div>
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
                   Предварительная оценка по квизу. Финальный уровень выставит преподаватель на
@@ -328,11 +328,12 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Contact ── */}
-        <div id="contact" className="g-card mt-10 scroll-mt-20 flex items-center justify-between px-7 py-5">
+        <div
+          id="contact"
+          className="g-card mt-10 scroll-mt-20 flex items-center justify-between px-7 py-5"
+        >
           <div>
-            <div className="g-display text-[15px] font-bold text-gojo-ink">
-              Связаться с нами
-            </div>
+            <div className="g-display text-[15px] font-bold text-gojo-ink">Связаться с нами</div>
             <div className="g-body mt-0.5 text-[13px] text-gojo-ink-muted">
               Вопросы по обучению, материалы, индивидуальный план
             </div>

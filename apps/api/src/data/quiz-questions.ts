@@ -1,4 +1,4 @@
-import type { JlptLevel } from "@gojo/shared";
+import type { JlptLevel, QuizPlacement, QuizStartChoice } from "@gojo/shared";
 
 export type QuizQuestion = {
   id: string;
@@ -19,9 +19,9 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "n5-1",
     level: "N5",
-    prompt: "Как читается かわ?",
-    choices: ["kaba", "kawa", "gawa", "kowa"],
-    correctIndex: 1,
+    prompt: "Что значит слово みず?",
+    choices: ["вода", "огонь", "гора", "река"],
+    correctIndex: 0,
   },
   {
     id: "n5-2",
@@ -89,13 +89,48 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
 ];
 
+export const LEVEL_ORDER: readonly JlptLevel[] = ["N5", "N4", "N3", "N2"];
+
 /**
- * Score → JLPT level mapping (out of 8 questions).
- * 0–3 correct → N5, 4–5 → N4, 6–7 → N3, 8 → N2.
+ * Levels the declaration vouches for — skipped by the quiz and credited
+ * "со слов" on the map. Kana itself has no question in the bank, so "kana"
+ * still probes from N5 up; it only moves the placement floor off "start".
  */
-export function scoreToLevel(correct: number): JlptLevel {
-  if (correct >= 8) return "N2";
-  if (correct >= 6) return "N3";
-  if (correct >= 4) return "N4";
-  return "N5";
+export function creditedLevels(declared: QuizStartChoice | undefined): readonly JlptLevel[] {
+  if (declared === "n5") return ["N5"];
+  if (declared === "n4") return ["N5", "N4"];
+  return [];
+}
+
+/** The subset of the bank actually served, given the declaration. Must stay
+ * a pure function of `declared`: the client filters by the same rule, and a
+ * mismatch would score unserved questions as wrong. */
+export function questionsForDeclared(declared: QuizStartChoice | undefined): QuizQuestion[] {
+  const credited = new Set(creditedLevels(declared));
+  return QUIZ_QUESTIONS.filter((q) => !credited.has(q.level));
+}
+
+/**
+ * Placement = the lowest served level the user didn't fully clear.
+ * Monotonic and honest by construction: 0 demonstrated never rounds up.
+ * With nothing correct at N5 and no kana declared, the floor is "start"
+ * (below N5) — the quiz can't claim a JLPT band from a blank slate.
+ */
+export function placementFor(
+  declared: QuizStartChoice | undefined,
+  byLevel: { level: JlptLevel; correct: number; total: number }[],
+): QuizPlacement {
+  const credited = new Set(creditedLevels(declared));
+  for (const level of LEVEL_ORDER) {
+    if (credited.has(level)) continue;
+    const scored = byLevel.find((b) => b.level === level);
+    if (!scored || scored.total === 0) continue;
+    if (scored.correct < scored.total) {
+      const knowsKana = declared === "kana" || credited.size > 0;
+      if (level === "N5" && scored.correct === 0 && !knowsKana) return "start";
+      return level;
+    }
+  }
+  // Cleared everything served — N2 is the bank's ceiling.
+  return "N2";
 }

@@ -1,10 +1,11 @@
 import { Avatar } from "@/components/avatar";
 import {
   ApiError,
+  type TeacherStudentProfileDto,
   fetchPaymentPlans,
   fetchTeacherStudentProfile,
-  type TeacherStudentProfileDto,
 } from "@/lib/api";
+import { quizLevelLabel } from "@/lib/quiz-level";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
@@ -73,7 +74,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
               </h1>
               <p className="text-sm text-gojo-ink-muted">
                 {student.email} · JLPT: {student.jlptLevel ?? "не выставлен"} · Квиз:{" "}
-                {student.quizLevel ?? "нет"}
+                {student.quizLevel ? quizLevelLabel(student.quizLevel) : "нет"}
               </p>
             </div>
           </div>
