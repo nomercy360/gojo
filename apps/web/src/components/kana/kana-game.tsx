@@ -270,8 +270,17 @@ function TeachScreen({
         >
           {item.romaji}
         </div>
-        <p style={{ fontFamily: MANROPE, fontSize: 14, color: C.ink3, marginTop: 8 }}>
-          Запомни форму — сейчас проверим.
+        <p
+          style={{
+            fontFamily: MANROPE,
+            fontSize: 14,
+            color: C.ink3,
+            margin: "10px auto 0",
+            maxWidth: 340,
+            lineHeight: 1.5,
+          }}
+        >
+          {item.mnemonic}
         </p>
 
         {/* row progress dots */}
@@ -928,7 +937,7 @@ function MapScreen({
             onClick={() => track("kana_save_clicked", { learned: learnedTotal })}
             style={{ ...quietLink, textDecoration: "underline" }}
           >
-            Сохранить карту — войти или создать аккаунт
+            Уже есть аккаунт? Войди — карта сохранится
           </a>
         )}
         {isLoggedIn && (
