@@ -36,9 +36,13 @@ cp .env.example .env
 bun install
 bun run infra:up          # Postgres + Minio + Mailpit
 bun run db:migrate
-bun run --cwd packages/db seed
-bun run dev               # web :3000 + api :3001
+bun run dev               # seeds local users, then starts web :3000 + api :3001
 ```
+
+Local logins:
+
+- Admin: `admin.test@gojolearn.ru` / `AdminTest123-`
+- Student: `student.test@gojolearn.ru` / `StudentTest123-`
 
 ## E2E tests
 

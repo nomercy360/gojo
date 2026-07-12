@@ -4,40 +4,55 @@ import { auth } from "../auth.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 
-// Standalone, manually-invoked helper for a fixed local test login. NOT part
-// of packages/db/src/migrate.ts (which runs on every prod deploy) — a
-// hardcoded credential must never be reachable from a production pipeline.
-// Run with: bun run seed:test-user
-
-const TEST_EMAIL = "test@gojo.local";
-const TEST_PASSWORD = "testpass123";
-const TEST_NICKNAME = "TestUser";
+// Local-only accounts with real Better Auth password hashes. This script is
+// run automatically before the development servers start, but is never part
+// of migrations or the production entrypoint.
+const LOCAL_USERS = [
+  {
+    email: "admin.test@gojolearn.ru",
+    password: "AdminTest123-",
+    nickname: "Админ",
+    role: "admin",
+  },
+  {
+    email: "student.test@gojolearn.ru",
+    password: "StudentTest123-",
+    nickname: "Студент",
+    role: "student",
+  },
+] as const;
 
 if (env.NODE_ENV === "production") {
   console.error("Refusing to seed a test account against a production environment.");
   process.exit(1);
 }
 
-const [existing] = await db
-  .select()
-  .from(userTable)
-  .where(eq(userTable.email, TEST_EMAIL))
-  .limit(1);
+for (const localUser of LOCAL_USERS) {
+  const [existing] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(eq(userTable.email, localUser.email))
+    .limit(1);
 
-if (existing) {
-  console.log(`Test account already exists: ${TEST_EMAIL} / ${TEST_PASSWORD}`);
-  process.exit(0);
+  if (!existing) {
+    await auth.api.signUpEmail({
+      body: {
+        email: localUser.email,
+        password: localUser.password,
+        name: localUser.nickname,
+        // biome-ignore lint/suspicious/noExplicitAny: Better Auth additional fields are dynamic
+        ...({ nickname: localUser.nickname, role: localUser.role } as any),
+      },
+    });
+    console.log(`Created local ${localUser.role}: ${localUser.email}`);
+    continue;
+  }
+
+  await db
+    .update(userTable)
+    .set({ nickname: localUser.nickname, name: localUser.nickname, role: localUser.role })
+    .where(eq(userTable.id, existing.id));
+  console.log(`Local ${localUser.role} already exists: ${localUser.email}`);
 }
 
-await auth.api.signUpEmail({
-  body: {
-    email: TEST_EMAIL,
-    password: TEST_PASSWORD,
-    name: TEST_NICKNAME,
-    // biome-ignore lint/suspicious/noExplicitAny: additional fields beyond the base schema
-    ...({ nickname: TEST_NICKNAME, role: "student" } as any),
-  },
-});
-
-console.log(`Test account created: ${TEST_EMAIL} / ${TEST_PASSWORD}`);
 process.exit(0);

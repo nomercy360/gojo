@@ -4,7 +4,7 @@
   "type": "module",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "concurrently -n web,api -c magenta,cyan \"bun run dev:web\" \"bun run dev:api\"",
+    "dev": "bun run seed:local-users && concurrently -n web,api -c magenta,cyan \"bun run dev:web\" \"bun run dev:api\"",
     "dev:web": "cd apps/web && bun run dev",
     "dev:api": "cd apps/api && bun run dev",
     "build": "cd apps/web && bun run build && cd ../api && bun run build",
@@ -14,6 +14,7 @@
     "db:generate": "cd packages/db && bun run generate",
     "db:migrate": "cd packages/db && bun run migrate",
     "db:studio": "cd packages/db && bun run studio",
+    "seed:local-users": "cd apps/api && bun run seed:local-users",
     "test:e2e": "bun run db:migrate && playwright test",
     "test:e2e:headed": "bun run db:migrate && playwright test --headed",
     "test:e2e:ui": "bun run db:migrate && playwright test --ui",

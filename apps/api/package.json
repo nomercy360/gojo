@@ -8,7 +8,7 @@
     "start": "bun --env-file=../../.env run src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "typecheck": "tsc --noEmit",
-    "seed:test-user": "bun --env-file=../../.env run src/scripts/seed-test-user.ts"
+    "seed:local-users": "bun --env-file=../../.env run src/scripts/seed-test-user.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",

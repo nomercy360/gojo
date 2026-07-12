@@ -658,6 +658,7 @@ function ResultScreen({
           email,
           contact: leadPhone,
         });
+        localStorage.setItem("gojo:pending-lead-email", email);
         setLeadSent(true);
         setLeadEmailSent(r.emailSent);
         track("quiz_lead_submitted", { level: result.level });

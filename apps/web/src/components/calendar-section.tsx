@@ -1,7 +1,7 @@
 "use client";
 
 import type { LessonDto } from "@gojo/shared";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -54,6 +54,7 @@ function buildWeekFromDates(monday: Date, isoDates: string[]) {
     return {
       label: labels[i],
       date: d.getDate(),
+      dateKey: `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`,
       hasSession: dateKeys.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
       isToday: d.toDateString() === today.toDateString(),
     };
@@ -65,6 +66,8 @@ export function CalendarSection() {
   const [loading, setLoading] = useState(true);
   const [hidden, setHidden] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setHidden(localStorage.getItem("gojo:calendar-hidden") === "1");
@@ -99,7 +102,13 @@ export function CalendarSection() {
   }, [weekOffset]);
 
   const monday = getWeekStart(weekOffset);
-  const sessions = bookedLessons.map(formatLesson);
+  const visibleLessons = selectedDate
+    ? bookedLessons.filter((lesson) => {
+        const date = new Date(lesson.startsAt);
+        return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}` === selectedDate;
+      })
+    : bookedLessons;
+  const sessions = visibleLessons.map(formatLesson);
   const week = buildWeekFromDates(
     monday,
     bookedLessons.map((lesson) => lesson.startsAt),
@@ -107,6 +116,24 @@ export function CalendarSection() {
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   const weekLabel = `${monday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
+
+  const moveWeek = (offset: number) => {
+    setSelectedDate(null);
+    setWeekOffset((current) => current + offset);
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    event.preventDefault();
+    moveWeek(deltaX < 0 ? 1 : -1);
+  };
 
   if (hidden) {
     return (
@@ -159,7 +186,14 @@ export function CalendarSection() {
         </button>
       </div>
 
-      <div className="p-7">
+      <div
+        className="p-7"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          touchStart.current = { x: touch.clientX, y: touch.clientY };
+        }}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Header */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div
@@ -172,14 +206,17 @@ export function CalendarSection() {
             <button
               type="button"
               aria-label="Предыдущая неделя"
-              onClick={() => setWeekOffset((offset) => offset - 1)}
+              onClick={() => moveWeek(-1)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 text-[16px] text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
             >
               ←
             </button>
             <button
               type="button"
-              onClick={() => setWeekOffset(0)}
+              onClick={() => {
+                setSelectedDate(null);
+                setWeekOffset(0);
+              }}
               className="g-body min-w-36 rounded-lg px-3 py-1.5 text-[12px] font-bold text-gojo-ink-muted transition-colors hover:text-gojo-orange"
             >
               {weekOffset === 0 ? "Эта неделя" : weekLabel}
@@ -187,7 +224,7 @@ export function CalendarSection() {
             <button
               type="button"
               aria-label="Следующая неделя"
-              onClick={() => setWeekOffset((offset) => offset + 1)}
+              onClick={() => moveWeek(1)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 text-[16px] text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
             >
               →
@@ -198,7 +235,16 @@ export function CalendarSection() {
         {/* Week strip */}
         <div className="mb-5 grid grid-cols-7 gap-1.5">
           {week.map((d) => (
-            <div key={`${d.label}-${d.date}`} className="flex flex-col items-center gap-1">
+            <button
+              key={d.dateKey}
+              type="button"
+              aria-label={`${d.label}, ${d.date}`}
+              aria-pressed={selectedDate === d.dateKey}
+              onClick={() =>
+                setSelectedDate((current) => (current === d.dateKey ? null : d.dateKey))
+              }
+              className="flex flex-col items-center gap-1 rounded-xl py-1 transition-colors hover:bg-gojo-paper"
+            >
               <div
                 className="g-mono text-[10px] font-bold uppercase tracking-wider"
                 style={{ color: "#a0a0a0" }}
@@ -208,9 +254,21 @@ export function CalendarSection() {
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-xl text-[13px] font-bold"
                 style={{
-                  background: d.hasSession ? "#e8420a" : d.isToday ? "#f8f4ec" : "transparent",
-                  color: d.hasSession ? "white" : d.isToday ? "#e8420a" : "#252525",
-                  outline: d.isToday ? "2px solid #e8420a" : "none",
+                  background:
+                    selectedDate === d.dateKey
+                      ? "#252525"
+                      : d.hasSession
+                        ? "#e8420a"
+                        : d.isToday
+                          ? "#f8f4ec"
+                          : "transparent",
+                  color:
+                    selectedDate === d.dateKey || d.hasSession
+                      ? "white"
+                      : d.isToday
+                        ? "#e8420a"
+                        : "#252525",
+                  outline: d.isToday && selectedDate !== d.dateKey ? "2px solid #e8420a" : "none",
                   outlineOffset: 2,
                 }}
               >
@@ -222,7 +280,7 @@ export function CalendarSection() {
                   style={{ background: "#e8420a", opacity: 0.5 }}
                 />
               )}
-            </div>
+            </button>
           ))}
         </div>
 
@@ -245,7 +303,7 @@ export function CalendarSection() {
               予
             </div>
             <p className="g-body text-[13px]" style={{ color: "#a0a0a0" }}>
-              На этой неделе занятий нет
+              {selectedDate ? "На выбранный день занятий нет" : "На этой неделе занятий нет"}
             </p>
           </div>
         )}

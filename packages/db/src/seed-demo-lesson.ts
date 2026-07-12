@@ -1,7 +1,7 @@
 /**
  * One-shot: creates a demo completed lesson for exploration.
- * Teacher: sensei@gojo.local (Tanaka-sensei)
- * Student: maxim@email.com (booked, flashcards materialised)
+ * Teacher: admin.test@gojolearn.ru
+ * Student: student.test@gojolearn.ru (booked, flashcards materialised)
  *
  * Safe to re-run — skips if a lesson with the same title already exists.
  */
@@ -20,14 +20,14 @@ async function run() {
   const [student] = await db
     .select()
     .from(schema.user)
-    .where(eq(schema.user.email, "maxim@email.com"));
-  if (!student) throw new Error("student maxim@email.com not found");
+    .where(eq(schema.user.email, "student.test@gojolearn.ru"));
+  if (!student) throw new Error("student student.test@gojolearn.ru not found");
 
   const [teacher] = await db
     .select()
     .from(schema.user)
-    .where(eq(schema.user.email, "sensei@gojo.local"));
-  if (!teacher) throw new Error("teacher sensei@gojo.local not found");
+    .where(eq(schema.user.email, "admin.test@gojolearn.ru"));
+  if (!teacher) throw new Error("teacher admin.test@gojolearn.ru not found");
 
   const [existing] = await db
     .select()

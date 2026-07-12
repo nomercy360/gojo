@@ -1,4 +1,4 @@
-import { bookings, leads, studentAccess } from "@gojo/db";
+import { bookings, leads, studentAccess, user as userTable } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
 import { and, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
@@ -39,7 +39,23 @@ leadsRoute.post("/link-current", requireAuth, async (c) => {
     .update(leads)
     .set({ userId: user.id, updatedAt: new Date() })
     .where(and(eq(leads.email, user.email), isNull(leads.userId)))
-    .returning({ id: leads.id, trialLessonId: leads.trialLessonId });
+    .returning({
+      id: leads.id,
+      kind: leads.kind,
+      level: leads.level,
+      trialLessonId: leads.trialLessonId,
+      createdAt: leads.createdAt,
+    });
+
+  const latestQuizLead = linked
+    .filter((lead) => lead.kind === "quiz" && lead.level)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  if (latestQuizLead?.level) {
+    await db
+      .update(userTable)
+      .set({ quizLevel: latestQuizLead.level, updatedAt: new Date() })
+      .where(eq(userTable.id, user.id));
+  }
 
   for (const lead of linked) {
     if (!lead.trialLessonId) continue;

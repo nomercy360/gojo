@@ -79,6 +79,8 @@ export default async function DashboardPage() {
     apiStats.currentStreak > 0
       ? `${apiStats.currentStreak} ${pluralizeDays(apiStats.currentStreak)} подряд`
       : "начни серию";
+  const hasAssessedLevel = Boolean(user.jlptLevel || user.quizLevel);
+  const hasLessonHistory = apiStats.totalBookings > 0;
 
   return (
     <main className="min-h-screen bg-gojo-paper">
@@ -287,7 +289,7 @@ export default async function DashboardPage() {
                   {user.jlptLevel}
                 </div>
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  {LEVEL_BLURB[user.jlptLevel] ?? "Уровень подтверждён преподавателем"}
+                  Подтверждено преподавателем · {LEVEL_BLURB[user.jlptLevel] ?? "уровень определён"}
                 </p>
               </>
             ) : user.quizLevel ? (
@@ -296,8 +298,7 @@ export default async function DashboardPage() {
                   {user.quizLevel === "start" ? "с нуля" : `~${user.quizLevel}`}
                 </div>
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  Предварительная оценка по квизу. Финальный уровень выставит преподаватель на
-                  бесплатной консультации.
+                  Предварительная оценка по квизу. Преподаватель уточнит её на первом уроке.
                 </p>
               </>
             ) : (
@@ -306,7 +307,9 @@ export default async function DashboardPage() {
                   Пока не определён
                 </div>
                 <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  Уровень выставит преподаватель на бесплатной консультации.
+                  {hasLessonHistory
+                    ? "Уровень ещё не выставлен. Уточни его у преподавателя после занятия."
+                    : "Пройди квиз или запишись на бесплатную консультацию, чтобы определить уровень."}
                 </p>
               </>
             )}
@@ -317,12 +320,25 @@ export default async function DashboardPage() {
                   Индивидуальный план
                 </div>
                 <div className="g-body text-[12px] text-gojo-ink-muted">
-                  Программа подобрана под ваши цели и темп обучения
+                  {hasAssessedLevel
+                    ? "Программа подобрана под ваши цели и темп обучения"
+                    : "Сначала определим уровень и подходящий план обучения"}
                 </div>
               </div>
-              <Link href="/payments" className="g-btn-primary shrink-0 text-[13px]">
-                Оплата
-              </Link>
+              {hasAssessedLevel ? (
+                <Link href="/payments" className="g-btn-primary shrink-0 text-[13px]">
+                  Оплата
+                </Link>
+              ) : (
+                <a
+                  href="https://t.me/gojoedu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="g-btn-primary shrink-0 text-[13px]"
+                >
+                  {hasLessonHistory ? "Уточнить уровень" : "Консультация"}
+                </a>
+              )}
             </div>
           </div>
         </div>
