@@ -1,5 +1,6 @@
 "use client";
 
+import { BookingModal } from "@/components/booking-modal";
 import { authClient } from "@/lib/auth-client";
 import { homePathForUser } from "@/lib/roles";
 import Link from "next/link";
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,13 +67,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <Field label="Email" name="email" type="email" placeholder="you@example.com" required />
-          <Field
-            label="Пароль"
-            name="password"
-            type="password"
-            placeholder="Пароль"
-            required
-          />
+          <Field label="Пароль" name="password" type="password" placeholder="Пароль" required />
 
           {error ? (
             <div className="rounded-md border border-gojo-error/40 bg-gojo-error-soft px-4 py-3 text-sm font-bold text-gojo-error">
@@ -86,13 +82,26 @@ export default function LoginPage() {
 
         <p className="mt-6 text-[13px] text-gojo-ink-muted">
           <Link href="/forgot-password" className="font-bold text-gojo-orange hover:underline">
-            Забыли пароль или впервые здесь?
+            Забыли пароль или ещё не устанавливали его?
           </Link>
         </p>
-        <p className="mt-2 text-[11px] text-gojo-ink-muted">
-          Аккаунт создаётся администратором после консультации.
-        </p>
+
+        <div className="mt-10 rounded-xl border border-black/5 bg-gojo-surface p-5">
+          <div className="text-[14px] font-bold">Впервые здесь?</div>
+          <p className="mt-1 text-[12px] leading-relaxed text-gojo-ink-muted">
+            Аккаунт создаёт администратор после бесплатной консультации — затем на почту придёт
+            письмо со ссылкой для установки пароля.
+          </p>
+          <button
+            type="button"
+            onClick={() => setBookingOpen(true)}
+            className="g-btn-primary mt-4 w-full text-sm"
+          >
+            Записаться на бесплатную консультацию
+          </button>
+        </div>
       </div>
+      <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="login" />
     </main>
   );
 }
