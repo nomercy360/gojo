@@ -219,6 +219,11 @@ h4 {
   outline: 2px solid var(--color-gojo-orange-soft);
   outline-offset: 2px;
 }
+/* Inside the booking modal the landing reset (.landing-root *) zeroes the
+ * wrapper padding with equal specificity — restore it, matching .form-input. */
+.landing-root .gojo-phone-field {
+  padding: 0 14px;
+}
 .gojo-phone-field .PhoneInputCountry {
   gap: 6px;
 }
