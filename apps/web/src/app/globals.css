@@ -2212,6 +2212,17 @@ html:has(.landing-root) {
 .landing-root .bm-alt-link:hover {
   color: var(--ink);
 }
+.landing-root .bm-telegram-login {
+  margin-top: 0;
+  background: #229ed9;
+}
+.landing-root .bm-telegram-login:hover {
+  background: #168ac2;
+}
+.landing-root .bm-telegram-login:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
 .landing-root .form-success {
   display: none;
   text-align: center;

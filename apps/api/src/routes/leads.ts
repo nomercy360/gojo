@@ -7,6 +7,8 @@ import { requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { notifyLead } from "../lead-notifications.ts";
 import { sendEmail } from "../mailer.ts";
+import { sendTelegramMessage } from "../reminders.ts";
+import { finishTelegramLogin, startTelegramLogin, verifyTelegramProof } from "../telegram-login.ts";
 
 // Empty strings from the web form mean "not provided" — collapse them so the
 // per-channel validators only run on real input and `.optional()` holds.
@@ -57,12 +59,13 @@ const leadInput = z
     // Contact channels in priority order: Telegram primary, email optional
     // durable fallback, phone opt-in callback. At least one must be present.
     telegram: telegramField,
+    telegramProof: z.string().max(4096).optional(),
     email: emailField,
     phone: phoneField,
     level: z.string().trim().max(200).optional(),
     goal: z.string().trim().max(500).optional(),
   })
-  .refine((d) => Boolean(d.telegram || d.email || d.phone), {
+  .refine((d) => Boolean(d.telegramProof || d.telegram || d.email || d.phone), {
     message: "Укажи хотя бы один способ связи",
     path: ["telegram"],
   });
@@ -73,20 +76,35 @@ type LeadInput = z.infer<typeof leadInput>;
 // if it attracts spam.
 export const leadsRoute = new Hono();
 
+leadsRoute.get("/telegram/start", startTelegramLogin);
+leadsRoute.get("/telegram/callback", finishTelegramLogin);
+
 leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
-  const data = c.req.valid("json");
+  const input = c.req.valid("json");
+  const telegramIdentity = input.telegramProof
+    ? await verifyTelegramProof(input.telegramProof)
+    : undefined;
+  const { telegramProof: _proof, ...plainData } = input;
+  const data = {
+    ...plainData,
+    telegram: telegramIdentity?.username ?? plainData.telegram,
+    telegramId: telegramIdentity?.id,
+  };
 
   // Canonical identity for the advisory lock, in channel priority. The `!`s are
   // safe: leadInput guarantees at least one of telegram/email/phone.
-  const lockKey = data.telegram
-    ? `tg:${data.telegram}`
-    : data.email
-      ? `em:${data.email}`
-      : `ph:${data.phone!}`;
+  const lockKey = data.telegramId
+    ? `tgid:${data.telegramId}`
+    : data.telegram
+      ? `tg:${data.telegram}`
+      : data.email
+        ? `em:${data.email}`
+        : `ph:${data.phone!}`;
   // A lead matches an existing one if it shares ANY contact channel.
   const idMatch = or(
     ...([
       data.telegram ? eq(leads.telegram, data.telegram) : undefined,
+      data.telegramId ? eq(leads.telegramId, data.telegramId) : undefined,
       data.email ? eq(leads.email, data.email) : undefined,
       data.phone ? eq(leads.phone, data.phone) : undefined,
     ].filter(Boolean) as SQL[]),
@@ -136,6 +154,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
         .set({
           name: canonicalName,
           telegram: data.telegram ?? undefined,
+          telegramId: data.telegramId ?? undefined,
           email: data.email ?? undefined,
           phone: data.phone ?? undefined,
           goal: data.goal ?? undefined,
@@ -167,6 +186,18 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
   }
 
   void notifyLead({ ...data, name: result.canonicalName });
+
+  // If the lead signed in with Telegram, the bot_access scope lets us DM them
+  // directly (chat_id === their Telegram user id) even before they /start the
+  // bot. Best-effort: a 403 (scope declined / bot blocked) is logged, not fatal.
+  if (data.kind === "booking" && data.telegramId) {
+    void sendTelegramMessage(
+      data.telegramId,
+      `${result.canonicalName}, спасибо за заявку в Gojo! 🎌\n\nНапишем здесь, в Telegram, чтобы договориться о времени бесплатного первого урока — 25 минут онлайн, познакомимся и определим уровень. Без продаж.`,
+      "lead.telegram_welcome",
+    ).catch((error) => console.error("lead telegram welcome failed:", error));
+  }
+
   let emailSent = false;
   if (data.kind === "booking" && data.email) {
     try {

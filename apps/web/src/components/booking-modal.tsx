@@ -1,11 +1,17 @@
 "use client";
 
 import { track } from "@/lib/analytics";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
+
+type TelegramLoginPayload = {
+  proof?: string;
+  user?: { id: number; name: string; username?: string; picture?: string };
+  error?: string;
+};
 
 const readValue = (id: string) =>
   (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
@@ -35,6 +41,7 @@ export function BookingModal({
   // for the minority without Telegram; phone is a further opt-in "call me".
   const [showAlt, setShowAlt] = useState(false);
   const [wantsCall, setWantsCall] = useState(false);
+  const [telegramLoading, setTelegramLoading] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -48,6 +55,7 @@ export function BookingModal({
       track("booking_open", { source });
       setShowAlt(false);
       setWantsCall(false);
+      setTelegramLoading(false);
     }
   }, [open, source]);
 
@@ -60,50 +68,85 @@ export function BookingModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const submitForm = async () => {
-    const name = readValue("bm-name");
-    const telegram = readValue("bm-telegram");
-    const email = readValue("bm-email");
-    const phone = wantsCall ? readValue("bm-phone") : "";
-    if (!name) {
-      toast.error("Пожалуйста, заполни имя");
-      return;
-    }
-    if (!telegram && !email && !phone) {
-      toast.error("Оставь Telegram, email или телефон — куда написать?");
-      return;
-    }
-    if (wantsCall && !phone) {
-      toast.error("Укажи номер для звонка");
-      return;
-    }
-    try {
-      const res = await fetch(`${API_URL}/leads`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "booking",
-          name,
-          telegram: telegram || undefined,
-          email: email || undefined,
-          phone: phone || undefined,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as {
-        alreadyExists?: boolean;
-        emailSent?: boolean;
-        reason?: string;
-      };
-      // Only email links a guest lead to an account later (leads/link-current).
-      if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
-      setAlreadySubmitted(Boolean(data.alreadyExists));
-      setSubmissionReason(data.reason);
-      setConfirmationEmailSent(Boolean(email) && data.emailSent !== false);
-      track("lead_submitted", { source });
-      setSubmitted(true);
-    } catch {
-      toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
+  const submitForm = useCallback(
+    async (telegram?: { proof: string; name: string }) => {
+      const name = readValue("bm-name") || telegram?.name || "";
+      const email = readValue("bm-email");
+      const phone = wantsCall ? readValue("bm-phone") : "";
+      if (!name) {
+        toast.error("Пожалуйста, заполни имя");
+        return;
+      }
+      if (!telegram?.proof && !email && !phone) {
+        toast.error("Оставь Telegram, email или телефон — куда написать?");
+        return;
+      }
+      if (wantsCall && !phone) {
+        toast.error("Укажи номер для звонка");
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/leads`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "booking",
+            name,
+            telegramProof: telegram?.proof,
+            email: email || undefined,
+            phone: phone || undefined,
+          }),
+        });
+        if (!res.ok) throw new Error();
+        const data = (await res.json()) as {
+          alreadyExists?: boolean;
+          emailSent?: boolean;
+          reason?: string;
+        };
+        // Only email links a guest lead to an account later (leads/link-current).
+        if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
+        setAlreadySubmitted(Boolean(data.alreadyExists));
+        setSubmissionReason(data.reason);
+        setConfirmationEmailSent(Boolean(email) && data.emailSent !== false);
+        track("lead_submitted", { source });
+        setSubmitted(true);
+      } catch {
+        toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
+      }
+    },
+    [source, wantsCall],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const apiOrigin = new URL(API_URL, window.location.href).origin;
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== apiOrigin || event.data?.type !== "gojo:telegram-login") return;
+      setTelegramLoading(false);
+      const payload = event.data.payload as TelegramLoginPayload;
+      if (!payload.proof || !payload.user) {
+        console.error("Telegram Login failed:", payload.error);
+        toast.error(`Telegram: ${payload.error ?? "login_failed"}`);
+        return;
+      }
+      const nameInput = document.getElementById("bm-name") as HTMLInputElement | null;
+      if (nameInput && !nameInput.value.trim()) nameInput.value = payload.user.name;
+      void submitForm({ proof: payload.proof, name: payload.user.name });
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [open, submitForm]);
+
+  const openTelegramLogin = () => {
+    setTelegramLoading(true);
+    const popup = window.open(
+      `${API_URL}/leads/telegram/start`,
+      "gojo-telegram-login",
+      "popup=yes,width=550,height=650",
+    );
+    if (!popup) {
+      setTelegramLoading(false);
+      toast.error("Разреши всплывающие окна, чтобы войти через Telegram.");
     }
   };
 
@@ -155,19 +198,17 @@ export function BookingModal({
                 />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="bm-telegram">
-                  Telegram
-                </label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="@username"
-                  id="bm-telegram"
-                  autoComplete="off"
-                  autoCapitalize="off"
-                />
+                <span className="form-label">Telegram</span>
+                <button
+                  className="form-submit bm-telegram-login"
+                  type="button"
+                  disabled={telegramLoading}
+                  onClick={openTelegramLogin}
+                >
+                  {telegramLoading ? "Открываем Telegram…" : "Войти через Telegram"}
+                </button>
                 <p className="form-note" style={{ marginTop: "6px", textAlign: "left" }}>
-                  Напишем сюда, чтобы договориться о времени — так быстрее всего.
+                  Подтверди вход — и мы сможем написать, чтобы договориться о времени.
                 </p>
               </div>
               {showAlt ? (
@@ -222,14 +263,16 @@ export function BookingModal({
                   Нет Telegram? Другой способ связи
                 </button>
               )}
-              <button
-                type="button"
-                className="form-submit"
-                style={{ marginTop: "18px" }}
-                onClick={submitForm}
-              >
-                Продолжить в Telegram
-              </button>
+              {showAlt ? (
+                <button
+                  type="button"
+                  className="form-submit"
+                  style={{ marginTop: "18px" }}
+                  onClick={() => void submitForm()}
+                >
+                  Отправить заявку
+                </button>
+              ) : null}
               <p className="form-note">
                 Нажимая кнопку, ты соглашаешься с политикой конфиденциальности. Никакого спама —
                 только информация о записи.

@@ -1,0 +1,1 @@
+ALTER TABLE "leads" ADD COLUMN "telegram_id" bigint;

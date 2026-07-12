@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
 import { lessons } from "./lessons.ts";
 
@@ -18,6 +18,9 @@ export const leads = pgTable("leads", {
   // opt-in "call me" rescue. At least one is present; a lead can carry several.
   // `telegram` is stored as a bare lowercase @-handle (no leading @).
   telegram: text(),
+  // Verified stable identity returned by Telegram Login. Usernames are
+  // optional and mutable, so deduplication prefers this numeric ID.
+  telegramId: bigint({ mode: "number" }),
   // Email is optional and normalized to lowercase. Still the dedup/link key
   // whenever it's present, and the channel the quiz result email uses.
   email: text(),

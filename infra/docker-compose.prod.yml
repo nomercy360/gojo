@@ -90,6 +90,9 @@ services:
       # (never committed). If unset, leads still save — the ping is skipped.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_LEAD_CHAT_ID: ${TELEGRAM_LEAD_CHAT_ID:-}
+      TELEGRAM_LOGIN_CLIENT_ID: ${TELEGRAM_LOGIN_CLIENT_ID:-8280971819}
+      TELEGRAM_LOGIN_CLIENT_SECRET: ${TELEGRAM_LOGIN_CLIENT_SECRET:-}
+      TELEGRAM_LOGIN_REDIRECT_URI: ${TELEGRAM_LOGIN_REDIRECT_URI:-https://gojolearn.ru/api/leads/telegram/callback}
       # Transactional email (verification, password reset) — SMTP, provider-
       # agnostic. Values live in .env.prod (never committed). Unset SMTP_HOST
       # falls back to localhost:1025, which doesn't exist in prod, so mail
