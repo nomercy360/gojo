@@ -55,8 +55,14 @@ export default async function PaymentsPage({
         </div>
         <h1 className="mt-2 font-serif text-[32px] font-bold">Доступ к занятиям</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gojo-ink-muted">
-          Оплата проходит через ЮKassa. После успешного платежа доступ обновится автоматически по
-          webhook; если ты уже вернулся с оплаты, обнови страницу через несколько секунд.
+          Оплата проходит через ЮKassa. Сейчас это разовый платёж без автоматического продления и
+          повторных списаний. После успешного платежа доступ обновится автоматически; если ты уже
+          вернулся с оплаты, обнови страницу через несколько секунд. Сведения об обработке данных —
+          в{" "}
+          <Link href="/privacy" className="font-bold text-gojo-orange underline">
+            Политике
+          </Link>
+          .
         </p>
 
         {error ? (

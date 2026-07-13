@@ -15,8 +15,14 @@ export default function LoginPage() {
   const [magicPending, setMagicPending] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   async function handleTelegram() {
+    if (!privacyAccepted) {
+      setError("Подтверди согласие на обработку персональных данных.");
+      return;
+    }
+    localStorage.setItem("gojo:pending-personal-data-consent", "2026-07-13");
     setError(null);
     setTelegramPending(true);
     try {
@@ -39,6 +45,11 @@ export default function LoginPage() {
 
   async function handleMagicLink(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!privacyAccepted) {
+      setError("Подтверди согласие на обработку персональных данных.");
+      return;
+    }
+    localStorage.setItem("gojo:pending-personal-data-consent", "2026-07-13");
     setError(null);
     setMagicPending(true);
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
@@ -114,6 +125,36 @@ export default function LoginPage() {
             {error}
           </div>
         ) : null}
+
+        <label className="mt-5 flex items-start gap-2 text-[12px] leading-relaxed text-gojo-ink-muted">
+          <input
+            type="checkbox"
+            checked={privacyAccepted}
+            onChange={(event) => setPrivacyAccepted(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            Я даю отдельное{" "}
+            <a
+              className="font-bold text-gojo-orange underline"
+              href="/personal-data-consent"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              согласие на обработку персональных данных
+            </a>{" "}
+            и ознакомился(-ась) с{" "}
+            <a
+              className="font-bold text-gojo-orange underline"
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Политикой
+            </a>
+            . Первый вход создаёт аккаунт.
+          </span>
+        </label>
 
         <div className="mt-10 rounded-xl border border-black/5 bg-gojo-surface p-5">
           <div className="text-[14px] font-bold">Впервые здесь?</div>

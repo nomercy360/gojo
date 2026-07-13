@@ -4,6 +4,7 @@ import type { FunnelEventName } from "@gojo/shared";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const ANON_KEY = "gojo:anon-id";
+const CONSENT_KEY = "gojo:analytics-consent";
 
 /**
  * Stable per-browser id so guest funnel events chain into one journey and
@@ -12,6 +13,7 @@ const ANON_KEY = "gojo:anon-id";
  */
 export function getAnonymousId(): string | null {
   try {
+    if (localStorage.getItem(CONSENT_KEY) !== "accepted") return null;
     let id = localStorage.getItem(ANON_KEY);
     if (!id) {
       id = crypto.randomUUID();

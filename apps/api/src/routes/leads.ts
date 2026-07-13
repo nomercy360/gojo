@@ -52,6 +52,8 @@ const emailField = z.preprocess(
   z.string().trim().toLowerCase().email().max(200).optional(),
 );
 
+const CONSENT_VERSION = "2026-07-13";
+
 const leadInput = z
   .object({
     kind: z.enum(["booking", "guide"]).default("booking"),
@@ -64,6 +66,9 @@ const leadInput = z
     phone: phoneField,
     level: z.string().trim().max(200).optional(),
     goal: z.string().trim().max(500).optional(),
+    personalDataConsent: z.literal(true),
+    consentVersion: z.literal(CONSENT_VERSION),
+    marketingConsent: z.boolean().optional().default(false),
   })
   .refine((d) => Boolean(d.telegramProof || d.telegram || d.email || d.phone), {
     message: "Укажи хотя бы один способ связи",
@@ -85,6 +90,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
     ? await verifyTelegramProof(input.telegramProof)
     : undefined;
   const { telegramProof: _proof, ...plainData } = input;
+  const consentedAt = new Date();
   const data = {
     ...plainData,
     telegram: telegramIdentity?.username ?? plainData.telegram,
@@ -158,6 +164,10 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
           email: data.email ?? undefined,
           phone: data.phone ?? undefined,
           goal: data.goal ?? undefined,
+          personalDataConsentAt: consentedAt,
+          personalDataConsentVersion: data.consentVersion,
+          marketingConsentAt: data.marketingConsent ? consentedAt : undefined,
+          marketingConsentVersion: data.marketingConsent ? data.consentVersion : undefined,
           userId: existingLead.userId ?? existingUser?.id ?? null,
           updatedAt: new Date(),
         })
@@ -176,7 +186,21 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
 
     const [lead] = await tx
       .insert(leads)
-      .values({ ...data, name: canonicalName, userId: existingUser?.id ?? null })
+      .values({
+        kind: data.kind,
+        name: canonicalName,
+        telegram: data.telegram,
+        telegramId: data.telegramId,
+        email: data.email,
+        phone: data.phone,
+        level: data.level,
+        goal: data.goal,
+        userId: existingUser?.id ?? null,
+        personalDataConsentAt: consentedAt,
+        personalDataConsentVersion: data.consentVersion,
+        marketingConsentAt: data.marketingConsent ? consentedAt : null,
+        marketingConsentVersion: data.marketingConsent ? data.consentVersion : null,
+      })
       .returning({ id: leads.id });
     return { id: lead?.id, alreadyExists: false, reason: undefined, canonicalName };
   });

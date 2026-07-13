@@ -14,6 +14,7 @@ test.describe("profile", () => {
 
   test("student updates profile through the UI", async ({ page }) => {
     await page.goto("/profile");
+    await page.getByRole("button", { name: "Только необходимые" }).click();
     await page.getByLabel("Имя", { exact: true }).fill("Hanako");
     await page.getByLabel("Фамилия", { exact: true }).fill("Yamada");
     await page.getByLabel("Никнейм").fill("Hana E2E");

@@ -96,6 +96,8 @@ onboardingRoute.post("/quiz/lead", zValidator("json", quizLeadInput), async (c) 
       goal: "Получить подробный результат квиза и план обучения",
       notes,
       userId: existingUser?.id ?? null,
+      personalDataConsentAt: new Date(),
+      personalDataConsentVersion: data.consentVersion,
       updatedAt: new Date(),
     };
     if (existingLead) {

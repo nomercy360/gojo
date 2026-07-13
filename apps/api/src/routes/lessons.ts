@@ -11,8 +11,10 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
+import { env } from "../env.ts";
 import { AUTO_COMPLETE_AFTER_END_MS } from "../lib/lesson-state.ts";
-import { sendTelegramMessage } from "../reminders.ts";
+import { sendEmail } from "../mailer.ts";
+import { logNotification, sendTelegramMessage } from "../reminders.ts";
 import { toLessonDto } from "./mappers.ts";
 
 /**
@@ -276,40 +278,130 @@ lessonsRoute.get("/:id", async (c) => {
   );
 });
 
-/**
- * Notify a student (over Telegram) that they've been scheduled for a lesson.
- * Called from the teacher-assignment path; students no longer self-book.
- */
-export async function sendBookingConfirmation(
-  bookingId: string,
-  userId: string,
+type LessonConfirmationRecipient = {
+  bookingId?: string;
+  userId?: string;
+  email?: string | null;
+  telegramId?: number | null;
+};
+
+function isDeliverableEmail(email: string | null | undefined): email is string {
+  return Boolean(email && !email.toLowerCase().endsWith("@telegram.gojo"));
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+/** Notify every available channel when a teacher schedules a student. */
+export async function sendLessonConfirmation(
+  recipient: LessonConfirmationRecipient,
   title: string,
   startsAt: Date,
 ) {
-  const [student] = await db
-    .select({ telegramId: userTable.telegramId })
-    .from(userTable)
-    .where(eq(userTable.id, userId))
-    .limit(1);
-  if (student?.telegramId == null) return;
-  try {
-    const when = startsAt.toLocaleString("ru-RU", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    await sendTelegramMessage(
-      student.telegramId,
-      `✅ Ты записан на урок «${title}» — ${when}`,
+  const [student] = recipient.userId
+    ? await db
+        .select({ email: userTable.email, telegramId: userTable.telegramId })
+        .from(userTable)
+        .where(eq(userTable.id, recipient.userId))
+        .limit(1)
+    : [];
+  const email = recipient.email ?? student?.email;
+  const telegramId = recipient.telegramId ?? student?.telegramId;
+  const when = startsAt.toLocaleString("ru-RU", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  let delivered = false;
+
+  if (telegramId != null) {
+    try {
+      const sent = await sendTelegramMessage(
+        telegramId,
+        `✅ Ты записан на урок «${title}» — ${when}`,
+        "lesson.booking_confirmation",
+        recipient.userId,
+      );
+      delivered ||= sent;
+      if (!sent) {
+        await logNotification(
+          "lesson.booking_confirmation",
+          "telegram",
+          String(telegramId),
+          "skipped",
+          recipient.userId,
+          "telegram_not_configured",
+        );
+      }
+    } catch (err) {
+      console.error("lesson Telegram confirmation failed:", err);
+    }
+  } else if (recipient.userId) {
+    await logNotification(
       "lesson.booking_confirmation",
-      userId,
+      "telegram",
+      recipient.userId,
+      "skipped",
+      recipient.userId,
+      "telegram_id_missing",
     );
-    await db
-      .update(bookings)
-      .set({ bookingConfirmedAt: new Date() })
-      .where(eq(bookings.id, bookingId));
-  } catch (err) {
-    console.error(`booking confirmation failed for ${bookingId}:`, err);
+  }
+
+  if (isDeliverableEmail(email)) {
+    try {
+      const safeTitle = escapeHtml(title);
+      const subjectTitle = title.replace(/[\r\n]+/g, " ");
+      await sendEmail(
+        email,
+        `Урок «${subjectTitle}» запланирован`,
+        `<p>Ты записан на урок <strong>«${safeTitle}»</strong>.</p><p>Начало: <strong>${escapeHtml(when)}</strong>.</p><p><a href="${env.WEB_ORIGIN}/lessons">Открыть расписание</a></p>`,
+      );
+      await logNotification(
+        "lesson.booking_confirmation",
+        "email",
+        email,
+        "sent",
+        recipient.userId,
+      );
+      delivered = true;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      await logNotification(
+        "lesson.booking_confirmation",
+        "email",
+        email,
+        "failed",
+        recipient.userId,
+        error,
+      );
+      console.error("lesson email confirmation failed:", err);
+    }
+  } else if (recipient.userId) {
+    await logNotification(
+      "lesson.booking_confirmation",
+      "email",
+      recipient.userId,
+      "skipped",
+      recipient.userId,
+      "email_missing",
+    );
+  }
+
+  if (delivered && recipient.bookingId) {
+    try {
+      await db
+        .update(bookings)
+        .set({ bookingConfirmedAt: new Date() })
+        .where(eq(bookings.id, recipient.bookingId));
+    } catch (err) {
+      console.error(`failed to mark booking ${recipient.bookingId} as confirmed:`, err);
+    }
   }
 }

@@ -5,11 +5,25 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BookingModal } from "./booking-modal";
 
-const PHRASES = [
-  "смотреть мангу и аниме в оригинале.",
-  "приобщиться к культуре Японии.",
-  "учиться и жить в Японии.",
-];
+type HeroKanaOption = "shi" | "su" | "se" | "chi";
+
+const HERO_KANA_QUESTIONS = [
+  { kana: "す", correct: "su", options: ["shi", "su", "se"] },
+  { kana: "し", correct: "shi", options: ["su", "shi", "chi"] },
+] as const satisfies ReadonlyArray<{
+  kana: string;
+  correct: HeroKanaOption;
+  options: readonly HeroKanaOption[];
+}>;
+
+function shuffleHeroKanaOptions(options: readonly HeroKanaOption[]) {
+  const shuffled = [...options];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapWith = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapWith]] = [shuffled[swapWith], shuffled[index]];
+  }
+  return shuffled;
+}
 
 const REVIEWS = [
   {
@@ -41,68 +55,33 @@ const REVIEWS = [
 const REVIEW_LOOP = [...REVIEWS, ...REVIEWS];
 const REVIEW_STAR_KEYS = ["star-1", "star-2", "star-3", "star-4", "star-5"];
 
-/**
- * Hero typewriter. Owns its own state so per-keystroke updates don't re-render
- * the whole landing tree. Calls onAdvance(index) when it rolls to a new phrase
- * so the parent can sync the hero triptych.
- */
-function CyclingWord({ onAdvance }: { onAdvance: (index: number) => void }) {
-  const [text, setText] = useState(PHRASES[0]);
-  useEffect(() => {
-    let current = 0;
-    let charIndex = PHRASES[0].length;
-    let deleting = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const type = () => {
-      const phrase = PHRASES[current];
-      if (!deleting) {
-        charIndex += 1;
-        setText(phrase.slice(0, charIndex));
-        if (charIndex === phrase.length) {
-          timer = setTimeout(() => {
-            deleting = true;
-            type();
-          }, 2600);
-          return;
-        }
-        timer = setTimeout(type, 44);
-      } else {
-        charIndex -= 1;
-        setText(phrase.slice(0, charIndex));
-        if (charIndex === 0) {
-          deleting = false;
-          current = (current + 1) % PHRASES.length;
-          onAdvance(current % 3);
-          timer = setTimeout(type, 320);
-          return;
-        }
-        timer = setTimeout(type, 24);
-      }
-    };
-    timer = setTimeout(() => {
-      deleting = true;
-      type();
-    }, 2600);
-    return () => clearTimeout(timer);
-  }, [onAdvance]);
-  return <>{text}</>;
-}
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 const readValue = (id: string) =>
   (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
 
 export function Landing() {
-  const [active, setActive] = useState(0);
+  const [heroKanaOptions, setHeroKanaOptions] = useState<HeroKanaOption[]>([
+    ...HERO_KANA_QUESTIONS[0].options,
+  ]);
+  const [heroKanaStep, setHeroKanaStep] = useState<0 | 1 | 2>(0);
+  const [heroKanaAnswer, setHeroKanaAnswer] = useState<HeroKanaOption | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideSubmitted, setGuideSubmitted] = useState(false);
+  const [guidePrivacyAccepted, setGuidePrivacyAccepted] = useState(false);
+  const [guideMarketingAccepted, setGuideMarketingAccepted] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [studentsCount, setStudentsCount] = useState(0);
   const [yearsCount, setYearsCount] = useState(0);
   const [statsDone, setStatsDone] = useState(false);
   const statsRef = useRef<HTMLElement>(null);
+
+  // Keep the answer position unpredictable without introducing a server/client
+  // hydration mismatch: the first randomization happens only after mount.
+  useEffect(() => {
+    setHeroKanaOptions(shuffleHeroKanaOptions(HERO_KANA_QUESTIONS[0].options));
+  }, []);
 
   useEffect(() => {
     const el = statsRef.current;
@@ -151,6 +130,10 @@ export function Landing() {
       toast.error("Пожалуйста, заполни имя и email");
       return;
     }
+    if (!guidePrivacyAccepted) {
+      toast.error("Подтверди согласие на обработку персональных данных");
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/leads`, {
         method: "POST",
@@ -160,6 +143,9 @@ export function Landing() {
           name: readValue("g-name"),
           email: readValue("g-email"),
           telegram: readValue("g-tg") || undefined,
+          personalDataConsent: true,
+          consentVersion: "2026-07-13",
+          marketingConsent: guideMarketingAccepted,
         }),
       });
       if (!res.ok) throw new Error();
@@ -205,15 +191,12 @@ export function Landing() {
           <a href="#mission" className="nav-link">
             Команда
           </a>
-          <a href="#faq" className="nav-link">
-            Вопросы
-          </a>
           <a href="/login" className="nav-login">
             Войти
           </a>
-          <a href="/onboarding/quiz" className="nav-cta">
-            Попробовать бесплатно
-          </a>
+          <button type="button" className="nav-cta" onClick={openModal}>
+            Бесплатный первый урок
+          </button>
           <button
             type="button"
             className="nav-burger"
@@ -235,26 +218,24 @@ export function Landing() {
           <a href="#mission" onClick={() => setNavOpen(false)}>
             Команда
           </a>
-          <a href="#faq" onClick={() => setNavOpen(false)}>
-            Вопросы
-          </a>
           <a href="/login" onClick={() => setNavOpen(false)}>
             Войти
           </a>
+          <button
+            type="button"
+            className="nav-mobile-cta"
+            onClick={() => {
+              setNavOpen(false);
+              openModal();
+            }}
+          >
+            Бесплатный первый урок
+          </button>
         </div>
       </nav>
 
       <section className="hero">
         <div className="hero-content">
-          <div className="hero-brand">
-            <img className="hero-brand-logo" src="/landing/logo.png" alt="Gojo Learn" />
-            <span className="hero-brand-divider" />
-            <span className="hero-brand-tag">
-              Школа японского языка
-              <br />
-              нового поколения
-            </span>
-          </div>
           <h1 className="hero-title">
             Японский,
             <br />
@@ -263,13 +244,8 @@ export function Landing() {
             <span className="orange">бросать.</span>
           </h1>
           <p className="hero-subtitle">
-            Для тех, кто хочет{" "}
-            <span id="cycling-text-wrap">
-              <span id="cycling-text">
-                <CyclingWord onAdvance={setActive} />
-              </span>
-              <span className="cycling-cursor">|</span>
-            </span>
+            Учишься в приложении, а живой преподаватель следит за прогрессом и не даёт сойти с
+            дистанции. Первый урок — бесплатно, 25 минут.
           </p>
           <div className="hero-btns">
             <a
@@ -280,7 +256,7 @@ export function Landing() {
                 openModal();
               }}
             >
-              Начать учить японский
+              Бесплатный первый урок
             </a>
             <a href="#how" className="btn-secondary-dark">
               Как это работает
@@ -288,27 +264,98 @@ export function Landing() {
           </div>
         </div>
 
-        <div className="hero-image-col" id="hero-images">
-          <div
-            className={`triptych-card ${active === 0 ? "active" : "dim"}`}
-            onClick={() => setActive(0)}
-          >
-            <img className="img-manga" src="/landing/manga.webp" alt="Манга и аниме в оригинале" />
-            <div className="label">Манга и аниме</div>
+        <div className="hero-product-col">
+          <div className="hero-kana-card" aria-labelledby="hero-kana-title">
+            <div className="hero-kana-head">
+              <span id="hero-kana-title">Хирагана · ряд «СА»</span>
+              <span className="hero-kana-step">
+                {heroKanaStep === 2 ? "Слово прочитано" : `Знак ${heroKanaStep + 1} из 2`}
+                <span className="hero-kana-progress" aria-hidden="true">
+                  {[0, 1].map((dot) => (
+                    <span
+                      key={dot}
+                      className={dot < heroKanaStep ? "done" : dot === heroKanaStep ? "active" : ""}
+                    />
+                  ))}
+                </span>
+              </span>
+            </div>
+
+            <div
+              className="hero-kana-symbol"
+              aria-label={heroKanaStep === 0 ? "Хирагана су" : "Хирагана ши"}
+            >
+              {heroKanaStep === 0 ? "す" : "し"}
+            </div>
+            <p className="hero-kana-prompt">Как читается этот знак?</p>
+
+            <div className="hero-kana-options">
+              {heroKanaOptions.map((option) => {
+                const selected = heroKanaAnswer === option;
+                const question = HERO_KANA_QUESTIONS[Math.min(heroKanaStep, 1)];
+                const isCorrect = option === question.correct;
+                const className = selected ? (isCorrect ? "correct" : "wrong") : "";
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    className={className}
+                    aria-pressed={selected}
+                    disabled={heroKanaStep === 2 || (heroKanaStep === 0 && heroKanaAnswer === "su")}
+                    onClick={() => {
+                      setHeroKanaAnswer(option);
+                      if (!isCorrect) return;
+                      if (heroKanaStep === 1) {
+                        setHeroKanaStep(2);
+                      }
+                    }}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              className={`hero-kana-payoff ${
+                heroKanaStep === 2 || (heroKanaStep === 0 && heroKanaAnswer === "su")
+                  ? "visible"
+                  : ""
+              }`}
+              aria-hidden={heroKanaStep !== 2 && !(heroKanaStep === 0 && heroKanaAnswer === "su")}
+              aria-live="polite"
+            >
+              {heroKanaStep === 0 ? (
+                <>
+                  <span>
+                    Верно — <strong>す</strong> читается <strong>su</strong>.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeroKanaStep(1);
+                      setHeroKanaAnswer(null);
+                      setHeroKanaOptions(shuffleHeroKanaOptions(HERO_KANA_QUESTIONS[1].options));
+                    }}
+                  >
+                    Следующий знак →
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span>
+                    <strong>すし</strong> = суши. Первое слово прочитано.
+                  </span>
+                  <Link href="/kana">Продолжить урок →</Link>
+                </>
+              )}
+            </div>
           </div>
-          <div
-            className={`triptych-card ${active === 1 ? "active" : "dim"}`}
-            onClick={() => setActive(1)}
-          >
-            <img className="img-culture" src="/landing/culture.webp" alt="Культура Японии" />
-            <div className="label">Культура</div>
-          </div>
-          <div
-            className={`triptych-card ${active === 2 ? "active" : "dim"}`}
-            onClick={() => setActive(2)}
-          >
-            <img className="img-study" src="/landing/study.webp" alt="Учёба и жизнь в Японии" />
-            <div className="label">Жить в Японии</div>
+          <div className="hero-teacher-chip">
+            <span className="hero-teacher-avatar" aria-hidden="true">
+              РР
+            </span>
+            <span>Прогресс проверяет живой преподаватель</span>
           </div>
         </div>
       </section>
@@ -1096,7 +1143,7 @@ export function Landing() {
         </div>
         <span className="footer-text">© 2026 Gojo Learn. Все права защищены.</span>
         <div className="footer-links">
-          <a href="#" className="footer-link">
+          <a href="/privacy" className="footer-link">
             Политика конфиденциальности
           </a>
           <a
@@ -1163,12 +1210,47 @@ export function Landing() {
                 </label>
                 <input className="form-input" type="text" placeholder="@username" id="g-tg" />
               </div>
+              <label
+                className="form-note"
+                style={{ display: "flex", gap: "9px", alignItems: "flex-start", textAlign: "left" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={guidePrivacyAccepted}
+                  onChange={(event) => setGuidePrivacyAccepted(event.target.checked)}
+                  style={{ marginTop: "3px", flex: "0 0 auto" }}
+                />
+                <span>
+                  Я даю отдельное{" "}
+                  <a href="/personal-data-consent" target="_blank" rel="noopener noreferrer">
+                    согласие на обработку данных
+                  </a>{" "}
+                  и ознакомился(-ась) с{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer">
+                    Политикой
+                  </a>
+                  .
+                </span>
+              </label>
+              <label
+                className="form-note"
+                style={{ display: "flex", gap: "9px", alignItems: "flex-start", textAlign: "left" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={guideMarketingAccepted}
+                  onChange={(event) => setGuideMarketingAccepted(event.target.checked)}
+                  style={{ marginTop: "3px", flex: "0 0 auto" }}
+                />
+                <span>
+                  Хочу получать новости школы и предложения по email или в Telegram (необязательно;
+                  можно отказаться в любой момент).
+                </span>
+              </label>
               <button type="button" className="form-submit" onClick={submitGuideForm}>
                 Получить гайд
               </button>
-              <p className="form-note">
-                Никакого спама. Только гайд и, если захочешь, новости о старте школы.
-              </p>
+              <p className="form-note">Без второй отметки отправим только запрошенный гайд.</p>
             </div>
           </div>
 

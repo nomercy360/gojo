@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { e2eAccounts } from "./support/auth";
 import { deleteLead } from "./support/data";
 
 const mailpitURL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
 const webURL = process.env.E2E_WEB_URL ?? "http://localhost:3000";
+const consent = { personalDataConsent: true as const, consentVersion: "2026-07-13" as const };
 
 type MailpitMessages = {
   messages: Array<{
@@ -15,7 +15,7 @@ type MailpitMessages = {
 };
 
 test("magic-link sign-in sends an email through Mailpit", async ({ request }) => {
-  const email = e2eAccounts.mutableStudent.email;
+  const email = `e2e-magic-link-${Date.now()}@gojo.local`;
   const before = await mailCount(request, email);
 
   const response = await request.post(`${apiURL}/auth/sign-in/magic-link`, {
@@ -33,7 +33,7 @@ test("booking submission sends a confirmation email", async ({ request }) => {
   let leadId: string | undefined;
   try {
     const response = await request.post(`${apiURL}/leads`, {
-      data: { kind: "booking", name: "Mail Test", email },
+      data: { ...consent, kind: "booking", name: "Mail Test", email },
     });
     expect(response.status()).toBe(201);
     const body = (await response.json()) as { id: string; emailSent: boolean };
@@ -54,6 +54,7 @@ test("quiz analysis is delivered without requiring a phone", async ({ request })
     const questions = (await questionsResponse.json()) as Array<{ id: string }>;
     const response = await request.post(`${apiURL}/onboarding/quiz/lead`, {
       data: {
+        ...consent,
         name: "Quiz Mail Test",
         email,
         declared: "kana",

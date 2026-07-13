@@ -31,7 +31,7 @@ import {
   materializeNewCardForAttendedBookings,
 } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
-import { sendBookingConfirmation } from "./lessons.ts";
+import { sendLessonConfirmation } from "./lessons.ts";
 import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
 import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
 
@@ -188,10 +188,11 @@ teacherRoute.post(
       .where(eq(leads.id, id));
 
     if (lead.userId) {
-      await db
+      const [booking] = await db
         .insert(bookings)
         .values({ lessonId: lesson.id, studentId: lead.userId })
-        .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] });
+        .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
+        .returning();
       await db
         .insert(studentAccess)
         .values({ userId: lead.userId, trialUsed: true, updatedAt: new Date() })
@@ -199,6 +200,22 @@ teacherRoute.post(
           target: studentAccess.userId,
           set: { trialUsed: true, updatedAt: new Date() },
         });
+      await sendLessonConfirmation(
+        {
+          bookingId: booking?.id,
+          userId: lead.userId,
+          email: lead.email,
+          telegramId: lead.telegramId,
+        },
+        lesson.title,
+        lesson.startsAt,
+      );
+    } else {
+      await sendLessonConfirmation(
+        { email: lead.email, telegramId: lead.telegramId },
+        lesson.title,
+        lesson.startsAt,
+      );
     }
 
     return c.json(toLessonDto(lesson, null), 201);
@@ -502,7 +519,11 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
       .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
       .returning();
     if (booking) {
-      await sendBookingConfirmation(booking.id, body.studentId, row.title, row.startsAt);
+      await sendLessonConfirmation(
+        { bookingId: booking.id, userId: body.studentId },
+        row.title,
+        row.startsAt,
+      );
     }
   }
 

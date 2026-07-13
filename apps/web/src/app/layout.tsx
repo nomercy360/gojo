@@ -1,3 +1,4 @@
+import { PrivacyChoices } from "@/components/privacy-choices";
 import { SiteHeader } from "@/components/site-header";
 import type { Metadata, Viewport } from "next";
 import {
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <SiteHeader />
         {children}
+        <PrivacyChoices />
         <Toaster
           position="bottom-right"
           toastOptions={{

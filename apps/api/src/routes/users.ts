@@ -14,6 +14,23 @@ export const usersRoute = new Hono<AuthContext>();
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 
+usersRoute.post("/me/personal-data-consent", requireAuth, async (c) => {
+  const u = c.get("user")!;
+  const body = (await c.req.json().catch(() => null)) as { version?: string } | null;
+  if (body?.version !== "2026-07-13") {
+    throw new HTTPException(400, { message: "unknown consent version" });
+  }
+  await db
+    .update(userTable)
+    .set({
+      personalDataConsentAt: new Date(),
+      personalDataConsentVersion: body.version,
+      updatedAt: new Date(),
+    })
+    .where(eq(userTable.id, u.id));
+  return c.json({ ok: true });
+});
+
 usersRoute.patch("/me", requireAuth, zValidator("json", updateProfileInput), async (c) => {
   const u = c.get("user")!;
   const body = c.req.valid("json");

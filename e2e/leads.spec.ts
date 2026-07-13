@@ -3,12 +3,14 @@ import { e2eAccounts, mutableStudentAuthFile } from "./support/auth";
 import { deleteLead, findLead, findUserId, setTrialUsed } from "./support/data";
 
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
+const consent = { personalDataConsent: true as const, consentVersion: "2026-07-13" as const };
 
 test("guest creates a booking lead", async ({ request }) => {
   let leadId: string | undefined;
   try {
     const response = await request.post(`${apiURL}/leads`, {
       data: {
+        ...consent,
         kind: "booking",
         name: "Максуд",
         telegram: "@maksud_e2e",
@@ -19,6 +21,14 @@ test("guest creates a booking lead", async ({ request }) => {
     const body = (await response.json()) as { ok: boolean; id: string };
     expect(body.ok).toBe(true);
     leadId = body.id;
+    const row = await findLead(leadId);
+    expect(row).toMatchObject({
+      kind: "booking",
+      name: "Максуд",
+      telegram: "maksud_e2e",
+      personalDataConsentVersion: consent.consentVersion,
+    });
+    expect(row?.personalDataConsentAt).toBeInstanceOf(Date);
   } finally {
     await deleteLead(leadId);
   }
@@ -28,7 +38,7 @@ test("guest creates a Telegram-only booking lead without email", async ({ reques
   let leadId: string | undefined;
   try {
     const response = await request.post(`${apiURL}/leads`, {
-      data: { kind: "booking", name: "Аня", telegram: `@anya_${Date.now()}` },
+      data: { ...consent, kind: "booking", name: "Аня", telegram: `@anya_${Date.now()}` },
     });
     expect(response.status()).toBe(201);
     const body = (await response.json()) as { id: string; emailSent: boolean };
@@ -43,9 +53,27 @@ test("guest creates a Telegram-only booking lead without email", async ({ reques
 
 test("rejects a booking lead with no contact channel", async ({ request }) => {
   const response = await request.post(`${apiURL}/leads`, {
-    data: { kind: "booking", name: "Без контакта" },
+    data: { ...consent, kind: "booking", name: "Без контакта" },
   });
   expect(response.status()).toBe(400);
+});
+
+test("rejects a booking lead without current personal-data consent", async ({ request }) => {
+  const missing = await request.post(`${apiURL}/leads`, {
+    data: { kind: "booking", name: "No consent", email: "no-consent@example.test" },
+  });
+  expect(missing.status()).toBe(400);
+
+  const outdated = await request.post(`${apiURL}/leads`, {
+    data: {
+      kind: "booking",
+      name: "Old consent",
+      email: "old-consent@example.test",
+      personalDataConsent: true,
+      consentVersion: "2025-01-01",
+    },
+  });
+  expect(outdated.status()).toBe(400);
 });
 
 test("repeated active booking submission updates one lead", async ({ request }) => {
@@ -53,13 +81,13 @@ test("repeated active booking submission updates one lead", async ({ request }) 
   let leadId: string | undefined;
   try {
     const first = await request.post(`${apiURL}/leads`, {
-      data: { kind: "booking", name: "First name", email },
+      data: { ...consent, kind: "booking", name: "First name", email },
     });
     expect(first.status()).toBe(201);
     leadId = ((await first.json()) as { id: string }).id;
 
     const repeated = await request.post(`${apiURL}/leads`, {
-      data: { kind: "booking", name: "Updated name", email: email.toUpperCase() },
+      data: { ...consent, kind: "booking", name: "Updated name", email: email.toUpperCase() },
     });
     expect(repeated.status()).toBe(200);
     await expect(repeated.json()).resolves.toMatchObject({ id: leadId, alreadyExists: true });
@@ -78,6 +106,7 @@ test.describe("lead linking", () => {
       const studentId = await findUserId(e2eAccounts.mutableStudent.email);
       const created = await request.post(`${apiURL}/leads`, {
         data: {
+          ...consent,
           kind: "booking",
           name: "E2E Linked Lead",
           email: e2eAccounts.mutableStudent.email,
@@ -100,6 +129,7 @@ test.describe("lead linking", () => {
     try {
       const response = await request.post(`${apiURL}/leads`, {
         data: {
+          ...consent,
           kind: "booking",
           name: "Existing Student",
           email: e2eAccounts.mutableStudent.email,

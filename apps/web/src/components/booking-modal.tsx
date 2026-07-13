@@ -1,7 +1,7 @@
 "use client";
 
 import { track } from "@/lib/analytics";
-import { useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -13,15 +13,18 @@ type TelegramLoginPayload = {
   error?: string;
 };
 
-const readValue = (id: string) =>
-  (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
+type ContactMethod = "telegram" | "email" | "phone";
+
+const contactMethods: Array<{ id: ContactMethod; label: string }> = [
+  { id: "telegram", label: "Telegram" },
+  { id: "email", label: "Email" },
+  { id: "phone", label: "Телефон" },
+];
 
 /**
  * Shared "book a free lesson" modal — used by the landing page's own CTAs
  * and, as a consultation-booking prompt, by the guest CTAs on the kana/kanji
- * trainers and the quiz result screen (all outside `.landing-root`, so this
- * renders inside a `.landing-root` wrapper of its own to pick up the modal
- * styles regardless of where it's mounted).
+ * trainers and the quiz result screen.
  */
 export function BookingModal({
   open,
@@ -33,15 +36,16 @@ export function BookingModal({
   /** Which surface opened the modal — lands in funnel-event props. */
   source?: string;
 }) {
+  const [contactMethod, setContactMethod] = useState<ContactMethod>("telegram");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [submissionReason, setSubmissionReason] = useState<string | undefined>();
   const [confirmationEmailSent, setConfirmationEmailSent] = useState(true);
-  // Default view is just name + Telegram. Email/phone live behind a quiet link
-  // for the minority without Telegram; phone is a further opt-in "call me".
-  const [showAlt, setShowAlt] = useState(false);
-  const [wantsCall, setWantsCall] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -51,70 +55,80 @@ export function BookingModal({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      track("booking_open", { source });
-      setShowAlt(false);
-      setWantsCall(false);
-      setTelegramLoading(false);
-    }
+    if (!open) return;
+    track("booking_open", { source });
+    setContactMethod("telegram");
+    setSubmitted(false);
+    setAlreadySubmitted(false);
+    setSubmissionReason(undefined);
+    setConfirmationEmailSent(true);
+    setTelegramLoading(false);
+    setFormSubmitting(false);
+    setPrivacyAccepted(false);
   }, [open, source]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const submitForm = useCallback(
-    async (telegram?: { proof: string; name: string }) => {
-      const name = readValue("bm-name") || telegram?.name || "";
-      const email = readValue("bm-email");
-      const phone = wantsCall ? readValue("bm-phone") : "";
-      if (!name) {
-        toast.error("Пожалуйста, заполни имя");
+  const submitLead = useCallback(
+    async ({
+      telegram,
+      submittedEmail,
+      submittedPhone,
+    }: {
+      telegram?: { proof: string; name: string };
+      submittedEmail?: string;
+      submittedPhone?: string;
+    }) => {
+      if (!privacyAccepted) {
+        toast.error("Подтверди согласие на обработку персональных данных");
         return;
       }
-      if (!telegram?.proof && !email && !phone) {
-        toast.error("Оставь Telegram, email или телефон — куда написать?");
-        return;
-      }
-      if (wantsCall && !phone) {
-        toast.error("Укажи номер для звонка");
-        return;
-      }
+      setFormSubmitting(true);
       try {
-        const res = await fetch(`${API_URL}/leads`, {
+        const normalizedEmail = submittedEmail?.trim();
+        const normalizedPhone = submittedPhone?.trim();
+        const response = await fetch(`${API_URL}/leads`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             kind: "booking",
-            name,
+            // Telegram supplies the person's verified display name. The compact
+            // email/phone redesign deliberately asks for one contact value only.
+            name: telegram?.name || "Гость",
             telegramProof: telegram?.proof,
-            email: email || undefined,
-            phone: phone || undefined,
+            email: normalizedEmail || undefined,
+            phone: normalizedPhone || undefined,
+            personalDataConsent: true,
+            consentVersion: "2026-07-13",
           }),
         });
-        if (!res.ok) throw new Error();
-        const data = (await res.json()) as {
+        if (!response.ok) throw new Error();
+
+        const data = (await response.json()) as {
           alreadyExists?: boolean;
           emailSent?: boolean;
           reason?: string;
         };
-        // Only email links a guest lead to an account later (leads/link-current).
-        if (email) localStorage.setItem(PENDING_LEAD_KEY, email);
+        if (normalizedEmail) localStorage.setItem(PENDING_LEAD_KEY, normalizedEmail);
         setAlreadySubmitted(Boolean(data.alreadyExists));
         setSubmissionReason(data.reason);
-        setConfirmationEmailSent(Boolean(email) && data.emailSent !== false);
+        setConfirmationEmailSent(Boolean(normalizedEmail) && data.emailSent !== false);
         track("lead_submitted", { source });
         setSubmitted(true);
       } catch {
-        toast.error("Не удалось отправить заявку. Попробуй ещё раз.");
+        toast.error("Не удалось отправить заявку. Проверь контакт и попробуй ещё раз.");
+      } finally {
+        setFormSubmitting(false);
       }
     },
-    [source, wantsCall],
+    [privacyAccepted, source],
   );
 
   useEffect(() => {
@@ -129,15 +143,17 @@ export function BookingModal({
         toast.error(`Telegram: ${payload.error ?? "login_failed"}`);
         return;
       }
-      const nameInput = document.getElementById("bm-name") as HTMLInputElement | null;
-      if (nameInput && !nameInput.value.trim()) nameInput.value = payload.user.name;
-      void submitForm({ proof: payload.proof, name: payload.user.name });
+      void submitLead({ telegram: { proof: payload.proof, name: payload.user.name } });
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [open, submitForm]);
+  }, [open, submitLead]);
 
   const openTelegramLogin = () => {
+    if (!privacyAccepted) {
+      toast.error("Сначала подтверди согласие на обработку персональных данных");
+      return;
+    }
     setTelegramLoading(true);
     const popup = window.open(
       `${API_URL}/leads/telegram/start`,
@@ -150,137 +166,175 @@ export function BookingModal({
     }
   };
 
+  const submitContact = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (contactMethod === "email") {
+      void submitLead({ submittedEmail: email });
+      return;
+    }
+    if (contactMethod === "phone") void submitLead({ submittedPhone: phone });
+  };
+
   return (
     <div className="landing-root">
       <div
-        className={`modal-overlay ${open ? "open" : ""}`}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
+        className={`modal-overlay booking-modal-overlay ${open ? "open" : ""}`}
+        aria-hidden={!open}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onClose();
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
+        onKeyDown={(event) => {
+          if (event.key === "Escape") onClose();
         }}
       >
-        <div className="modal-box">
-          <button type="button" className="modal-close" aria-label="Закрыть" onClick={onClose}>
-            ✕
+        <dialog
+          open={open}
+          className="modal-box booking-modal-box"
+          aria-modal="true"
+          aria-labelledby="booking-modal-title"
+        >
+          <button
+            type="button"
+            className="modal-close booking-modal-close"
+            aria-label="Закрыть"
+            onClick={onClose}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
           </button>
 
-          <div style={{ display: submitted ? "none" : "block" }}>
-            <div className="modal-tag">🎌 Бесплатный первый урок</div>
-            <h2 className="modal-title">
+          <div hidden={submitted}>
+            <div className="booking-modal-tag">Бесплатный первый урок</div>
+            <h2 className="booking-modal-title" id="booking-modal-title">
               Попробуй японский
               <br />
               <em>без обязательств</em>
             </h2>
-            <p className="modal-sub">
-              Урок 25 минут онлайн — познакомимся, определим уровень и покажем план. Без продаж.
+            <p className="booking-modal-lead">
+              25 минут онлайн: познакомимся, определим уровень и покажем план.
             </p>
-            <div className="modal-trust">
-              <img src="/founder.webp" alt="Руслан Рустаев" />
-              <div>
-                <strong>Руслан Рустаев</strong>
-                <span>Сооснователь Gojo · топ-преподаватель Profi.ru</span>
-              </div>
+            <p className="booking-modal-teacher">Урок проведёт Руслан Рустаев, сооснователь gojo</p>
+
+            <div className="booking-contact-tabs" role="tablist" aria-label="Способ связи">
+              {contactMethods.map((method) => (
+                <button
+                  key={method.id}
+                  type="button"
+                  id={`booking-tab-${method.id}`}
+                  className={`booking-contact-tab ${contactMethod === method.id ? "active" : ""}`}
+                  role="tab"
+                  aria-selected={contactMethod === method.id}
+                  aria-controls={`booking-panel-${method.id}`}
+                  tabIndex={contactMethod === method.id ? 0 : -1}
+                  onClick={() => setContactMethod(method.id)}
+                >
+                  {method.label}
+                </button>
+              ))}
             </div>
 
-            <div className="modal-form">
-              <div className="form-group">
-                <label className="form-label" htmlFor="bm-name">
-                  Имя
-                </label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Как тебя зовут?"
-                  id="bm-name"
-                  autoComplete="name"
-                />
-              </div>
-              <div className="form-group">
-                <span className="form-label">Telegram</span>
+            <form className="booking-contact-form" onSubmit={submitContact}>
+              <div
+                id="booking-panel-telegram"
+                role="tabpanel"
+                aria-labelledby="booking-tab-telegram"
+                hidden={contactMethod !== "telegram"}
+              >
                 <button
-                  className="form-submit bm-telegram-login"
+                  className="booking-contact-action booking-telegram-action"
                   type="button"
-                  disabled={telegramLoading}
+                  disabled={telegramLoading || formSubmitting}
                   onClick={openTelegramLogin}
                 >
-                  {telegramLoading ? "Открываем Telegram…" : "Войти через Telegram"}
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21.8 3.2 18.6 19c-.2 1.1-.9 1.4-1.8.9l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.1 12.8 1.3 11.3C.2 11.1.2 10.3 1.5 9.8L20.3 2.6c.9-.3 1.7.2 1.5.6Z" />
+                  </svg>
+                  {telegramLoading || formSubmitting
+                    ? "Открываем Telegram…"
+                    : "Войти через Telegram"}
                 </button>
-                <p className="form-note" style={{ marginTop: "6px", textAlign: "left" }}>
-                  Подтверди вход — и мы сможем написать, чтобы договориться о времени.
-                </p>
               </div>
-              {showAlt ? (
-                <div
-                  style={{
-                    background: "var(--cream-dark)",
-                    borderRadius: "14px",
-                    padding: "15px 15px 16px",
-                    marginBottom: "4px",
-                  }}
-                >
-                  <p className="form-note" style={{ margin: "0 0 12px", textAlign: "left" }}>
-                    Telegram быстрее, но можно и так — оставь что удобно.
-                  </p>
-                  <div className="form-group" style={{ marginBottom: wantsCall ? "12px" : 0 }}>
-                    <label className="form-label" htmlFor="bm-email">
-                      Email
-                    </label>
-                    <input
-                      className="form-input"
-                      type="email"
-                      placeholder="your@email.com"
-                      id="bm-email"
-                      autoComplete="email"
-                    />
-                  </div>
-                  {wantsCall ? (
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" htmlFor="bm-phone">
-                        Телефон
-                      </label>
-                      <input
-                        className="form-input"
-                        type="tel"
-                        placeholder="+7 (900) 000-00-00"
-                        id="bm-phone"
-                        autoComplete="tel"
-                      />
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="bm-alt-link"
-                      onClick={() => setWantsCall(true)}
-                    >
-                      Хочу, чтобы позвонили →
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <button type="button" className="bm-alt-link" onClick={() => setShowAlt(true)}>
-                  Нет Telegram? Другой способ связи
+
+              <div
+                className="booking-inline-panel"
+                id="booking-panel-email"
+                role="tabpanel"
+                aria-labelledby="booking-tab-email"
+                hidden={contactMethod !== "email"}
+              >
+                <label className="sr-only" htmlFor="bm-email">
+                  Email
+                </label>
+                <input
+                  id="bm-email"
+                  type="email"
+                  value={email}
+                  placeholder="name@mail.com"
+                  autoComplete="email"
+                  required={contactMethod === "email"}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+                <button className="booking-contact-action" type="submit" disabled={formSubmitting}>
+                  {formSubmitting ? "Отправляем…" : "Записаться"}
                 </button>
-              )}
-              {showAlt ? (
-                <button
-                  type="button"
-                  className="form-submit"
-                  style={{ marginTop: "18px" }}
-                  onClick={() => void submitForm()}
-                >
-                  Отправить заявку
+              </div>
+
+              <div
+                className="booking-inline-panel"
+                id="booking-panel-phone"
+                role="tabpanel"
+                aria-labelledby="booking-tab-phone"
+                hidden={contactMethod !== "phone"}
+              >
+                <label className="sr-only" htmlFor="bm-phone">
+                  Телефон
+                </label>
+                <input
+                  id="bm-phone"
+                  type="tel"
+                  value={phone}
+                  placeholder="+7 900 000-00-00"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  required={contactMethod === "phone"}
+                  onChange={(event) => setPhone(event.target.value)}
+                />
+                <button className="booking-contact-action" type="submit" disabled={formSubmitting}>
+                  {formSubmitting ? "Отправляем…" : "Жду звонка"}
                 </button>
-              ) : null}
-              <p className="form-note">
-                Нажимая кнопку, ты соглашаешься с политикой конфиденциальности. Никакого спама —
-                только информация о записи.
-              </p>
-            </div>
+              </div>
+
+              <label
+                className="booking-modal-policy"
+                style={{ display: "flex", gap: 8, textAlign: "left" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                  style={{ marginTop: 2, flex: "0 0 auto" }}
+                />
+                <span>
+                  Я даю отдельное{" "}
+                  <a href="/personal-data-consent" target="_blank" rel="noopener noreferrer">
+                    согласие на обработку персональных данных
+                  </a>{" "}
+                  и ознакомился(-ась) с{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer">
+                    Политикой
+                  </a>
+                  .
+                </span>
+              </label>
+            </form>
+
+            <p className="booking-modal-policy">
+              Согласие не включает рекламные рассылки; контакт используется для заявки и записи.
+            </p>
           </div>
 
-          <div className="form-success" style={{ display: submitted ? "block" : "none" }}>
+          <div className="form-success booking-modal-success" hidden={!submitted}>
             <div className="form-success-icon">🎌</div>
             <div className="form-success-title">
               {submissionReason === "account_has_trial"
@@ -302,25 +356,12 @@ export function BookingModal({
               href="https://t.me/gojoedu"
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "10px",
-                marginTop: "14px",
-                background: "var(--orange)",
-                color: "var(--white)",
-                padding: "13px 24px",
-                borderRadius: "8px",
-                textDecoration: "none",
-                fontFamily: "var(--font-body)",
-                fontSize: "14px",
-                fontWeight: "700",
-              }}
+              className="booking-success-link"
             >
-              ✈️ Telegram сообщество Gojo
+              Telegram сообщество Gojo
             </a>
           </div>
-        </div>
+        </dialog>
       </div>
     </div>
   );

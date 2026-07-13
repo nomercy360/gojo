@@ -25,8 +25,9 @@ test.describe("public learning funnels", () => {
     }
 
     await expect(page.getByText("Шаг 3 из 3 · результат")).toBeVisible();
-    await expect(page.getByRole("heading", { name: /Твой старт — уровень N[1-5]/ })).toBeVisible();
-    await expect(page.getByText("Твоя карта")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Твой старт — уровень N[1-5]|Начнём с самых азов/ }),
+    ).toBeVisible();
     await expect(page.getByText("Твоя карта")).toBeVisible();
   });
 
@@ -83,11 +84,13 @@ test.describe("public learning funnels", () => {
     });
 
     await page.goto("/kana");
+    await page.getByRole("button", { name: "Только необходимые" }).click();
     await expect(page.getByText(/10 из 46 · хирагана/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Следующий ряд: «СА»/ })).toBeVisible();
 
     await page.getByRole("button", { name: "Обсудить прогресс с преподавателем" }).click();
     await expect(page.getByRole("heading", { name: /Попробуй японский/ })).toBeVisible();
-    await expect(page.getByLabel("Email")).toBeVisible();
+    await page.getByRole("tab", { name: "Email" }).click();
+    await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible();
   });
 });

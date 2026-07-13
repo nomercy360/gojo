@@ -2,7 +2,11 @@
 
 import { Avatar } from "@/components/avatar";
 import { authClient } from "@/lib/auth-client";
-import { linkPendingBookingLead, migrateGuestTrainerProgress } from "@/lib/post-login-sync";
+import {
+  linkPendingBookingLead,
+  migrateGuestTrainerProgress,
+  savePendingPersonalDataConsent,
+} from "@/lib/post-login-sync";
 import { isTeacherUser } from "@/lib/roles";
 import type { UserDto } from "@gojo/shared";
 import Link from "next/link";
@@ -44,6 +48,7 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
       if (migrateGuestTrainerProgress(user.id) && !cancelled) {
         toast.success("Прогресс тренажёра сохранён");
       }
+      await savePendingPersonalDataConsent();
       const linked = await linkPendingBookingLead();
       if (linked > 0 && !cancelled) toast.success("Заявка привязана к аккаунту");
     })();

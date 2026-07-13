@@ -29,6 +29,12 @@ export const leads = pgTable("leads", {
   goal: text(), // goal (booking form)
   notes: text(),
   nextFollowUpAt: timestamp({ withTimezone: true }),
+  // Evidence of the separate consent shown next to public lead forms.
+  personalDataConsentAt: timestamp({ withTimezone: true }),
+  personalDataConsentVersion: text(),
+  // Advertising/news consent is independent and optional.
+  marketingConsentAt: timestamp({ withTimezone: true }),
+  marketingConsentVersion: text(),
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });

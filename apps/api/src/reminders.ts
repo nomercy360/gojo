@@ -18,9 +18,9 @@ export async function sendTelegramMessage(
   text: string,
   event = "telegram.message",
   userId?: string,
-): Promise<void> {
+): Promise<boolean> {
   const token = env.TELEGRAM_BOT_TOKEN;
-  if (!token) return;
+  if (!token) return false;
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -32,9 +32,10 @@ export async function sendTelegramMessage(
     throw new Error(error);
   }
   await logNotification(event, "telegram", String(chatId), "sent", userId);
+  return true;
 }
 
-async function logNotification(
+export async function logNotification(
   event: string,
   channel: string,
   recipient: string,
@@ -74,11 +75,12 @@ async function checkAndSendReminders(): Promise<void> {
     if (row.telegramId == null) continue;
     try {
       const time = row.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-      await sendTelegramMessage(
+      const sent = await sendTelegramMessage(
         row.telegramId,
         `⏰ Напоминание: «${row.title}» в ${time} (через ~${REMINDER_LEAD_MINUTES} мин)`,
         "personal_event.reminder_15m",
       );
+      if (!sent) continue;
       await db
         .update(personalEvents)
         .set({ remindedAt: new Date() })
@@ -118,11 +120,12 @@ async function checkAndSendReminders(): Promise<void> {
         hour: "2-digit",
         minute: "2-digit",
       });
-      await sendTelegramMessage(
+      const sent = await sendTelegramMessage(
         row.telegramId,
         `🎌 Завтра урок: «${row.title}» — ${when}`,
         "lesson.reminder_24h",
       );
+      if (!sent) continue;
       await db
         .update(bookings)
         .set({ reminder24hSentAt: new Date() })
@@ -155,11 +158,12 @@ async function checkAndSendReminders(): Promise<void> {
     if (row.telegramId == null) continue;
     try {
       const time = row.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-      await sendTelegramMessage(
+      const sent = await sendTelegramMessage(
         row.telegramId,
         `⏰ Урок «${row.title}» в ${time} (через ~15 мин)`,
         "lesson.reminder_15m",
       );
+      if (!sent) continue;
       await db
         .update(bookings)
         .set({ reminder15mSentAt: new Date() })

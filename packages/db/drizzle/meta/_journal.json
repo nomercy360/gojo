@@ -57,6 +57,20 @@
       "when": 1783858666210,
       "tag": "0007_amazing_jasper_sitwell",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783950787511,
+      "tag": "0008_bent_roxanne_simpson",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783950870667,
+      "tag": "0009_blushing_morlocks",
+      "breakpoints": true
     }
   ]
 }

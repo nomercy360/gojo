@@ -296,23 +296,26 @@ html:has(.landing-root) {
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(248, 244, 236, 0.96);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e9dfd1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 max(40px, calc((100% - 1440px) / 2));
-  height: 68px;
+  gap: 28px;
+  padding: 0 max(40px, calc((100% - 1372px) / 2));
+  height: 72px;
 }
 .landing-root .nav-logo {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  flex: 0 0 auto;
   text-decoration: none;
 }
 .landing-root .nav-logo-img {
-  height: 28px;
+  height: 30px;
   width: auto;
   display: block;
 }
@@ -352,50 +355,55 @@ html:has(.landing-root) {
   padding-left: 14px;
   border-left: 1px solid rgba(17, 17, 17, 0.15);
   margin-left: 2px;
-  line-height: 1;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .landing-root .nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  justify-content: flex-end;
+  gap: clamp(20px, 2vw, 32px);
+  min-width: 0;
+  flex: 1;
 }
 .landing-root .nav-link {
   color: var(--ink-2);
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
   transition: color 0.2s;
 }
 .landing-root .nav-link:hover {
   color: var(--orange);
 }
 .landing-root .nav-login {
-  color: var(--ink);
-  border: 1px solid rgba(17, 17, 17, 0.18);
-  padding: 9px 16px;
-  border-radius: 6px;
+  color: var(--ink-2);
+  border: 0;
+  padding: 8px 0;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
-  transition: border-color 0.18s, color 0.18s, background 0.18s;
+  transition: color 0.18s;
+  white-space: nowrap;
 }
 .landing-root .nav-login:hover {
   color: var(--orange);
-  border-color: var(--orange);
-  background: var(--orange-dim);
 }
 .landing-root .nav-cta {
   background: var(--orange);
   color: var(--white);
   border: none;
-  padding: 11px 22px;
-  border-radius: 6px;
+  min-height: 44px;
+  padding: 11px 24px;
+  border-radius: 10px;
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s;
   text-decoration: none;
+  white-space: nowrap;
 }
 .landing-root .nav-cta:hover {
   background: var(--orange-light);
@@ -405,15 +413,15 @@ html:has(.landing-root) {
 /* ───── HERO ───── */
 .landing-root .hero {
   background: var(--cream);
-  min-height: 640px;
+  min-height: 610px;
   position: relative;
   overflow: hidden;
   /* same horizontal rhythm as all other sections */
-  padding: 80px max(40px, calc((100% - 1440px) / 2)) 72px;
+  padding: 72px max(40px, calc((100% - 1440px) / 2)) 64px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(420px, 0.85fr);
   align-items: center;
-  gap: 56px;
+  gap: clamp(48px, 6vw, 96px);
   box-sizing: border-box;
 }
 .landing-root .hero-image-col {
@@ -515,7 +523,7 @@ html:has(.landing-root) {
   font-weight: 900;
   line-height: 1.04;
   color: var(--ink);
-  margin-bottom: 22px;
+  margin-bottom: 20px;
   letter-spacing: -0.025em;
   font-variation-settings: "opsz" 144;
 }
@@ -530,9 +538,9 @@ html:has(.landing-root) {
   color: var(--ink-2);
   font-size: 19px;
   font-weight: 500;
-  max-width: 560px;
+  max-width: 610px;
   line-height: 1.55;
-  margin-bottom: 36px;
+  margin-bottom: 30px;
   white-space: normal;
 }
 .landing-root #cycling-text-wrap {
@@ -578,7 +586,7 @@ html:has(.landing-root) {
   color: var(--white);
   border: none;
   padding: 16px 30px;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
@@ -597,9 +605,9 @@ html:has(.landing-root) {
 .landing-root .btn-secondary-dark {
   background: transparent;
   color: var(--ink);
-  border: 2px solid rgba(17, 17, 17, 0.18);
+  border: 1px solid rgba(17, 17, 17, 0.18);
   padding: 16px 28px;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
   text-decoration: none;
@@ -615,70 +623,175 @@ html:has(.landing-root) {
   color: var(--orange);
   background: rgba(247, 107, 0, 0.04);
 }
-/* HERO IMAGE */
-/* ───── HERO TRIPTYCH ───── */
-.landing-root .hero-image-col {
+/* ───── INTERACTIVE KANA PRODUCT PREVIEW ───── */
+.landing-root .hero-product-col {
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  height: 560px;
-}
-.landing-root .triptych-card {
-  position: relative;
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--cream);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.5s ease;
-  cursor: pointer;
-}
-.landing-root .triptych-card.dim {
-  opacity: 0.35;
-  transform: scale(0.97);
-}
-.landing-root .triptych-card.active {
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-}
-.landing-root .triptych-card img {
-  position: absolute;
-  inset: 0;
+  min-width: 0;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 520px;
+  justify-self: end;
+}
+.landing-root .hero-kana-card {
+  border: 1px solid #e9dfd1;
+  border-radius: 20px;
+  background: var(--white);
+  padding: clamp(22px, 3vw, 32px);
+  box-shadow: 0 18px 50px rgba(60, 45, 32, 0.1);
+}
+.landing-root .hero-kana-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #8a8178;
+  font-size: 13px;
+  font-weight: 600;
+}
+.landing-root .hero-kana-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+.landing-root .hero-kana-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.landing-root .hero-kana-progress > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e9dfd1;
+}
+.landing-root .hero-kana-progress > span.done,
+.landing-root .hero-kana-progress > span.active {
+  background: var(--orange);
+}
+.landing-root .hero-kana-progress > span.active {
+  box-shadow: 0 0 0 3px rgba(232, 66, 10, 0.12);
+}
+.landing-root .hero-kana-symbol {
+  margin: 18px 0 8px;
+  color: var(--ink);
+  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-size: clamp(72px, 9vw, 104px);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+.landing-root .hero-kana-prompt {
+  margin-bottom: 16px;
+  color: var(--ink-3);
+  font-size: 13px;
+  text-align: center;
+}
+.landing-root .hero-kana-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+.landing-root .hero-kana-options button {
+  min-height: 46px;
+  border: 1px solid #e9dfd1;
+  border-radius: 11px;
+  background: #fbf7f0;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.landing-root .hero-kana-options button:hover {
+  border-color: #cdbdab;
+  transform: translateY(-1px);
+}
+.landing-root .hero-kana-options button:disabled {
+  cursor: default;
+  transform: none;
+}
+.landing-root .hero-kana-options button:focus-visible,
+.landing-root .hero-kana-payoff a:focus-visible,
+.landing-root .hero-kana-payoff button:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+.landing-root .hero-kana-options button.correct {
+  border-color: #7ba05b;
+  background: #e7f0e2;
+  color: #3b5a26;
+}
+.landing-root .hero-kana-options button.wrong {
+  border-color: var(--orange);
+  background: #f9e9e4;
+  color: #a53c1a;
+}
+.landing-root .hero-kana-payoff {
+  visibility: hidden;
+  min-height: 64px;
+  margin-top: 14px;
+  border-radius: 11px;
+  background: #f5ede1;
+  color: #6b4a2e;
+  padding: 10px 13px;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+.landing-root .hero-kana-payoff.visible {
+  visibility: visible;
+}
+.landing-root .hero-kana-payoff span,
+.landing-root .hero-kana-payoff a,
+.landing-root .hero-kana-payoff button {
   display: block;
 }
-/* per-image framing tweaks */
-.landing-root .triptych-card .img-manga {
-  object-position: center 18%;
-  transform: scaleX(-1);
+.landing-root .hero-kana-payoff strong {
+  color: #3c2d20;
+  font-family: var(--font-noto-sans-jp), "Hiragino Sans", sans-serif;
+  font-size: 16px;
 }
-.landing-root .triptych-card .img-culture {
-  object-position: center top;
-}
-.landing-root .triptych-card .img-study {
-  object-position: center 30%;
-}
-.landing-root .triptych-card .label {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  background: rgba(17, 17, 17, 0.85);
-  color: var(--white);
-  padding: 7px 12px;
-  border-radius: 5px;
-  font-family: var(--font-mono);
-  font-size: 11px;
+.landing-root .hero-kana-payoff a,
+.landing-root .hero-kana-payoff button {
+  width: fit-content;
+  margin: 3px auto 0;
+  border: 0;
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-  transition: opacity 0.4s ease;
+  line-height: inherit;
+  padding: 0;
+  text-underline-offset: 3px;
 }
-.landing-root .triptych-card.dim .label {
-  opacity: 0;
+.landing-root .hero-kana-payoff button {
+  text-decoration: underline;
+}
+.landing-root .hero-teacher-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 0 6px;
+  color: #8a8178;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.landing-root .hero-teacher-avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8decf;
+  color: #6b4a2e;
+  font-size: 11px;
+  font-weight: 800;
 }
 /* ───── PHRASE MARQUEE (replaces proof strip) ───── */
 .landing-root .phrase-marquee {
@@ -1592,6 +1705,28 @@ html:has(.landing-root) {
   .landing-root .how-aio {
     padding: 32px 28px;
     gap: 28px;
+  }
+}
+@media (max-width: 1120px) {
+  .landing-root nav {
+    gap: 20px;
+    padding: 0 24px;
+  }
+  .landing-root .nav-logo-sub {
+    display: none;
+  }
+  .landing-root .nav-links {
+    gap: 18px;
+  }
+}
+@media (max-width: 820px) {
+  .landing-root .nav-link,
+  .landing-root .nav-login,
+  .landing-root .nav-cta {
+    display: none;
+  }
+  .landing-root .nav-burger {
+    display: flex;
   }
 }
 @media (max-width: 600px) {
@@ -3114,19 +3249,13 @@ html:has(.landing-root) {
   }
   .landing-root .hero {
     grid-template-columns: 1fr;
-    padding: 110px 28px 70px;
-    gap: 36px;
+    padding: 64px 28px 56px;
+    gap: 44px;
   }
-  .landing-root .hero-image-col {
-    height: 360px;
-    gap: 6px;
-  }
-  .landing-root .triptych-card .label {
-    font-size: 9px;
-    padding: 5px 8px;
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
+  .landing-root .hero-product-col {
+    width: min(100%, 560px);
+    max-width: none;
+    justify-self: center;
   }
   .landing-root .how-grid {
     grid-template-columns: 1fr 1fr;
@@ -3170,11 +3299,41 @@ html:has(.landing-root) {
   .landing-root .nav-login {
     display: none;
   }
+  .landing-root .nav-cta {
+    display: none;
+  }
+  .landing-root .nav-logo-sub {
+    display: none;
+  }
   .landing-root .hero {
-    padding: 100px 16px 50px;
+    padding: 48px 16px 44px;
+    gap: 36px;
   }
   .landing-root .hero-title {
     font-size: clamp(30px, 8vw, 40px);
+  }
+  .landing-root .hero-subtitle {
+    font-size: 16px;
+    margin-bottom: 26px;
+  }
+  .landing-root .hero-btns {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .landing-root .btn-primary,
+  .landing-root .btn-secondary-dark {
+    justify-content: center;
+    text-align: center;
+  }
+  .landing-root .hero-kana-card {
+    border-radius: 16px;
+    padding: 20px 16px;
+  }
+  .landing-root .hero-kana-symbol {
+    font-size: 72px;
+  }
+  .landing-root .hero-kana-payoff {
+    min-height: 80px;
   }
   .landing-root .teachers-grid,
   .landing-root .pain-grid {
@@ -3266,7 +3425,7 @@ html:has(.landing-root) {
   top: 100%;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(248, 244, 236, 0.98);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--hairline);
   flex-direction: column;
@@ -3290,10 +3449,286 @@ html:has(.landing-root) {
 }
 .landing-root .nav-mobile a:hover {
   color: var(--orange);
-  background: var(--cream);
+  background: var(--white);
 }
-@media (max-width: 600px) {
+.landing-root .nav-mobile-cta {
+  margin: 8px 16px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--orange);
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 13px 16px;
+}
+@media (max-width: 820px) {
   .landing-root .nav-burger {
     display: flex;
+  }
+}
+@media (min-width: 821px) {
+  .landing-root .nav-mobile.open {
+    display: none;
+  }
+}
+
+/* Booking modal redesign — compact, single-contact conversion flow. */
+.landing-root .booking-modal-overlay {
+  background: rgba(20, 16, 12, 0.5);
+  backdrop-filter: none;
+  padding: 24px;
+}
+.landing-root .booking-modal-box {
+  width: 440px;
+  max-width: 100%;
+  margin: 0;
+  padding: 36px 36px 28px;
+  border: 0;
+  border-radius: 20px;
+  background: #fbf7f0;
+  color: #2a2420;
+  box-shadow: 0 22px 70px rgba(42, 36, 32, 0.2);
+  font-family: var(--font-body);
+}
+.landing-root .booking-modal-close {
+  top: 18px;
+  right: 18px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: #8a8178;
+}
+.landing-root .booking-modal-close svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+.landing-root .booking-modal-close:hover {
+  color: #2a2420;
+}
+.landing-root .booking-modal-tag {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f5e9dc;
+  color: #b2431f;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.landing-root .booking-modal-title {
+  margin-bottom: 12px;
+  color: #2a2420;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.landing-root .booking-modal-title em {
+  color: #d85a30;
+  font-style: normal;
+}
+.landing-root .booking-modal-lead {
+  margin: 0 0 6px;
+  color: #6b6259;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.landing-root .booking-modal-teacher {
+  margin: 0 0 22px;
+  color: #8a8178;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.landing-root .booking-contact-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f0e8dc;
+}
+.landing-root .booking-contact-tab {
+  flex: 1;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b6259;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 8px 4px;
+  transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+.landing-root .booking-contact-tab:hover {
+  color: #2a2420;
+}
+.landing-root .booking-contact-tab.active {
+  background: #fbf7f0;
+  color: #2a2420;
+  box-shadow: 0 1px 3px rgba(42, 36, 32, 0.08);
+}
+.landing-root .booking-contact-tab:focus-visible,
+.landing-root .booking-contact-action:focus-visible,
+.landing-root .booking-inline-panel input:focus-visible,
+.landing-root .booking-modal-close:focus-visible {
+  outline: 2px solid #d85a30;
+  outline-offset: 2px;
+}
+.landing-root .booking-contact-form [hidden] {
+  display: none;
+}
+.landing-root .booking-inline-panel {
+  display: flex;
+  gap: 8px;
+}
+.landing-root .booking-inline-panel input {
+  min-width: 0;
+  height: 50px;
+  flex: 1;
+  border: 1px solid #e3d9cc;
+  border-radius: 12px;
+  outline: none;
+  background: #fff;
+  color: #2a2420;
+  font: inherit;
+  font-size: 15px;
+  padding: 0 14px;
+  transition: border-color 160ms ease;
+}
+.landing-root .booking-inline-panel input::placeholder {
+  color: #9a9086;
+  opacity: 1;
+}
+.landing-root .booking-inline-panel input:focus {
+  border-color: #d85a30;
+}
+.landing-root .booking-contact-action {
+  min-height: 50px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 12px;
+  background: #d85a30;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0 20px;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.landing-root .booking-contact-action:hover:not(:disabled) {
+  background: #c84d27;
+  transform: translateY(-1px);
+}
+.landing-root .booking-contact-action:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+.landing-root .booking-telegram-action {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #4ea3db;
+  font-size: 16px;
+}
+.landing-root .booking-telegram-action:hover:not(:disabled) {
+  background: #3b94cd;
+}
+.landing-root .booking-telegram-action svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+.landing-root .booking-modal-policy {
+  margin: 16px 0 0;
+  color: #9a9086;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+.landing-root .booking-modal-policy a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.landing-root .booking-modal-policy a:hover {
+  color: #6b6259;
+}
+.landing-root .booking-modal-success:not([hidden]) {
+  display: block;
+}
+.landing-root .booking-modal-success .form-success-icon {
+  font-size: 42px;
+}
+.landing-root .booking-success-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 18px;
+  border-radius: 12px;
+  background: #d85a30;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 20px;
+  text-decoration: none;
+}
+.landing-root .booking-success-link:hover {
+  background: #c84d27;
+}
+
+@media (max-width: 600px) {
+  .landing-root .booking-modal-overlay {
+    align-items: center;
+    padding: 14px;
+  }
+  .landing-root .booking-modal-box {
+    margin: 0;
+    padding: 32px 22px 24px;
+    border-radius: 18px;
+  }
+  .landing-root .booking-modal-title {
+    font-size: 28px;
+  }
+  .landing-root .booking-contact-action {
+    padding: 0 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .landing-root .booking-modal-overlay {
+    align-items: flex-start;
+    padding: 8px;
+  }
+  .landing-root .booking-modal-box {
+    padding: 30px 16px 22px;
+  }
+  .landing-root .booking-modal-title {
+    font-size: 26px;
+  }
+  .landing-root .booking-contact-tab {
+    font-size: 13px;
+  }
+  .landing-root .booking-inline-panel {
+    gap: 6px;
+  }
+  .landing-root .booking-contact-action {
+    font-size: 14px;
+    padding: 0 11px;
   }
 }

@@ -636,6 +636,8 @@ function ResultScreen({
           declared: declared ?? undefined,
           name,
           email,
+          personalDataConsent: true,
+          consentVersion: "2026-07-13",
         });
         localStorage.setItem("gojo:pending-lead-email", email);
         setLeadSent(true);
@@ -895,6 +897,30 @@ function ResultScreen({
                   style={inputStyle}
                 />
               </div>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 8,
+                  fontFamily: MANROPE,
+                  fontSize: 11,
+                  lineHeight: 1.45,
+                  color: C.muted,
+                }}
+              >
+                <input type="checkbox" name="privacyConsent" required style={{ marginTop: 2 }} />
+                <span>
+                  Даю отдельное{" "}
+                  <a href="/personal-data-consent" target="_blank" rel="noreferrer">
+                    согласие на обработку данных
+                  </a>{" "}
+                  и ознакомился(-ась) с{" "}
+                  <a href="/privacy" target="_blank" rel="noreferrer">
+                    Политикой
+                  </a>
+                  .
+                </span>
+              </label>
               <button
                 type="submit"
                 disabled={leadPending}
