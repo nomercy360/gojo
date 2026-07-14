@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -43,43 +45,41 @@ export function PrivacyChoices() {
   if (!visible) return null;
 
   return (
-    <aside className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl rounded-xl border border-black/15 bg-gojo-surface p-4 shadow-2xl sm:flex sm:items-center sm:gap-5">
-      <p className="flex-1 text-[12px] leading-relaxed text-gojo-ink-muted">
-        Необходимое хранилище поддерживает вход и настройки. С вашего разрешения мы также используем
-        обезличенный идентификатор для аналитики и диагностики ошибок. Подробнее — в{" "}
-        <Link href="/privacy" className="font-bold text-gojo-orange underline">
-          Политике
-        </Link>
-        .
-      </p>
-      <div className="mt-3 flex shrink-0 gap-2 sm:mt-0">
-        <button
-          type="button"
-          className="g-btn-secondary px-4 py-2 text-xs"
-          onClick={() => choose("declined")}
-        >
-          Только необходимые
-        </button>
-        <button
-          type="button"
-          className="g-btn-primary px-4 py-2 text-xs"
-          onClick={() => choose("accepted")}
-        >
-          Разрешить аналитику
-        </button>
-      </div>
-    </aside>
+    <Card
+      asChild
+      className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl p-4 shadow-2xl sm:flex-row sm:items-center sm:gap-5"
+    >
+      <aside aria-label="Настройки конфиденциальности">
+        <p className="flex-1 text-[12px] leading-relaxed text-gojo-ink-muted">
+          Необходимое хранилище поддерживает вход и настройки. С вашего разрешения мы также
+          используем обезличенный идентификатор для аналитики и диагностики ошибок. Подробнее — в{" "}
+          <Link href="/privacy" className="font-bold text-gojo-orange underline">
+            Политике
+          </Link>
+          .
+        </p>
+        <div className="mt-3 flex shrink-0 gap-2 sm:mt-0">
+          <Button type="button" variant="outline" size="sm" onClick={() => choose("declined")}>
+            Только необходимые
+          </Button>
+          <Button type="button" size="sm" onClick={() => choose("accepted")}>
+            Разрешить аналитику
+          </Button>
+        </div>
+      </aside>
+    </Card>
   );
 }
 
 export function PrivacySettingsButton() {
   return (
-    <button
+    <Button
       type="button"
-      className="font-bold text-gojo-orange underline"
+      variant="link"
+      className="h-auto p-0 font-bold text-gojo-orange underline"
       onClick={() => window.dispatchEvent(new Event(OPEN_CHOICES_EVENT))}
     >
       Настроить аналитику
-    </button>
+    </Button>
   );
 }

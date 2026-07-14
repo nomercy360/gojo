@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { e2eAccounts } from "./support/auth";
 import { deleteLead } from "./support/data";
 
 const mailpitURL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
@@ -14,18 +15,49 @@ type MailpitMessages = {
   }>;
 };
 
-test("magic-link sign-in sends an email through Mailpit", async ({ request }) => {
-  const email = `e2e-magic-link-${Date.now()}@gojo.local`;
-  const before = await mailCount(request, email);
+for (const loginCase of [
+  {
+    label: "student",
+    email: e2eAccounts.student.email,
+    role: "student",
+    destination: "/dashboard",
+    heading: "Твой личный кабинет",
+  },
+  {
+    label: "admin",
+    email: e2eAccounts.admin.email,
+    role: "admin",
+    destination: "/teacher",
+    heading: "Мои уроки",
+  },
+] as const) {
+  test(`${loginCase.label} magic link opens the correct dashboard`, async ({ page, request }) => {
+    const before = await mailCount(request, loginCase.email);
+    const response = await request.post(`${apiURL}/auth/sign-in/magic-link`, {
+      data: {
+        email: loginCase.email,
+        callbackURL: `${webURL}${loginCase.destination}`,
+        metadata: { expectedRole: loginCase.role },
+      },
+      headers: { Origin: webURL },
+    });
+    expect(response.ok()).toBeTruthy();
+    await expect
+      .poll(() => mailCount(request, loginCase.email), { timeout: 10_000 })
+      .toBeGreaterThan(before);
 
-  const response = await request.post(`${apiURL}/auth/sign-in/magic-link`, {
-    data: { email, callbackURL: "/dashboard" },
-    headers: { Origin: webURL },
+    const messageId = await latestMailId(request, loginCase.email);
+    const messageResponse = await request.get(`${mailpitURL}/api/v1/message/${messageId}`);
+    await expect(messageResponse).toBeOK();
+    const message = (await messageResponse.json()) as { HTML: string };
+    const magicLink = message.HTML.match(/href="([^"]+)"/)?.[1];
+    expect(magicLink).toBeTruthy();
+
+    await page.goto(magicLink!);
+    await expect(page).toHaveURL(`${webURL}${loginCase.destination}`);
+    await expect(page.getByRole("heading", { name: loginCase.heading })).toBeVisible();
   });
-  expect(response.ok()).toBeTruthy();
-
-  await expect.poll(() => mailCount(request, email), { timeout: 10_000 }).toBeGreaterThan(before);
-});
+}
 
 test("booking submission sends a confirmation email", async ({ request }) => {
   const email = `e2e-booking-mail-${Date.now()}@gojo.local`;
@@ -76,4 +108,13 @@ async function mailCount(request: import("@playwright/test").APIRequestContext, 
   await expect(response).toBeOK();
   const body = (await response.json()) as MailpitMessages;
   return body.messages.filter((message) => message.To.some((to) => to.Address === email)).length;
+}
+
+async function latestMailId(request: import("@playwright/test").APIRequestContext, email: string) {
+  const response = await request.get(`${mailpitURL}/api/v1/messages`);
+  await expect(response).toBeOK();
+  const body = (await response.json()) as MailpitMessages;
+  const message = body.messages.find((item) => item.To.some((to) => to.Address === email));
+  expect(message).toBeTruthy();
+  return message!.ID;
 }

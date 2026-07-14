@@ -1,6 +1,11 @@
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { fetchMyPayments, fetchPaymentPlans } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { checkoutAction } from "./actions";
@@ -16,7 +21,7 @@ const ERROR_COPY: Record<string, string> = {
 
 function ContactBlock() {
   return (
-    <section className="g-card mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
+    <Card className="mt-8 flex-row flex-wrap items-center justify-between gap-4 p-5">
       <div>
         <div className="font-serif text-[18px] font-bold">
           Возникла проблема или хочешь изменить план?
@@ -27,11 +32,11 @@ function ContactBlock() {
         href="https://t.me/gojoedu"
         target="_blank"
         rel="noopener noreferrer"
-        className="g-btn-secondary shrink-0 text-sm"
+        className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
       >
         Написать в Telegram
       </a>
-    </section>
+    </Card>
   );
 }
 
@@ -66,12 +71,14 @@ export default async function PaymentsPage({
         </p>
 
         {error ? (
-          <div className="mt-6 rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
-            {ERROR_COPY[error] ?? ERROR_COPY.checkout_failed}
-          </div>
+          <Alert variant="destructive" className="mt-6 bg-gojo-error-soft">
+            <AlertDescription className="font-bold text-gojo-error">
+              {ERROR_COPY[error] ?? ERROR_COPY.checkout_failed}
+            </AlertDescription>
+          </Alert>
         ) : null}
 
-        <section className="g-card mt-8 p-5">
+        <Card className="mt-8 p-5">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
             Текущий статус
           </div>
@@ -87,23 +94,23 @@ export default async function PaymentsPage({
             />
             <StatusTile label="Уроки" value={String(account.access.lessonCredits)} />
           </div>
-        </section>
+        </Card>
 
         <section className="mt-8 grid gap-5 sm:grid-cols-2">
           {plans.map((plan) => (
-            <div key={plan.id} className="g-card p-5">
+            <Card key={plan.id} className="p-5">
               <form action={checkoutAction}>
-                <input type="hidden" name="planId" value={plan.id} />
+                <Input type="hidden" name="planId" value={plan.id} />
                 <h2 className="font-serif text-[24px] font-bold">{plan.title}</h2>
                 <p className="mt-2 text-sm text-gojo-ink-muted">{plan.description}</p>
                 <div className="mt-5 font-serif text-[34px] font-bold">
                   {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
                 </div>
-                <button type="submit" className="g-btn-primary mt-5 w-full text-sm">
+                <Button type="submit" className="mt-5 w-full">
                   Оплатить через ЮKassa
-                </button>
+                </Button>
               </form>
-            </div>
+            </Card>
           ))}
         </section>
 

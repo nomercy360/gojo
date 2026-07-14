@@ -1,5 +1,7 @@
 import { LessonCardsManager } from "@/app/lessons/[id]/cards-manager";
 import { HomeworkManager } from "@/app/lessons/[id]/homework-manager";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   ApiError,
   type LessonStudentDto,
@@ -30,7 +32,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function TeacherLessonPage({ params }: Props) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin/login");
   if (!isTeacherUser(user)) redirect("/dashboard");
 
   let lesson: LessonDto;
@@ -50,7 +52,7 @@ export default async function TeacherLessonPage({ params }: Props) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="g-card px-6 py-8">
+          <Card className="px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `Не удалось открыть урок (${e.status})` : "Ошибка загрузки"}
             </p>
@@ -60,7 +62,7 @@ export default async function TeacherLessonPage({ params }: Props) {
             >
               ← К панели учителя
             </Link>
-          </div>
+          </Card>
         </div>
       </main>
     );
@@ -77,7 +79,7 @@ export default async function TeacherLessonPage({ params }: Props) {
           ← К панели учителя
         </Link>
 
-        <div className="g-card mt-6 p-6">
+        <Card className="mt-6 p-6">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
             Урок учителя
           </div>
@@ -94,7 +96,7 @@ export default async function TeacherLessonPage({ params }: Props) {
             </p>
           </div>
           <MeetingLinkForm lessonId={id} meetingUrl={lesson.meetingUrl} />
-        </div>
+        </Card>
 
         <section className="mt-10">
           <h2 className="font-serif text-[22px] font-bold">Студенты</h2>
@@ -124,25 +126,24 @@ export default async function TeacherLessonPage({ params }: Props) {
           ) : (
             <ul className="mt-4 space-y-3">
               {materials.map((m) => (
-                <li
-                  key={m.id}
-                  className="g-card flex items-center justify-between p-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-bold">{m.title}</p>
-                    <p className="text-[11px] text-gojo-ink-muted">
-                      {m.fileType || "file"} · {new Date(m.createdAt).toLocaleDateString("ru-RU")}
-                    </p>
-                  </div>
-                  <a
-                    href={m.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-3 shrink-0 rounded-md border border-black/10 bg-gojo-surface px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-gojo-orange hover:text-gojo-orange"
-                  >
-                    Открыть
-                  </a>
-                </li>
+                <Card key={m.id} asChild className="flex-row items-center justify-between p-4">
+                  <li>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold">{m.title}</p>
+                      <p className="text-[11px] text-gojo-ink-muted">
+                        {m.fileType || "file"} · {new Date(m.createdAt).toLocaleDateString("ru-RU")}
+                      </p>
+                    </div>
+                    <a
+                      href={m.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      Открыть
+                    </a>
+                  </li>
+                </Card>
               ))}
             </ul>
           )}

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewStudentPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin/login");
   if (!isTeacherUser(user)) redirect("/dashboard");
 
   const plans = await fetchPaymentPlans();

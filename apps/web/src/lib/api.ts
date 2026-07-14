@@ -137,7 +137,7 @@ export function createLesson(body: {
   title: string;
   startsAt: string;
   endsAt: string;
-  studentId?: string;
+  studentIds?: string[];
   meetingUrl?: string;
 }) {
   return apiFetch<LessonDto>("/teacher/lessons", {

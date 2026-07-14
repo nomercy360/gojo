@@ -1,5 +1,11 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { PaymentPlanDto } from "@gojo/shared";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
@@ -15,62 +21,29 @@ export function CreateStudentForm({ plans }: { plans: PaymentPlanDto[] }) {
   }, [state.ok]);
 
   return (
-    <div className="g-card p-6">
+    <Card className="p-6">
       <h2 className="font-serif text-[22px] font-bold">Новый студент</h2>
       <p className="mt-1 text-[13px] text-gojo-ink-muted">
         Создаёт аккаунт и отправляет студенту письмо со ссылкой для установки пароля.
       </p>
       <form action={formAction} className="mt-5 space-y-4">
-        <div>
-          <label className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft" htmlFor="name">
-            Имя
-          </label>
-          <input
-            id="name"
-            name="name"
-            required
-            placeholder="Как зовут студента?"
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="student@example.com"
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-          />
-        </div>
-        <div>
-          <label
-            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-            htmlFor="nickname"
-          >
+        <Field>
+          <FieldLabel htmlFor="name">Имя</FieldLabel>
+          <Input id="name" name="name" required placeholder="Как зовут студента?" />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Input id="email" name="email" type="email" required placeholder="student@example.com" />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="nickname">
             Никнейм <span className="font-normal opacity-60">(необязательно)</span>
-          </label>
-          <input
-            id="nickname"
-            name="nickname"
-            placeholder="Как будет отображаться в ЛК"
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft" htmlFor="planId">
-            Тариф
-          </label>
-          <select
-            id="planId"
-            name="planId"
-            required
-            defaultValue=""
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-          >
+          </FieldLabel>
+          <Input id="nickname" name="nickname" placeholder="Как будет отображаться в ЛК" />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="planId">Тариф</FieldLabel>
+          <NativeSelect id="planId" name="planId" required defaultValue="">
             <option value="" disabled>
               Выбери тариф
             </option>
@@ -79,19 +52,19 @@ export function CreateStudentForm({ plans }: { plans: PaymentPlanDto[] }) {
                 {plan.title} — {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
               </option>
             ))}
-          </select>
-        </div>
+          </NativeSelect>
+        </Field>
 
         {state.error ? (
-          <div className="rounded-md border border-gojo-error/40 bg-gojo-error-soft px-4 py-3 text-sm font-bold text-gojo-error">
-            {state.error}
-          </div>
+          <Alert variant="destructive" className="bg-gojo-error-soft">
+            <AlertDescription className="font-bold text-gojo-error">{state.error}</AlertDescription>
+          </Alert>
         ) : null}
 
-        <button type="submit" disabled={pending} className="g-btn-primary text-sm">
+        <Button type="submit" disabled={pending}>
           {pending ? "Создаём..." : "Создать аккаунт"}
-        </button>
+        </Button>
       </form>
-    </div>
+    </Card>
   );
 }

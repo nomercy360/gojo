@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+/*
+ ---break---
+ */
+@custom-variant dark (&:is(.dark *));
 
 /*
  * Gojo Learn — Manga-inspired design system v1.0
@@ -119,88 +124,6 @@ h4 {
 }
 .font-jp-serif {
   font-family: var(--font-jp-serif);
-}
-
-/* Manga card press effect */
-.card-pop {
-  box-shadow: var(--shadow-pop);
-  transform: translate(0, 0);
-  transition: transform 150ms ease, box-shadow 150ms ease;
-}
-.card-pop:hover {
-  box-shadow: var(--shadow-pop-hover);
-  transform: translate(2px, 2px);
-}
-
-/* Button press effect */
-.btn-pop {
-  box-shadow: 3px 3px 0 var(--color-gojo-ink);
-  transform: translate(0, 0);
-  transition: transform 150ms ease, box-shadow 150ms ease;
-}
-.btn-pop:hover {
-  box-shadow: 2px 2px 0 var(--color-gojo-ink);
-  transform: translate(1px, 1px);
-}
-.btn-pop:active {
-  box-shadow: 0 0 0 var(--color-gojo-ink);
-  transform: translate(3px, 3px);
-}
-
-/* Soft UI (v14-derived) — used across the logged-in app, matching the
- * landing page's refined look. Replaces .card-pop / .btn-pop / border-2. */
-.g-card {
-  background: var(--color-gojo-surface);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 220ms ease, box-shadow 220ms ease;
-}
-.g-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-.g-btn-primary {
-  background: var(--color-gojo-orange);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 12px 24px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 150ms ease, opacity 150ms ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.g-btn-primary:hover {
-  transform: translateY(-2px);
-  opacity: 0.92;
-}
-.g-btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-.g-btn-secondary {
-  background: transparent;
-  color: var(--color-gojo-ink);
-  border: 1.5px solid rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  padding: 12px 22px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 200ms ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.g-btn-secondary:hover {
-  border-color: var(--color-gojo-orange);
-  color: var(--color-gojo-orange);
-  background: rgba(232, 66, 10, 0.04);
 }
 
 /* react-phone-number-input — restyled to match the app's soft input look.
@@ -3435,7 +3358,8 @@ html:has(.landing-root) {
 .landing-root .nav-mobile.open {
   display: flex;
 }
-.landing-root .nav-mobile a {
+.landing-root .nav-mobile a,
+.landing-root .nav-mobile-link {
   padding: 14px 28px;
   font-family: var(--font-body);
   font-size: 15px;
@@ -3444,10 +3368,12 @@ html:has(.landing-root) {
   text-decoration: none;
   border-top: 1px solid var(--hairline);
 }
-.landing-root .nav-mobile a:first-child {
+.landing-root .nav-mobile a:first-child,
+.landing-root .nav-mobile-link:first-child {
   border-top: none;
 }
-.landing-root .nav-mobile a:hover {
+.landing-root .nav-mobile a:hover,
+.landing-root .nav-mobile-link:hover {
   color: var(--orange);
   background: var(--white);
 }
@@ -3730,5 +3656,136 @@ html:has(.landing-root) {
   .landing-root .booking-contact-action {
     font-size: 14px;
     padding: 0 11px;
+  }
+}
+/*
+ ---break---
+ */
+@theme inline {
+  --font-heading: var(--font-fraunces), var(--font-pt-serif), Georgia, serif;
+  --font-sans: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+/*
+ ---break---
+ */
+:root {
+  --background: #f8f4ec;
+  --foreground: #252525;
+  --card: #ffffff;
+  --card-foreground: #252525;
+  --popover: #ffffff;
+  --popover-foreground: #252525;
+  --primary: #e8420a;
+  --primary-foreground: #ffffff;
+  --secondary: #efe7d8;
+  --secondary-foreground: #252525;
+  --muted: #f3eee5;
+  --muted-foreground: #6b6b6b;
+  --accent: #fde8e0;
+  --accent-foreground: #7a2005;
+  --destructive: #c8302c;
+  --border: rgb(37 37 37 / 0.1);
+  --input: rgb(37 37 37 / 0.14);
+  --ring: #e8420a;
+  --chart-1: #e8420a;
+  --chart-2: #4a8f3a;
+  --chart-3: #2c5f7c;
+  --chart-4: #e30613;
+  --chart-5: #6b6b6b;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #252525;
+  --sidebar-primary: #e8420a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fde8e0;
+  --sidebar-accent-foreground: #7a2005;
+  --sidebar-border: rgb(37 37 37 / 0.1);
+  --sidebar-ring: #e8420a;
+}
+/*
+ ---break---
+ */
+.dark {
+  --background: #1a1a1a;
+  --foreground: #f8f4ec;
+  --card: #252525;
+  --card-foreground: #f8f4ec;
+  --popover: #252525;
+  --popover-foreground: #f8f4ec;
+  --primary: #f05a22;
+  --primary-foreground: #ffffff;
+  --secondary: #363636;
+  --secondary-foreground: #f8f4ec;
+  --muted: #303030;
+  --muted-foreground: #b7b0a5;
+  --accent: #4a271b;
+  --accent-foreground: #ffd8ca;
+  --destructive: #ef6a65;
+  --border: rgb(255 255 255 / 0.12);
+  --input: rgb(255 255 255 / 0.16);
+  --ring: #f05a22;
+  --sidebar: #252525;
+  --sidebar-foreground: #f8f4ec;
+  --sidebar-primary: #f05a22;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #4a271b;
+  --sidebar-accent-foreground: #ffd8ca;
+  --sidebar-border: rgb(255 255 255 / 0.12);
+  --sidebar-ring: #f05a22;
+}
+/*
+ ---break---
+ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
   }
 }

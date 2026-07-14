@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { track } from "@/lib/analytics";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -193,7 +195,8 @@ export function BookingModal({
           aria-modal="true"
           aria-labelledby="booking-modal-title"
         >
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             className="modal-close booking-modal-close"
             aria-label="Закрыть"
@@ -202,7 +205,7 @@ export function BookingModal({
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
-          </button>
+          </Button>
 
           <div hidden={submitted}>
             <div className="booking-modal-tag">Бесплатный первый урок</div>
@@ -218,8 +221,9 @@ export function BookingModal({
 
             <div className="booking-contact-tabs" role="tablist" aria-label="Способ связи">
               {contactMethods.map((method) => (
-                <button
+                <Button
                   key={method.id}
+                  variant="unstyled"
                   type="button"
                   id={`booking-tab-${method.id}`}
                   className={`booking-contact-tab ${contactMethod === method.id ? "active" : ""}`}
@@ -230,7 +234,7 @@ export function BookingModal({
                   onClick={() => setContactMethod(method.id)}
                 >
                   {method.label}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -241,7 +245,8 @@ export function BookingModal({
                 aria-labelledby="booking-tab-telegram"
                 hidden={contactMethod !== "telegram"}
               >
-                <button
+                <Button
+                  variant="unstyled"
                   className="booking-contact-action booking-telegram-action"
                   type="button"
                   disabled={telegramLoading || formSubmitting}
@@ -253,7 +258,7 @@ export function BookingModal({
                   {telegramLoading || formSubmitting
                     ? "Открываем Telegram…"
                     : "Войти через Telegram"}
-                </button>
+                </Button>
               </div>
 
               <div
@@ -266,7 +271,7 @@ export function BookingModal({
                 <label className="sr-only" htmlFor="bm-email">
                   Email
                 </label>
-                <input
+                <Input
                   id="bm-email"
                   type="email"
                   value={email}
@@ -275,9 +280,14 @@ export function BookingModal({
                   required={contactMethod === "email"}
                   onChange={(event) => setEmail(event.target.value)}
                 />
-                <button className="booking-contact-action" type="submit" disabled={formSubmitting}>
+                <Button
+                  variant="unstyled"
+                  className="booking-contact-action"
+                  type="submit"
+                  disabled={formSubmitting}
+                >
                   {formSubmitting ? "Отправляем…" : "Записаться"}
-                </button>
+                </Button>
               </div>
 
               <div
@@ -290,7 +300,7 @@ export function BookingModal({
                 <label className="sr-only" htmlFor="bm-phone">
                   Телефон
                 </label>
-                <input
+                <Input
                   id="bm-phone"
                   type="tel"
                   value={phone}
@@ -300,16 +310,24 @@ export function BookingModal({
                   required={contactMethod === "phone"}
                   onChange={(event) => setPhone(event.target.value)}
                 />
-                <button className="booking-contact-action" type="submit" disabled={formSubmitting}>
+                <Button
+                  variant="unstyled"
+                  className="booking-contact-action"
+                  type="submit"
+                  disabled={formSubmitting}
+                >
                   {formSubmitting ? "Отправляем…" : "Жду звонка"}
-                </button>
+                </Button>
               </div>
 
               <label
+                htmlFor="booking-privacy-consent"
                 className="booking-modal-policy"
                 style={{ display: "flex", gap: 8, textAlign: "left" }}
               >
-                <input
+                <Input
+                  unstyled
+                  id="booking-privacy-consent"
                   type="checkbox"
                   checked={privacyAccepted}
                   onChange={(event) => setPrivacyAccepted(event.target.checked)}

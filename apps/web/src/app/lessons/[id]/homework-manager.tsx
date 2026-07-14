@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { AttendanceStatus, LessonStudentDto } from "@/lib/api";
 import { quizLevelLabel } from "@/lib/quiz-level";
 import type { HomeworkStatus, JlptLevel } from "@gojo/shared";
@@ -138,11 +141,12 @@ export function HomeworkManager({
                 </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
-                <select
+                <NativeSelect
                   value={s.jlptLevel ?? ""}
+                  size="sm"
                   disabled={pending}
                   onChange={(e) => setLevel(s.studentId, e.target.value as JlptLevel)}
-                  className="rounded-md border border-black/10 bg-gojo-surface px-2 py-1.5 text-[11px] font-bold disabled:opacity-50"
+                  className="w-28 text-[11px] font-bold"
                 >
                   <option value="" disabled>
                     Уровень
@@ -152,33 +156,36 @@ export function HomeworkManager({
                       {lvl}
                     </option>
                   ))}
-                </select>
-                <select
+                </NativeSelect>
+                <NativeSelect
                   value={s.attendanceStatus}
+                  size="sm"
                   disabled={pending}
                   onChange={(e) => setAttendance(s.studentId, e.target.value as AttendanceStatus)}
-                  className="rounded-md border border-black/10 bg-gojo-surface px-2 py-1.5 text-[11px] font-bold disabled:opacity-50"
+                  className="w-44 text-[11px] font-bold"
                 >
                   {Object.entries(ATTENDANCE_LABEL).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
                 {(["missed", "done"] as const).map((status) => (
-                  <button
+                  <Button
                     key={status}
                     type="button"
                     disabled={pending}
                     onClick={() => setStatus(s.studentId, status)}
-                    className={`rounded-md border px-3 py-1.5 text-[11px] font-bold disabled:opacity-50 ${
+                    size="sm"
+                    variant="outline"
+                    className={`text-[11px] ${
                       s.homeworkStatus === status
                         ? STATUS_CLASS[status]
                         : "border-black/10 text-gojo-ink-muted hover:border-black/20"
                     }`}
                   >
                     {STATUS_LABEL[status]}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -186,25 +193,19 @@ export function HomeworkManager({
               action={(formData) => saveNotes(s.studentId, formData)}
               className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]"
             >
-              <input
+              <Input
                 name="postLessonNote"
                 defaultValue={s.postLessonNote ?? ""}
                 placeholder="Заметка по уроку"
-                className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
               />
-              <input
+              <Input
                 name="recommendation"
                 defaultValue={s.recommendation ?? ""}
                 placeholder="Следующий шаг"
-                className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
               />
-              <button
-                type="submit"
-                disabled={pending}
-                className="rounded-md border border-black/10 bg-gojo-paper-2 px-3 py-2 text-[12px] font-bold disabled:opacity-50"
-              >
+              <Button type="submit" disabled={pending} variant="secondary" size="sm">
                 Сохранить
-              </button>
+              </Button>
             </form>
           </li>
         ))}

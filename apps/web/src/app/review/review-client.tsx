@@ -1,6 +1,8 @@
 "use client";
 
 import { KanjiModal } from "@/components/kanji-modal";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useTrainingHeartbeat } from "@/lib/use-training-heartbeat";
 import type { FlashcardDto, ReviewQueueDto } from "@gojo/shared";
 import { useState, useTransition } from "react";
@@ -91,16 +93,17 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
             </div>
           </div>
 
-          <div className="g-card p-10">
+          <Card className="p-10">
             <div className="text-center">
-              <button
+              <Button
                 type="button"
                 onClick={() => setKanjiOpen(true)}
-                className="font-jp-serif text-[54px] leading-tight font-bold text-gojo-ink hover:text-gojo-orange"
+                variant="ghost"
+                className="h-auto font-jp-serif text-[54px] leading-tight font-bold text-gojo-ink hover:text-gojo-orange"
                 aria-label="Показать разбор кандзи"
               >
                 {current.word}
-              </button>
+              </Button>
             </div>
 
             {flipped || mode === "unlearned" ? (
@@ -111,34 +114,35 @@ export function ReviewClient({ initialQueue }: { initialQueue: ReviewQueueDto })
                 <div className="mt-2 text-[18px] font-bold text-gojo-ink">{current.meaning}</div>
               </div>
             ) : null}
-          </div>
+          </Card>
 
           <div className="mt-6">
             {mode === "unlearned" ? (
-              <button type="button" disabled={pending} onClick={learn} className="g-btn-primary w-full text-sm">
+              <Button type="button" disabled={pending} onClick={learn} className="w-full">
                 Понял, в оборот
-              </button>
+              </Button>
             ) : !flipped ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => setFlipped(true)}
-                className="w-full rounded-md bg-gojo-ink px-5 py-3 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
+                variant="secondary"
+                className="w-full bg-gojo-ink text-white hover:bg-gojo-ink/90 hover:text-white"
               >
                 Показать ответ
-              </button>
+              </Button>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <button
+                <Button
                   type="button"
                   disabled={pending}
                   onClick={() => answer(false)}
-                  className="rounded-md bg-gojo-error-soft px-5 py-3 text-sm font-bold text-gojo-error transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                  variant="destructive"
                 >
                   Забыл
-                </button>
-                <button type="button" disabled={pending} onClick={() => answer(true)} className="g-btn-primary text-sm">
+                </Button>
+                <Button type="button" disabled={pending} onClick={() => answer(true)}>
                   Помню
-                </button>
+                </Button>
               </div>
             )}
           </div>

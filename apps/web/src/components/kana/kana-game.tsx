@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { useTrainingHeartbeat } from "@/lib/use-training-heartbeat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -222,7 +223,8 @@ function TeachScreen({
     <Shell>
       <div className="gojo-kana-rise" key={item.kana} style={{ textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             onClick={onExit}
             style={{
@@ -237,7 +239,7 @@ function TeachScreen({
             }}
           >
             ← Карта
-          </button>
+          </Button>
           <Eyebrow>
             {scriptNameRu(script)} · ряд «{ROW_NAMES[rowIndex]}» · {teachIndex + 1}/{row.length}
           </Eyebrow>
@@ -309,9 +311,14 @@ function TeachScreen({
           ))}
         </div>
 
-        <button type="button" onClick={onNext} style={{ ...btnInk, marginTop: 28 }}>
+        <Button
+          variant="unstyled"
+          type="button"
+          onClick={onNext}
+          style={{ ...btnInk, marginTop: 28 }}
+        >
           Дальше →
-        </button>
+        </Button>
         {isFirstEver && (
           <p style={{ fontFamily: MANROPE, fontSize: 12, color: C.muted, marginTop: 12 }}>
             Без регистрации · первое слово через ~3 минуты
@@ -476,7 +483,8 @@ function QuizEngine({
             justifyContent: "space-between",
           }}
         >
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             onClick={onExit}
             style={{
@@ -491,7 +499,7 @@ function QuizEngine({
             }}
           >
             {exitLabel}
-          </button>
+          </Button>
           <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: C.ink3 }}>
             {headerNote} · {index + 1} / {queue.length}
           </div>
@@ -611,7 +619,8 @@ function QuizEngine({
             }
 
             return (
-              <button
+              <Button
+                variant="unstyled"
                 key={choice}
                 type="button"
                 onClick={() => handleChoice(choice)}
@@ -650,7 +659,7 @@ function QuizEngine({
                     {choice}
                   </span>
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -780,11 +789,17 @@ function WordScreen({
           </p>
         )}
 
-        <button type="button" onClick={onNext} style={{ ...btnInk, marginTop: 28 }}>
+        <Button
+          variant="unstyled"
+          type="button"
+          onClick={onNext}
+          style={{ ...btnInk, marginTop: 28 }}
+        >
           Дальше →
-        </button>
+        </Button>
         {offerTeacher && (
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             onClick={() => {
               track("kana_save_clicked", { learned: learnedTotal, placement: "word" });
@@ -793,7 +808,7 @@ function WordScreen({
             style={quietLink}
           >
             Закрепить с преподавателем — бесплатный урок →
-          </button>
+          </Button>
         )}
       </div>
       <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="kana_word" />
@@ -940,25 +955,31 @@ function MapScreen({
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 22 }}>
           {!scriptDone && nextRowIndex !== null && (
-            <button type="button" onClick={() => onNextRow(nextRowIndex)} style={btnPrimary}>
+            <Button
+              variant="unstyled"
+              type="button"
+              onClick={() => onNextRow(nextRowIndex)}
+              style={btnPrimary}
+            >
               Следующий ряд: «{ROW_NAMES[nextRowIndex]}» →
-            </button>
+            </Button>
           )}
           {scriptDone && onStartKatakana && (
-            <button type="button" onClick={onStartKatakana} style={btnPrimary}>
+            <Button variant="unstyled" type="button" onClick={onStartKatakana} style={btnPrimary}>
               Начать катакану →
-            </button>
+            </Button>
           )}
           {scriptDone && !onStartKatakana && onAsk && (
-            <button type="button" onClick={onAsk} style={btnPrimary}>
+            <Button variant="unstyled" type="button" onClick={onAsk} style={btnPrimary}>
               Что учить дальше →
-            </button>
+            </Button>
           )}
           {/* the save ask appears only when the map is worth saving; accounts
               are admin-provisioned, so for a guest "save" means becoming a
               lead — which is why it outranks free mode in visual weight */}
           {!isLoggedIn && learnedTotal >= 10 && (
-            <button
+            <Button
+              variant="unstyled"
               type="button"
               onClick={() => {
                 track("kana_save_clicked", { learned: learnedTotal, placement: "map" });
@@ -967,11 +988,11 @@ function MapScreen({
               style={btnSoft}
             >
               Обсудить прогресс с преподавателем
-            </button>
+            </Button>
           )}
-          <button type="button" onClick={onReview} style={btnGhost}>
+          <Button variant="unstyled" type="button" onClick={onReview} style={btnGhost}>
             Свободный режим — 25 случайных знаков
-          </button>
+          </Button>
         </div>
 
         {isLoggedIn && (
@@ -1054,9 +1075,14 @@ function WallScreen({ onNext }: { onNext: () => void }) {
           Мы построили Gojo так, чтобы ты не оказался в правой части этого графика.
         </p>
 
-        <button type="button" onClick={onNext} style={{ ...btnInk, marginTop: 20 }}>
+        <Button
+          variant="unstyled"
+          type="button"
+          onClick={onNext}
+          style={{ ...btnInk, marginTop: 20 }}
+        >
           Как это работает →
-        </button>
+        </Button>
       </div>
     </Shell>
   );
@@ -1118,7 +1144,8 @@ function AskScreen({ onContinue }: { onContinue: () => void }) {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 26 }}>
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             onClick={() => {
               track("kana_ask_clicked");
@@ -1127,10 +1154,10 @@ function AskScreen({ onContinue }: { onContinue: () => void }) {
             style={btnPrimary}
           >
             Бесплатный урок с преподавателем
-          </button>
-          <button type="button" onClick={onContinue} style={btnGhost}>
+          </Button>
+          <Button variant="unstyled" type="button" onClick={onContinue} style={btnGhost}>
             Продолжить тренажёр — бесплатно
-          </button>
+          </Button>
         </div>
       </div>
       <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="kana" />
@@ -1165,7 +1192,8 @@ function ReviewSetupScreen({
 
   return (
     <Shell>
-      <button
+      <Button
+        variant="unstyled"
         type="button"
         onClick={onExit}
         style={{
@@ -1181,7 +1209,7 @@ function ReviewSetupScreen({
         }}
       >
         ← Карта
-      </button>
+      </Button>
       <Label>Свободный режим</Label>
 
       <h1
@@ -1225,7 +1253,8 @@ function ReviewSetupScreen({
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
           {(["hiragana", "katakana", "both"] as SetupMode[]).map((m) => (
-            <button
+            <Button
+              variant="unstyled"
               key={m}
               type="button"
               onClick={() => setMode(m)}
@@ -1272,7 +1301,7 @@ function ReviewSetupScreen({
               >
                 {counts[m]} симв.
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -1293,7 +1322,8 @@ function ReviewSetupScreen({
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {(["kana-to-romaji", "romaji-to-kana"] as Direction[]).map((d) => (
-            <button
+            <Button
+              variant="unstyled"
               key={d}
               type="button"
               onClick={() => setDir(d)}
@@ -1329,14 +1359,19 @@ function ReviewSetupScreen({
                   ? "Видишь あ — выбираешь «a»"
                   : "Видишь «ka» — выбираешь か"}
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      <button type="button" onClick={() => onStart(mode, dir)} style={btnPrimary}>
+      <Button
+        variant="unstyled"
+        type="button"
+        onClick={() => onStart(mode, dir)}
+        style={btnPrimary}
+      >
         Начать
-      </button>
+      </Button>
     </Shell>
   );
 }
@@ -1473,15 +1508,17 @@ function ReviewSummaryScreen({
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {mistakes.length > 0 && (
-            <button
+            <Button
+              variant="unstyled"
               type="button"
               onClick={onRetryMistakes}
               style={{ ...btnPrimary, padding: "14px" }}
             >
               Повторить ошибки ({mistakes.length})
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             onClick={onRestart}
             style={{
@@ -1493,10 +1530,10 @@ function ReviewSummaryScreen({
             }}
           >
             Ещё раунд
-          </button>
-          <button type="button" onClick={onExit} style={quietLink}>
+          </Button>
+          <Button variant="unstyled" type="button" onClick={onExit} style={quietLink}>
             ← К карте каны
-          </button>
+          </Button>
         </div>
       </div>
     </Shell>

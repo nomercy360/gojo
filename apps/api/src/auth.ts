@@ -3,6 +3,7 @@ import { account, session, user, verification } from "@gojo/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth, magicLink } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { env } from "./env.ts";
 import { sendEmail } from "./mailer.ts";
@@ -63,6 +64,9 @@ export const auth = betterAuth({
           scopes: ["openid", "profile", "telegram:bot_access"],
           pkce: true,
           authentication: "basic",
+          // Accounts are provisioned by an admin. Telegram may authenticate an
+          // already-linked account, but it must never create a new student.
+          disableSignUp: true,
           getUserInfo: async (tokens) => {
             const idToken = tokens.idToken;
             if (!idToken) return null;
@@ -74,19 +78,28 @@ export const auth = betterAuth({
             // `sub` is a large opaque string that overflows MAX_SAFE_INTEGER.
             const id = typeof payload.id === "number" ? payload.id : Number(payload.id);
             if (!Number.isSafeInteger(id) || id <= 0) return null;
+            const [linkedUser] = await db
+              .select({ email: user.email, name: user.name, image: user.image })
+              .from(user)
+              .where(eq(user.telegramId, id))
+              .limit(1);
             const name =
               typeof payload.name === "string" && payload.name.trim()
                 ? payload.name.trim()
-                : `tg${id}`;
+                : (linkedUser?.name ?? `tg${id}`);
             return {
               id: String(id),
-              // Telegram returns no email. Synthesize a stable, unique
-              // placeholder so the NOT NULL/unique email constraint holds; a
-              // real email can be attached later for magic-link sign-in.
-              email: `${id}@telegram.gojo`,
+              // Telegram returns no email. Match an admin-provisioned account
+              // by the Telegram ID the student linked in their profile. The
+              // placeholder only supports legacy already-linked OAuth users;
+              // disableSignUp below prevents it from creating a new account.
+              email: linkedUser?.email ?? `${id}@telegram.gojo`,
               emailVerified: true,
               name,
-              image: typeof payload.picture === "string" ? payload.picture : undefined,
+              image:
+                typeof payload.picture === "string"
+                  ? payload.picture
+                  : (linkedUser?.image ?? undefined),
             };
           },
           // Persist the Telegram numeric id on the user (used by reminders and
@@ -104,7 +117,27 @@ export const auth = betterAuth({
     // Caddy route, so — unlike the old verify/reset emails — it needs no manual
     // /api rewrite.
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
+      // A magic link is sign-in/invitation only. POST /teacher/students creates
+      // the account before requesting its first link.
+      disableSignUp: true,
+      sendMagicLink: async ({ email, url, metadata }) => {
+        const [existing] = await db
+          .select({ role: user.role })
+          .from(user)
+          .where(eq(user.email, email.toLowerCase()))
+          .limit(1);
+        const expectedRole = metadata?.expectedRole;
+
+        // Keep the public response generic while declining to email unknown
+        // users or a user who tried the wrong role-specific login page.
+        if (
+          !existing ||
+          (expectedRole === "admin" || expectedRole === "student"
+            ? existing.role !== expectedRole
+            : false)
+        ) {
+          return;
+        }
         try {
           await sendEmail(
             email,

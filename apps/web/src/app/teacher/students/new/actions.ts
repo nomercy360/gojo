@@ -21,7 +21,7 @@ export async function createStudentAction(
     await createStudent({ email, name, nickname, planId });
   } catch (e) {
     if (e instanceof ApiError) {
-      if (e.status === 401) redirect("/login");
+      if (e.status === 401) redirect("/admin/login");
       if (e.status === 403) return { error: "Нет прав администратора" };
       if (e.status === 400) return { error: "Проверь введённые данные" };
       return { error: `API ${e.status}: ${e.message}` };

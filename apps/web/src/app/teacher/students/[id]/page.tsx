@@ -1,4 +1,8 @@
 import { Avatar } from "@/components/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   ApiError,
   type TeacherStudentProfileDto,
@@ -18,7 +22,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export default async function TeacherStudentProfilePage({ params }: Props) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin/login");
   if (!isTeacherUser(user)) redirect("/dashboard");
 
   const { id } = await params;
@@ -29,7 +33,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="g-card px-6 py-8">
+          <Card className="px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `API ${e.status}: ${e.message}` : "Ошибка загрузки"}
             </p>
@@ -39,7 +43,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
             >
               ← К студентам
             </Link>
-          </div>
+          </Card>
         </div>
       </main>
     );
@@ -58,109 +62,117 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
           ← К студентам
         </Link>
 
-        <section className="g-card mt-6 p-5">
-          <div className="flex flex-wrap items-center gap-4">
-            <Avatar
-              value={student.avatarUrl}
-              size={64}
-              fallback={student.nickname ?? student.email}
-            />
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-                Профиль студента
+        <Card asChild className="mt-6 p-5">
+          <section>
+            <div className="flex flex-wrap items-center gap-4">
+              <Avatar
+                value={student.avatarUrl}
+                size={64}
+                fallback={student.nickname ?? student.email}
+              />
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+                  Профиль студента
+                </div>
+                <h1 className="mt-1 font-serif text-[32px] font-bold">
+                  {student.nickname ?? student.email}
+                </h1>
+                <p className="text-sm text-gojo-ink-muted">
+                  {student.email} · JLPT: {student.jlptLevel ?? "не выставлен"} · Квиз:{" "}
+                  {student.quizLevel ? quizLevelLabel(student.quizLevel) : "нет"}
+                </p>
               </div>
-              <h1 className="mt-1 font-serif text-[32px] font-bold">
-                {student.nickname ?? student.email}
-              </h1>
-              <p className="text-sm text-gojo-ink-muted">
-                {student.email} · JLPT: {student.jlptLevel ?? "не выставлен"} · Квиз:{" "}
-                {student.quizLevel ? quizLevelLabel(student.quizLevel) : "нет"}
-              </p>
             </div>
-          </div>
-        </section>
+          </section>
+        </Card>
 
-        <section className="g-card mt-6 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Тариф
-          </div>
-          <p className="mt-2 text-sm text-gojo-ink-muted">
-            Текущий:{" "}
-            <span className="font-bold text-gojo-ink">
-              {plans.find((p) => p.id === student.assignedPlanId)?.title ?? "не назначен"}
-            </span>
-          </p>
-          <form action={setStudentPlanAction} className="mt-4 flex flex-wrap items-center gap-3">
-            <input type="hidden" name="studentId" value={student.id} />
-            <select
-              key={student.assignedPlanId ?? ""}
-              name="planId"
-              defaultValue={student.assignedPlanId ?? ""}
-              className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-            >
-              <option value="" disabled>
-                Выбери тариф
-              </option>
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.title} — {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+        <Card asChild className="mt-6 p-5">
+          <section>
+            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+              Тариф
+            </div>
+            <p className="mt-2 text-sm text-gojo-ink-muted">
+              Текущий:{" "}
+              <span className="font-bold text-gojo-ink">
+                {plans.find((p) => p.id === student.assignedPlanId)?.title ?? "не назначен"}
+              </span>
+            </p>
+            <form action={setStudentPlanAction} className="mt-4 flex flex-wrap items-center gap-3">
+              <Input type="hidden" name="studentId" value={student.id} />
+              <NativeSelect
+                key={student.assignedPlanId ?? ""}
+                name="planId"
+                defaultValue={student.assignedPlanId ?? ""}
+                className="max-w-sm"
+              >
+                <option value="" disabled>
+                  Выбери тариф
                 </option>
-              ))}
-            </select>
-            <button type="submit" className="g-btn-secondary text-sm">
-              Сохранить тариф
-            </button>
-          </form>
-        </section>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.title} — {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+                  </option>
+                ))}
+              </NativeSelect>
+              <Button type="submit" variant="outline">
+                Сохранить тариф
+              </Button>
+            </form>
+          </section>
+        </Card>
 
-        <section className="g-card mt-6 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Статус оплаты
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <StatusTile label="Доступ" value={profile.access.isActive ? "Активен" : "Нет"} />
-            <StatusTile
-              label="До"
-              value={
-                profile.access.activeUntil
-                  ? new Date(profile.access.activeUntil).toLocaleDateString("ru-RU")
-                  : "—"
-              }
-            />
-            <StatusTile label="Уроки" value={String(profile.access.lessonCredits)} />
-          </div>
+        <Card asChild className="mt-6 p-5">
+          <section>
+            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+              Статус оплаты
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <StatusTile label="Доступ" value={profile.access.isActive ? "Активен" : "Нет"} />
+              <StatusTile
+                label="До"
+                value={
+                  profile.access.activeUntil
+                    ? new Date(profile.access.activeUntil).toLocaleDateString("ru-RU")
+                    : "—"
+                }
+              />
+              <StatusTile label="Уроки" value={String(profile.access.lessonCredits)} />
+            </div>
 
-          {profile.payments.length > 0 ? (
-            <ul className="mt-4 space-y-2">
-              {profile.payments.slice(0, 5).map((payment) => (
-                <li
-                  key={payment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-gojo-paper px-3 py-2 text-sm"
-                >
-                  <span className="text-gojo-ink-muted">
-                    {new Date(payment.createdAt).toLocaleDateString("ru-RU")} · {payment.planId}
-                  </span>
-                  <span className="font-bold">
-                    {Number(payment.amountValue).toLocaleString("ru-RU")} ₽ · {payment.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-4 text-sm text-gojo-ink-muted">Платежей пока нет.</p>
-          )}
-        </section>
+            {profile.payments.length > 0 ? (
+              <ul className="mt-4 space-y-2">
+                {profile.payments.slice(0, 5).map((payment) => (
+                  <li
+                    key={payment.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-gojo-paper px-3 py-2 text-sm"
+                  >
+                    <span className="text-gojo-ink-muted">
+                      {new Date(payment.createdAt).toLocaleDateString("ru-RU")} · {payment.planId}
+                    </span>
+                    <span className="font-bold">
+                      {Number(payment.amountValue).toLocaleString("ru-RU")} ₽ · {payment.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-gojo-ink-muted">Платежей пока нет.</p>
+            )}
+          </section>
+        </Card>
 
-        <section className="g-card mt-6 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Прогресс по урокам
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <StatusTile label="Посещено" value={String(profile.progress.attended)} />
-            <StatusTile label="Пропущено" value={String(profile.progress.noShow)} />
-            <StatusTile label="Всего" value={String(profile.progress.total)} />
-          </div>
-        </section>
+        <Card asChild className="mt-6 p-5">
+          <section>
+            <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+              Прогресс по урокам
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <StatusTile label="Посещено" value={String(profile.progress.attended)} />
+              <StatusTile label="Пропущено" value={String(profile.progress.noShow)} />
+              <StatusTile label="Всего" value={String(profile.progress.total)} />
+            </div>
+          </section>
+        </Card>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
           <section>

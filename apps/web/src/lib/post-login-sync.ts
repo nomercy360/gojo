@@ -1,6 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
-const PENDING_CONSENT_KEY = "gojo:pending-personal-data-consent";
 
 // After any login (Telegram OIDC or magic link — both redirect away from the
 // login page, so this can't run inline there any more), link a guest booking
@@ -21,24 +20,6 @@ export async function linkPendingBookingLead(): Promise<number> {
     return data.linked ?? 0;
   } catch {
     return 0;
-  }
-}
-
-export async function savePendingPersonalDataConsent(): Promise<boolean> {
-  const version = localStorage.getItem(PENDING_CONSENT_KEY);
-  if (!version) return false;
-  try {
-    const res = await fetch(`${API_URL}/users/me/personal-data-consent`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version }),
-    });
-    if (!res.ok) return false;
-    localStorage.removeItem(PENDING_CONSENT_KEY);
-    return true;
-  } catch {
-    return false;
   }
 }
 

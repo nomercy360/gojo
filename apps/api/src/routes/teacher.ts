@@ -18,7 +18,7 @@ import {
   setStudentPlanInput,
 } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -41,10 +41,10 @@ const createLessonInput = z.object({
   title: z.string().min(1).max(200),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
-  // The student this personal (1:1) lesson is scheduled for. When present the
-  // lesson is capped to that one student and a booking is created immediately —
-  // there is no self-serve booking. Optional so a slot can be pre-created.
+  // studentId remains accepted for older clients. New clients send studentIds
+  // so one lesson can invite a whole group at creation time.
   studentId: z.string().min(1).optional(),
+  studentIds: z.array(z.string().min(1)).max(8).optional(),
   meetingUrl: z.string().url().max(500).optional(),
   metadata: z
     .object({
@@ -85,6 +85,15 @@ const postLessonInput = z.object({
 });
 
 teacherRoute.use("*", requireAuth, requireTeacher);
+
+function validateNewLessonTime(startsAt: Date, endsAt: Date) {
+  if (startsAt.getTime() <= Date.now()) {
+    throw new HTTPException(400, { message: "lesson_starts_in_past" });
+  }
+  if (endsAt <= startsAt) {
+    throw new HTTPException(400, { message: "lesson_end_must_follow_start" });
+  }
+}
 
 function canManageLesson(
   u: NonNullable<AuthContext["Variables"]["user"]>,
@@ -160,6 +169,10 @@ teacherRoute.post(
     const u = c.get("user")!;
     const id = c.req.param("id");
     const body = c.req.valid("json");
+    const startsAt = new Date(body.startsAt);
+    const endsAt = new Date(body.endsAt);
+
+    validateNewLessonTime(startsAt, endsAt);
 
     const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
     if (!lead) throw new HTTPException(404, { message: "lead not found" });
@@ -169,8 +182,8 @@ teacherRoute.post(
       .values({
         teacherId: u.id,
         title: body.title,
-        startsAt: new Date(body.startsAt),
-        endsAt: new Date(body.endsAt),
+        startsAt,
+        endsAt,
         maxStudents: 1,
         metadata: { topic: `trial:${lead.id}` },
       })
@@ -391,16 +404,17 @@ teacherRoute.get("/students/:studentId", async (c) => {
 // and signs them in. (They can also sign in with Telegram afterwards.)
 teacherRoute.post("/students", zValidator("json", createStudentInput), async (c) => {
   const { email, name, nickname, planId } = c.req.valid("json");
+  const normalizedEmail = email.toLowerCase();
   if (!paymentPlans.some((p) => p.id === planId)) {
     throw new HTTPException(400, { message: "unknown plan" });
   }
 
   const ctx = await auth.$context;
-  if (await ctx.internalAdapter.findUserByEmail(email.toLowerCase())) {
+  if (await ctx.internalAdapter.findUserByEmail(normalizedEmail)) {
     throw new HTTPException(400, { message: "email already registered" });
   }
   const created = await ctx.internalAdapter.createUser({
-    email,
+    email: normalizedEmail,
     name,
     emailVerified: false,
     role: "student",
@@ -415,7 +429,7 @@ teacherRoute.post("/students", zValidator("json", createStudentInput), async (c)
 
   // Passwordless activation: a magic link that signs them straight in.
   await auth.api.signInMagicLink({
-    body: { email, name, callbackURL: `${env.WEB_ORIGIN}/dashboard` },
+    body: { email: normalizedEmail, name, callbackURL: `${env.WEB_ORIGIN}/dashboard` },
     headers: c.req.raw.headers,
   });
 
@@ -484,51 +498,67 @@ teacherRoute.get("/lessons", async (c) => {
 teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) => {
   const u = c.get("user")!;
   const body = c.req.valid("json");
+  const startsAt = new Date(body.startsAt);
+  const endsAt = new Date(body.endsAt);
+  validateNewLessonTime(startsAt, endsAt);
 
-  if (body.studentId) {
-    const [student] = await db
-      .select({ id: userTable.id, role: userTable.role })
+  const studentIds = [
+    ...new Set([...(body.studentIds ?? []), ...(body.studentId ? [body.studentId] : [])]),
+  ];
+  if (studentIds.length > 8) {
+    throw new HTTPException(400, { message: "too_many_students" });
+  }
+
+  if (studentIds.length > 0) {
+    const students = await db
+      .select({ id: userTable.id })
       .from(userTable)
-      .where(eq(userTable.id, body.studentId))
-      .limit(1);
-    if (!student || student.role !== "student") {
-      throw new HTTPException(400, { message: "unknown student" });
+      .where(and(inArray(userTable.id, studentIds), eq(userTable.role, "student")));
+    if (students.length !== studentIds.length) {
+      throw new HTTPException(400, { message: "unknown_student" });
     }
   }
 
-  const [row] = await db
-    .insert(lessons)
-    .values({
-      teacherId: u.id,
-      title: body.title,
-      startsAt: new Date(body.startsAt),
-      endsAt: new Date(body.endsAt),
-      meetingUrl: body.meetingUrl,
-      metadata: body.metadata,
-      // A personal lesson is 1:1; the assigned student is booked below.
-      ...(body.studentId ? { maxStudents: 1 } : {}),
-    })
-    .returning();
-
-  if (!row) throw new HTTPException(500, { message: "failed to create lesson" });
-
-  if (body.studentId) {
-    const [booking] = await db
-      .insert(bookings)
-      .values({ lessonId: row.id, studentId: body.studentId })
-      .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
+  const created = await db.transaction(async (tx) => {
+    const [lesson] = await tx
+      .insert(lessons)
+      .values({
+        teacherId: u.id,
+        title: body.title,
+        startsAt,
+        endsAt,
+        meetingUrl: body.meetingUrl,
+        metadata: body.metadata,
+        ...(studentIds.length > 0 ? { maxStudents: studentIds.length } : {}),
+      })
       .returning();
-    if (booking) {
-      await sendLessonConfirmation(
-        { bookingId: booking.id, userId: body.studentId },
-        row.title,
-        row.startsAt,
-      );
-    }
-  }
+    if (!lesson) throw new HTTPException(500, { message: "failed_to_create_lesson" });
+
+    const invited =
+      studentIds.length > 0
+        ? await tx
+            .insert(bookings)
+            .values(studentIds.map((studentId) => ({ lessonId: lesson.id, studentId })))
+            .returning({ id: bookings.id, studentId: bookings.studentId })
+        : [];
+    return { lesson, invited };
+  });
+
+  await Promise.all(
+    created.invited.map((booking) =>
+      sendLessonConfirmation(
+        { bookingId: booking.id, userId: booking.studentId },
+        created.lesson.title,
+        created.lesson.startsAt,
+      ),
+    ),
+  );
 
   return c.json(
-    toLessonDto(row, null, { includeMeetingUrl: true, studentCount: body.studentId ? 1 : 0 }),
+    toLessonDto(created.lesson, null, {
+      includeMeetingUrl: true,
+      studentCount: created.invited.length,
+    }),
     201,
   );
 });

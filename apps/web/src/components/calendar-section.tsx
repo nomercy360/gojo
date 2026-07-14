@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import type { LessonDto } from "@gojo/shared";
 import { useEffect, useRef, useState } from "react";
 
@@ -149,14 +150,15 @@ export function CalendarSection() {
           >
             Расписание скрыто
           </span>
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             onClick={showCalendar}
             className="g-body rounded-lg px-4 py-1.5 text-[12px] font-bold text-white transition-opacity hover:opacity-90"
             style={{ background: "#e8420a" }}
           >
             Показать расписание
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -176,14 +178,15 @@ export function CalendarSection() {
         <span className="g-mono text-[10px] uppercase tracking-wider" style={{ color: "#c0c0c0" }}>
           Расписание
         </span>
-        <button
+        <Button
+          variant="unstyled"
           type="button"
           onClick={hideCalendar}
           className="g-mono text-[10px] uppercase tracking-wider transition-colors hover:opacity-60"
           style={{ color: "#a0a0a0" }}
         >
           Скрыть
-        </button>
+        </Button>
       </div>
 
       <div
@@ -203,15 +206,17 @@ export function CalendarSection() {
             Расписание занятий
           </div>
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              variant="unstyled"
               type="button"
               aria-label="Предыдущая неделя"
               onClick={() => moveWeek(-1)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 text-[16px] text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
             >
               ←
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="unstyled"
               type="button"
               onClick={() => {
                 setSelectedDate(null);
@@ -220,22 +225,24 @@ export function CalendarSection() {
               className="g-body min-w-36 rounded-lg px-3 py-1.5 text-[12px] font-bold text-gojo-ink-muted transition-colors hover:text-gojo-orange"
             >
               {weekOffset === 0 ? "Эта неделя" : weekLabel}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="unstyled"
               type="button"
               aria-label="Следующая неделя"
               onClick={() => moveWeek(1)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 text-[16px] text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
             >
               →
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Week strip */}
         <div className="mb-5 grid grid-cols-7 gap-1.5">
           {week.map((d) => (
-            <button
+            <Button
+              variant="unstyled"
               key={d.dateKey}
               type="button"
               aria-label={`${d.label}, ${d.date}`}
@@ -280,7 +287,7 @@ export function CalendarSection() {
                   style={{ background: "#e8420a", opacity: 0.5 }}
                 />
               )}
-            </button>
+            </Button>
           ))}
         </div>
 

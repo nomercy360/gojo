@@ -65,7 +65,20 @@ test("analytics choice can be changed from the privacy page", async ({ page }) =
 test("guest is redirected away from protected pages", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("heading", { name: "Войти" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Вход для студента" })).toBeVisible();
+});
+
+test("student and admin have separate invite-only login screens", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Вход для студента" })).toBeVisible();
+  await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
+  await expect(page.getByText(/согласие на обработку персональных данных/i)).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Войти в панель" }).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByRole("heading", { name: "Вход для администратора" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Войти через Telegram" })).toHaveCount(0);
+  await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
 });
 
 test("API health and authorization boundary respond correctly", async ({ request }) => {

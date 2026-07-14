@@ -1,7 +1,10 @@
 "use client";
 
-import { AiReviewCard } from "@/app/lessons/[id]/homework-submission";
 import { reviewSubmissionAction } from "@/app/lessons/[id]/homework-actions";
+import { AiReviewCard } from "@/app/lessons/[id]/homework-submission";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { HomeworkSubmissionStatus, TeacherSubmissionDto } from "@gojo/shared";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -54,66 +57,70 @@ export function SubmissionsReview({
 
       <ul className="mt-4 space-y-3">
         {submissions.map((s) => (
-          <li key={s.id} className="g-card p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <span className="font-bold">{s.nickname ?? s.email}</span>
-                <span className="ml-2 text-[11px] text-gojo-ink-muted">
-                  {new Date(s.createdAt).toLocaleString("ru-RU", {
-                    day: "numeric",
-                    month: "long",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+          <li key={s.id}>
+            <Card className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="font-bold">{s.nickname ?? s.email}</span>
+                  <span className="ml-2 text-[11px] text-gojo-ink-muted">
+                    {new Date(s.createdAt).toLocaleString("ru-RU", {
+                      day: "numeric",
+                      month: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+                <span className="rounded-md border border-black/10 bg-gojo-paper-2 px-2.5 py-1 text-[11px] font-bold text-gojo-ink-muted">
+                  {STATUS_LABEL[s.status]}
+                  {s.aiReview
+                    ? ` · ассистент: ${s.aiReview.suggestedDecision === "approve" ? "принять" : "доработать"}`
+                    : ""}
                 </span>
               </div>
-              <span className="rounded-md border border-black/10 bg-gojo-paper-2 px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted">
-                {STATUS_LABEL[s.status]}
-                {s.aiReview ? ` · ассистент: ${s.aiReview.suggestedDecision === "approve" ? "принять" : "доработать"}` : ""}
-              </span>
-            </div>
 
-            <p className="mt-3 whitespace-pre-wrap rounded-md bg-gojo-paper-2 p-3 text-sm">
-              {s.content}
-            </p>
-
-            {s.aiReview ? <AiReviewCard review={s.aiReview} /> : null}
-            {s.aiReviewError ? (
-              <p className="mt-2 text-[13px] text-gojo-error">
-                Авторазбор не удался — проверь текст вручную.
+              <p className="mt-3 whitespace-pre-wrap rounded-md bg-gojo-paper-2 p-3 text-sm">
+                {s.content}
               </p>
-            ) : null}
 
-            {s.status === "submitted" || s.status === "ai_reviewed" ? (
-              <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto_auto]">
-                <input
-                  value={comments[s.id] ?? ""}
-                  onChange={(e) => setComments((m) => ({ ...m, [s.id]: e.target.value }))}
-                  placeholder="Комментарий студенту (необязательно)"
-                  className="rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => review(s.id, "approved")}
-                  className="g-btn-primary text-[12px] disabled:opacity-50"
-                >
-                  Принять
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => review(s.id, "needs_revision")}
-                  className="rounded-md border border-gojo-error/40 bg-gojo-error-soft px-3 py-2 text-[12px] font-bold text-gojo-error disabled:opacity-50"
-                >
-                  На доработку
-                </button>
-              </div>
-            ) : s.teacherComment ? (
-              <p className="mt-3 text-[13px] text-gojo-ink-muted">
-                Твой комментарий: {s.teacherComment}
-              </p>
-            ) : null}
+              {s.aiReview ? <AiReviewCard review={s.aiReview} /> : null}
+              {s.aiReviewError ? (
+                <p className="mt-2 text-[13px] text-gojo-error">
+                  Авторазбор не удался — проверь текст вручную.
+                </p>
+              ) : null}
+
+              {s.status === "submitted" || s.status === "ai_reviewed" ? (
+                <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto_auto]">
+                  <Input
+                    value={comments[s.id] ?? ""}
+                    onChange={(e) => setComments((m) => ({ ...m, [s.id]: e.target.value }))}
+                    placeholder="Комментарий студенту (необязательно)"
+                  />
+                  <Button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => review(s.id, "approved")}
+                    size="sm"
+                  >
+                    Принять
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => review(s.id, "needs_revision")}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    На доработку
+                  </Button>
+                </div>
+              ) : s.teacherComment ? (
+                <p className="mt-3 text-[13px] text-gojo-ink-muted">
+                  Твой комментарий: {s.teacherComment}
+                </p>
+              ) : null}
+            </Card>
           </li>
         ))}
       </ul>

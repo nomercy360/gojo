@@ -25,7 +25,7 @@ export async function uploadMaterialAction(
     await uploadLessonMaterial(lessonId, upload);
   } catch (e) {
     if (e instanceof ApiError) {
-      if (e.status === 401) redirect("/login");
+      if (e.status === 401) redirect("/admin/login");
       if (e.status === 403) return { error: "Нет прав учителя" };
       if (e.status === 413) return { error: "Файл больше 10 МБ" };
       return { error: `API ${e.status}: ${e.message}` };

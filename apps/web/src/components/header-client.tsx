@@ -1,12 +1,9 @@
 "use client";
 
 import { Avatar } from "@/components/avatar";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import {
-  linkPendingBookingLead,
-  migrateGuestTrainerProgress,
-  savePendingPersonalDataConsent,
-} from "@/lib/post-login-sync";
+import { linkPendingBookingLead, migrateGuestTrainerProgress } from "@/lib/post-login-sync";
 import { isTeacherUser } from "@/lib/roles";
 import type { UserDto } from "@gojo/shared";
 import Link from "next/link";
@@ -48,7 +45,6 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
       if (migrateGuestTrainerProgress(user.id) && !cancelled) {
         toast.success("Прогресс тренажёра сохранён");
       }
-      await savePendingPersonalDataConsent();
       const linked = await linkPendingBookingLead();
       if (linked > 0 && !cancelled) toast.success("Заявка привязана к аккаунту");
     })();
@@ -134,13 +130,14 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
                   <Avatar value={user.avatarUrl} size={26} fallback={user.nickname ?? user.email} />
                 </Link>
                 <form onSubmit={handleLogout}>
-                  <button
+                  <Button
                     type="submit"
                     disabled={loggingOut}
-                    className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+                    variant="ghost"
+                    className={`h-auto p-0 hover:bg-transparent hover:text-gojo-error disabled:cursor-wait ${mutedClass}`}
                   >
                     Выйти
-                  </button>
+                  </Button>
                 </form>
               </>
             ) : (
@@ -155,21 +152,19 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
                   {freeToolRoute ? "В кабинет" : "Оплата"}
                 </Link>
                 <form onSubmit={handleLogout}>
-                  <button
+                  <Button
                     type="submit"
                     disabled={loggingOut}
-                    className={`transition-colors hover:text-gojo-error disabled:cursor-wait disabled:opacity-60 ${mutedClass}`}
+                    variant="ghost"
+                    className={`h-auto p-0 hover:bg-transparent hover:text-gojo-error disabled:cursor-wait ${mutedClass}`}
                   >
                     Выйти
-                  </button>
+                  </Button>
                 </form>
               </>
             )
           ) : (
-            <Link
-              href="/login"
-              className="rounded-md border border-gojo-ink/20 px-4 py-1.5 text-gojo-ink transition-colors hover:border-gojo-orange hover:text-gojo-orange"
-            >
+            <Link href="/login" className={buttonVariants({ variant: "outline", size: "sm" })}>
               Войти
             </Link>
           )}

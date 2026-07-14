@@ -1,9 +1,14 @@
 import { Avatar } from "@/components/avatar";
 import { CalendarSection } from "@/components/calendar-section";
 import { LocalTime } from "@/components/local-time";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { fetchMyPayments, fetchMyRecordings, fetchStudentStats } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { cn } from "@/lib/utils";
 import type { StudentStatsDto } from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -104,7 +109,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Profile card ── */}
-        <div className="g-card mb-6 flex items-center gap-5 px-7 py-5">
+        <Card className="mb-6 flex-row items-center gap-5 px-7 py-5">
           <Avatar value={user.avatarUrl} size={64} fallback={user.nickname ?? user.email} />
           <div className="min-w-0 flex-1">
             <div className="g-display truncate text-[18px] font-extrabold leading-tight text-gojo-ink">
@@ -114,25 +119,18 @@ export default async function DashboardPage() {
               <span>
                 @{user.nickname ?? user.email.split("@")[0]} · {ROLE_LABEL[user.role] ?? user.role}
               </span>
-              <span
-                className={`rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${
-                  isPaid ? "bg-gojo-success" : "bg-gojo-error"
-                }`}
-              >
+              <Badge variant={isPaid ? "secondary" : "destructive"}>
                 {isPaid ? "Оплачено" : "Не оплачено"}
-              </span>
+              </Badge>
             </div>
           </div>
-          <Link
-            href="/profile"
-            className="g-body shrink-0 rounded-md border border-black/10 px-4 py-2 text-[13px] font-bold text-gojo-ink-muted transition-colors hover:border-gojo-orange hover:text-gojo-orange"
-          >
+          <Link href="/profile" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
             Редактировать
           </Link>
-        </div>
+        </Card>
 
         {/* ── Library ── */}
-        <div id="library" className="g-card mb-6 scroll-mt-20 px-7 py-5">
+        <Card id="library" className="mb-6 scroll-mt-20 px-7 py-5">
           <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
             Библиотека
           </div>
@@ -165,10 +163,10 @@ export default async function DashboardPage() {
               ))}
             </ul>
           )}
-        </div>
+        </Card>
 
         {/* ── Progress + trainers ── */}
-        <div id="trainers" className="g-card mb-6 scroll-mt-20 p-7">
+        <Card id="trainers" className="mb-6 scroll-mt-20 p-7">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
@@ -193,12 +191,7 @@ export default async function DashboardPage() {
                   {progressPercent} / 100
                 </span>
               </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-gojo-paper-2">
-                <div
-                  className="h-full rounded-full bg-gojo-orange transition-all"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
+              <Progress value={progressPercent} className="h-3 bg-gojo-paper-2" />
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {stats.lessonsCompleted > 0 ? (
                   <ProgressTile value={stats.lessonsCompleted} label="уроков пройдено" />
@@ -228,11 +221,11 @@ export default async function DashboardPage() {
                   href="https://t.me/gojoedu"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="g-btn-primary text-sm"
+                  className={buttonVariants()}
                 >
                   Записаться на консультацию
                 </a>
-                <Link href="/lessons" className="g-btn-secondary text-sm">
+                <Link href="/lessons" className={buttonVariants({ variant: "outline" })}>
                   Посмотреть уроки
                 </Link>
               </div>
@@ -244,34 +237,44 @@ export default async function DashboardPage() {
               Тренажёры
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Link href="/review" className="g-card group flex items-center gap-4 p-5">
-                <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                  単
-                </div>
-                <div>
-                  <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
-                  <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                    Повторение слов
+              <Card
+                asChild
+                className="flex-row items-center gap-4 p-5 hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <Link href="/review">
+                  <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
+                    単
                   </div>
-                </div>
-              </Link>
+                  <div>
+                    <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
+                    <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
+                      Повторение слов
+                    </div>
+                  </div>
+                </Link>
+              </Card>
 
-              <Link href="/kana" className="g-card group flex items-center gap-4 p-5">
-                <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                  あ
-                </div>
-                <div>
-                  <div className="g-display text-[15px] font-bold text-gojo-ink">
-                    Хирагана · Катакана
+              <Card
+                asChild
+                className="flex-row items-center gap-4 p-5 hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <Link href="/kana">
+                  <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
+                    あ
                   </div>
-                  <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                    Тренажёр символов
+                  <div>
+                    <div className="g-display text-[15px] font-bold text-gojo-ink">
+                      Хирагана · Катакана
+                    </div>
+                    <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
+                      Тренажёр символов
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </Card>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* ── Main grid ── */}
         <div className="grid gap-4 lg:grid-cols-3">
@@ -279,7 +282,7 @@ export default async function DashboardPage() {
           <CalendarSection />
 
           {/* Level card */}
-          <div className="g-card p-7">
+          <Card className="p-7">
             <div className="g-mono mb-4 text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
               Уровень
             </div>
@@ -326,7 +329,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
               {hasAssessedLevel ? (
-                <Link href="/payments" className="g-btn-primary shrink-0 text-[13px]">
+                <Link href="/payments" className={cn(buttonVariants(), "shrink-0")}>
                   Оплата
                 </Link>
               ) : (
@@ -334,19 +337,19 @@ export default async function DashboardPage() {
                   href="https://t.me/gojoedu"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="g-btn-primary shrink-0 text-[13px]"
+                  className={cn(buttonVariants(), "shrink-0")}
                 >
                   {hasLessonHistory ? "Уточнить уровень" : "Консультация"}
                 </a>
               )}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* ── Contact ── */}
-        <div
+        <Card
           id="contact"
-          className="g-card mt-10 scroll-mt-20 flex items-center justify-between px-7 py-5"
+          className="mt-10 scroll-mt-20 flex-row items-center justify-between px-7 py-5"
         >
           <div>
             <div className="g-display text-[15px] font-bold text-gojo-ink">Связаться с нами</div>
@@ -358,11 +361,11 @@ export default async function DashboardPage() {
             href="https://t.me/gojoedu"
             target="_blank"
             rel="noopener noreferrer"
-            className="g-btn-primary shrink-0 text-[13px]"
+            className={cn(buttonVariants(), "shrink-0")}
           >
             Telegram
           </a>
-        </div>
+        </Card>
       </div>
     </main>
   );

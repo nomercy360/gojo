@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function ViewToggle() {
@@ -16,26 +17,22 @@ export function ViewToggle() {
 
   return (
     <div className="flex gap-1 rounded-md border border-black/10 bg-gojo-paper p-1">
-      <button
+      <Button
         type="button"
         onClick={() => set("list")}
-        className={`rounded px-3 py-1 text-[11px] font-bold ${
-          view === "list" ? "bg-gojo-ink text-white" : "text-gojo-ink-muted hover:text-gojo-ink"
-        }`}
+        variant={view === "list" ? "secondary" : "ghost"}
+        size="sm"
       >
         Список
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={() => set("calendar")}
-        className={`rounded px-3 py-1 text-[11px] font-bold ${
-          view === "calendar"
-            ? "bg-gojo-ink text-white"
-            : "text-gojo-ink-muted hover:text-gojo-ink"
-        }`}
+        variant={view === "calendar" ? "secondary" : "ghost"}
+        size="sm"
       >
         Календарь
-      </button>
+      </Button>
     </div>
   );
 }

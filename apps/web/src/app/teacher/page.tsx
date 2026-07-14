@@ -1,3 +1,8 @@
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { StudentDirectoryEntry, TeacherLessonDto } from "@/lib/api";
 import { fetchStudentDirectory, fetchTeacherLessons } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
@@ -11,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TeacherPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin/login");
   if (!isTeacherUser(user)) redirect("/dashboard");
 
   let lessons: TeacherLessonDto[] = [];
@@ -34,7 +39,7 @@ export default async function TeacherPage() {
         </div>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <h1 className="font-serif text-[28px] font-bold">Мои уроки</h1>
-          <Link href="/teacher/students" className="g-btn-secondary text-sm">
+          <Link href="/teacher/students" className={buttonVariants({ variant: "outline" })}>
             Мои студенты ▸
           </Link>
         </div>
@@ -43,13 +48,13 @@ export default async function TeacherPage() {
           {/* Lessons list */}
           <div>
             {error ? (
-              <div className="rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
-                {error}
-              </div>
+              <Alert variant="destructive" className="bg-gojo-error-soft">
+                <AlertDescription className="font-bold text-gojo-error">{error}</AlertDescription>
+              </Alert>
             ) : scheduled.length === 0 ? (
-              <div className="g-card px-5 py-10 text-center text-gojo-ink-muted">
+              <Card className="px-5 py-10 text-center text-gojo-ink-muted">
                 Нет запланированных уроков. Создай первый →
-              </div>
+              </Card>
             ) : (
               <ul className="space-y-4">
                 {scheduled.map((l) => (
@@ -108,45 +113,42 @@ function TeacherLessonCard({ lesson }: { lesson: TeacherLessonDto }) {
   });
 
   return (
-    <li className="g-card relative overflow-hidden p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <span className="text-[11px] font-bold text-gojo-ink-muted">
-            {fmt.format(starts)} · {durationMin} мин
-          </span>
-          <h3 className="mt-1 font-serif text-[18px] font-bold">{lesson.title}</h3>
-          <div className="mt-2 flex items-center gap-3">
-            <span className="rounded-sm bg-gojo-ink px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-white">
-              {lesson.studentCount} студ.
+    <li>
+      <Card className="relative p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-gojo-ink-muted">
+              {fmt.format(starts)} · {durationMin} мин
             </span>
-            <a
-              href={`/teacher/lessons/${lesson.id}`}
-              className="text-sm font-bold text-gojo-orange hover:underline"
-            >
-              Управлять ▸
-            </a>
-            {lesson.meetingUrl ? (
+            <h3 className="mt-1 font-serif text-[18px] font-bold">{lesson.title}</h3>
+            <div className="mt-2 flex items-center gap-3">
+              <Badge variant="secondary">{lesson.studentCount} студ.</Badge>
               <a
-                href={lesson.meetingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/teacher/lessons/${lesson.id}`}
                 className="text-sm font-bold text-gojo-orange hover:underline"
               >
-                Войти ▸
+                Управлять ▸
               </a>
-            ) : null}
+              {lesson.meetingUrl ? (
+                <a
+                  href={lesson.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-bold text-gojo-orange hover:underline"
+                >
+                  Войти ▸
+                </a>
+              ) : null}
+            </div>
           </div>
+          <form action={cancelLessonAction}>
+            <Input type="hidden" name="lessonId" value={lesson.id} />
+            <Button type="submit" variant="destructive" size="sm">
+              Отменить
+            </Button>
+          </form>
         </div>
-        <form action={cancelLessonAction}>
-          <input type="hidden" name="lessonId" value={lesson.id} />
-          <button
-            type="submit"
-            className="rounded-md border border-black/10 px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted hover:bg-gojo-error-soft hover:text-gojo-error"
-          >
-            Отменить
-          </button>
-        </form>
-      </div>
+      </Card>
     </li>
   );
 }

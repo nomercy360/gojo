@@ -6,12 +6,12 @@ type PresetConfig = {
 };
 
 const PRESETS: Record<PresetAvatar, PresetConfig> = {
-  kitsune: { label: "Kitsune", src: "/avatars/kitsune.svg" },
-  tanuki: { label: "Tanuki", src: "/avatars/tanuki.svg" },
-  kappa: { label: "Kappa", src: "/avatars/kappa.svg" },
-  tengu: { label: "Tengu", src: "/avatars/tengu.svg" },
-  neko: { label: "Neko", src: "/avatars/neko.svg" },
-  sensei: { label: "Sensei", src: "/avatars/sensei.svg" },
+  kitsune: { label: "Kitsune", src: "/avatars/kitsune.webp" },
+  tanuki: { label: "Tanuki", src: "/avatars/tanuki.webp" },
+  kappa: { label: "Kappa", src: "/avatars/kappa.webp" },
+  tengu: { label: "Tengu", src: "/avatars/tengu.webp" },
+  neko: { label: "Neko", src: "/avatars/neko.webp" },
+  sensei: { label: "Sensei", src: "/avatars/sensei.webp" },
 };
 
 export function isPresetAvatar(value: string | null): value is `preset:${PresetAvatar}` {

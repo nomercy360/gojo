@@ -1,5 +1,6 @@
 import { PrivacyChoices } from "@/components/privacy-choices";
 import { SiteHeader } from "@/components/site-header";
+import { Toaster } from "@/components/ui/sonner";
 import type { Metadata, Viewport } from "next";
 import {
   Fraunces,
@@ -12,7 +13,6 @@ import {
   Unbounded,
 } from "next/font/google";
 import type { ReactNode } from "react";
-import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -93,17 +93,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <SiteHeader />
         {children}
         <PrivacyChoices />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              border: "2px solid #1A1A1A",
-              borderRadius: "8px",
-              fontWeight: 700,
-              fontSize: "13px",
-            },
-          }}
-        />
+        <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
   );

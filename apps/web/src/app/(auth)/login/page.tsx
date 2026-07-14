@@ -1,28 +1,23 @@
 "use client";
 
-import { BookingModal } from "@/components/booking-modal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
-// Passwordless. Primary: Telegram (better-auth genericOAuth, full-page
-// redirect). Secondary: email magic link. No self-signup form — a first login
-// via either method creates the account. Post-login lead/progress linking runs
-// from the header on the first authenticated page (see post-login-sync).
+// Student-only, passwordless sign-in. Accounts must already have been invited
+// by an administrator; neither authentication method can create an account.
 export default function LoginPage() {
-  const [bookingOpen, setBookingOpen] = useState(false);
   const [telegramPending, setTelegramPending] = useState(false);
   const [magicPending, setMagicPending] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   async function handleTelegram() {
-    if (!privacyAccepted) {
-      setError("Подтверди согласие на обработку персональных данных.");
-      return;
-    }
-    localStorage.setItem("gojo:pending-personal-data-consent", "2026-07-13");
     setError(null);
     setTelegramPending(true);
     try {
@@ -45,11 +40,6 @@ export default function LoginPage() {
 
   async function handleMagicLink(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!privacyAccepted) {
-      setError("Подтверди согласие на обработку персональных данных.");
-      return;
-    }
-    localStorage.setItem("gojo:pending-personal-data-consent", "2026-07-13");
     setError(null);
     setMagicPending(true);
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
@@ -57,6 +47,7 @@ export default function LoginPage() {
       const res = await authClient.signIn.magicLink({
         email,
         callbackURL: `${window.location.origin}/dashboard`,
+        metadata: { expectedRole: "student" },
       });
       if (res.error) throw new Error(res.error.message ?? "magic_link_failed");
       setMagicSent(true);
@@ -74,16 +65,16 @@ export default function LoginPage() {
         <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
           Gojo Learn
         </div>
-        <h1 className="mt-2 font-serif text-[28px] font-bold">Войти</h1>
+        <h1 className="mt-2 font-serif text-[28px] font-bold">Вход для студента</h1>
 
-        <button
+        <Button
           type="button"
           onClick={handleTelegram}
           disabled={telegramPending}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-[#28a8e9] px-4 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-6 w-full bg-[#28a8e9] text-white hover:bg-[#28a8e9]/90"
         >
           {telegramPending ? "Открываем Telegram…" : "✈️ Войти через Telegram"}
-        </button>
+        </Button>
 
         <div className="my-6 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
           <span className="h-px flex-1 bg-black/10" />
@@ -92,85 +83,37 @@ export default function LoginPage() {
         </div>
 
         {magicSent ? (
-          <div className="rounded-md border border-gojo-orange/30 bg-gojo-surface px-4 py-4 text-sm text-gojo-ink">
-            Отправили ссылку для входа на почту. Открой её на этом устройстве, чтобы войти. Не
-            пришло — проверь папку «Спам».
-          </div>
+          <Alert className="border-gojo-orange/30">
+            <AlertDescription className="text-gojo-ink">
+              Отправили ссылку для входа на почту. Открой её на этом устройстве, чтобы войти. Не
+              пришло — проверь папку «Спам».
+            </AlertDescription>
+          </Alert>
         ) : (
           <form onSubmit={handleMagicLink} className="space-y-4">
-            <div>
-              <label
-                className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-                htmlFor="email"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-                className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
-              />
-            </div>
-            <button type="submit" disabled={magicPending} className="g-btn-primary w-full text-sm">
+            <Field>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+            </Field>
+            <Button type="submit" disabled={magicPending} className="w-full">
               {magicPending ? "..." : "Отправить ссылку для входа"}
-            </button>
+            </Button>
           </form>
         )}
 
         {error ? (
-          <div className="mt-4 rounded-md border border-gojo-error/40 bg-gojo-error-soft px-4 py-3 text-sm font-bold text-gojo-error">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mt-4 bg-gojo-error-soft">
+            <AlertDescription className="font-bold text-gojo-error">{error}</AlertDescription>
+          </Alert>
         ) : null}
 
-        <label className="mt-5 flex items-start gap-2 text-[12px] leading-relaxed text-gojo-ink-muted">
-          <input
-            type="checkbox"
-            checked={privacyAccepted}
-            onChange={(event) => setPrivacyAccepted(event.target.checked)}
-            className="mt-0.5"
-          />
-          <span>
-            Я даю отдельное{" "}
-            <a
-              className="font-bold text-gojo-orange underline"
-              href="/personal-data-consent"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              согласие на обработку персональных данных
-            </a>{" "}
-            и ознакомился(-ась) с{" "}
-            <a
-              className="font-bold text-gojo-orange underline"
-              href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Политикой
-            </a>
-            . Первый вход создаёт аккаунт.
-          </span>
-        </label>
-
-        <div className="mt-10 rounded-xl border border-black/5 bg-gojo-surface p-5">
-          <div className="text-[14px] font-bold">Впервые здесь?</div>
-          <p className="mt-1 text-[12px] leading-relaxed text-gojo-ink-muted">
-            Запишись на бесплатную консультацию — познакомимся, определим уровень и покажем план.
-          </p>
-          <button
-            type="button"
-            onClick={() => setBookingOpen(true)}
-            className="g-btn-primary mt-4 w-full text-sm"
-          >
-            Записаться на бесплатную консультацию
-          </button>
-        </div>
+        <p className="mt-8 text-center text-[13px] text-gojo-ink-muted">
+          Администратор?{" "}
+          <Link href="/admin/login" className="font-bold text-gojo-orange hover:underline">
+            Войти в панель
+          </Link>
+        </p>
       </div>
-      <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="login" />
     </main>
   );
 }

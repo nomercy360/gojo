@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { LessonCardDto } from "@gojo/shared";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -56,38 +59,37 @@ export function LessonCardsManager({
     <section className="mt-10">
       <h2 className="font-serif text-[22px] font-bold">Карточки к уроку</h2>
       <p className="mt-1 text-[13px] text-gojo-ink-muted">
-        Слова для запоминания. Автоматически попадают в SRS-пул студентов после того,
-        как урок отмечен как пройденный (посещён).
+        Слова для запоминания. Автоматически попадают в SRS-пул студентов после того, как урок
+        отмечен как пройденный (посещён).
       </p>
 
-      <form
-        onSubmit={submit}
-        className="g-card mt-5 p-4"
-      >
-        <div className="grid gap-3 sm:grid-cols-3">
-          <input
-            value={word}
-            onChange={(e) => setWord(e.target.value)}
-            placeholder="勉強"
-            className="rounded-md border border-black/10 bg-gojo-paper px-3 py-2 font-jp-serif text-[16px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
-          />
-          <input
-            value={reading}
-            onChange={(e) => setReading(e.target.value)}
-            placeholder="べんきょう"
-            className="rounded-md border border-black/10 bg-gojo-paper px-3 py-2 font-jp-serif text-[16px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
-          />
-          <input
-            value={meaning}
-            onChange={(e) => setMeaning(e.target.value)}
-            placeholder="учёба"
-            className="rounded-md border border-black/10 bg-gojo-paper px-3 py-2 text-[15px] outline-none focus:outline-2 focus:outline-gojo-orange-soft"
-          />
-        </div>
-        <button type="submit" disabled={pending} className="g-btn-primary mt-3 text-[12px]">
-          + Добавить карточку
-        </button>
-      </form>
+      <Card className="mt-5 p-4">
+        <form onSubmit={submit}>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Input
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+              placeholder="勉強"
+              className="font-jp-serif text-[16px]"
+            />
+            <Input
+              value={reading}
+              onChange={(e) => setReading(e.target.value)}
+              placeholder="べんきょう"
+              className="font-jp-serif text-[16px]"
+            />
+            <Input
+              value={meaning}
+              onChange={(e) => setMeaning(e.target.value)}
+              placeholder="учёба"
+              className="text-[15px]"
+            />
+          </div>
+          <Button type="submit" disabled={pending} className="mt-3" size="sm">
+            + Добавить карточку
+          </Button>
+        </form>
+      </Card>
 
       {cards.length === 0 ? (
         <p className="mt-4 text-sm text-gojo-ink-muted">Пока ничего не добавлено.</p>
@@ -107,14 +109,16 @@ export function LessonCardsManager({
                 </div>
                 <div className="text-[13px] text-gojo-ink-muted">{c.meaning}</div>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => remove(c.id)}
                 disabled={pending}
-                className="ml-3 shrink-0 rounded-md border border-black/10 px-2.5 py-1 text-[11px] font-bold text-gojo-ink-muted hover:bg-gojo-error-soft hover:text-gojo-error disabled:opacity-50"
+                className="ml-3 shrink-0"
+                variant="destructive"
+                size="sm"
               >
                 Удалить
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

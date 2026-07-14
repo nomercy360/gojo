@@ -1,4 +1,8 @@
 import { Avatar } from "@/components/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ApiError, type TeacherStudentDto, fetchTeacherStudents } from "@/lib/api";
 import { quizLevelLabel } from "@/lib/quiz-level";
 import { isTeacherUser } from "@/lib/roles";
@@ -10,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TeacherStudentsPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin/login");
   if (!isTeacherUser(user)) redirect("/dashboard");
 
   let students: TeacherStudentDto[] = [];
@@ -39,60 +43,63 @@ export default async function TeacherStudentsPage() {
             <div className="rounded-md border border-black/10 bg-gojo-surface px-4 py-2 text-sm font-bold">
               {students.length} всего
             </div>
-            <Link href="/teacher/students/new" className="g-btn-primary text-sm">
+            <Link href="/teacher/students/new" className={buttonVariants()}>
               + Новый студент
             </Link>
           </div>
         </div>
 
         {error ? (
-          <div className="mt-8 rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mt-8 bg-gojo-error-soft">
+            <AlertDescription className="font-bold text-gojo-error">{error}</AlertDescription>
+          </Alert>
         ) : students.length === 0 ? (
-          <div className="g-card mt-8 px-5 py-10 text-center text-gojo-ink-muted">
+          <Card className="mt-8 px-5 py-10 text-center text-gojo-ink-muted">
             Студенты появятся здесь после первой брони урока.
-          </div>
+          </Card>
         ) : (
           <ul className="mt-8 space-y-3">
             {students.map((s) => (
-              <li
+              <Card
                 key={s.studentId}
-                className="g-card flex flex-wrap items-center justify-between gap-4 p-4"
+                asChild
+                className="flex-row flex-wrap items-center justify-between gap-4 p-4"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar value={s.avatarUrl} size={42} fallback={s.nickname ?? s.email} />
-                  <div className="min-w-0">
-                    <Link
-                      href={`/teacher/students/${s.studentId}`}
-                      className="truncate font-bold hover:text-gojo-orange"
-                    >
-                      {s.nickname ?? s.email}
-                    </Link>
-                    <div className="truncate text-[12px] text-gojo-ink-muted">{s.email}</div>
+                <li>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar value={s.avatarUrl} size={42} fallback={s.nickname ?? s.email} />
+                    <div className="min-w-0">
+                      <Link
+                        href={`/teacher/students/${s.studentId}`}
+                        className="truncate font-bold hover:text-gojo-orange"
+                      >
+                        {s.nickname ?? s.email}
+                      </Link>
+                      <div className="truncate text-[12px] text-gojo-ink-muted">{s.email}</div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold">
-                  <span className="rounded-sm bg-gojo-ink px-2 py-1 text-white">
-                    {s.attendedCount}/{s.lessonCount} уроков
-                  </span>
-                  <PaymentPill student={s} />
-                  <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
-                    JLPT: {s.jlptLevel ?? "не выставлен"}
-                  </span>
-                  {s.quizLevel ? (
+                  <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold">
+                    <Badge variant="secondary">
+                      {s.attendedCount}/{s.lessonCount} уроков
+                    </Badge>
+                    <PaymentPill student={s} />
                     <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
-                      Квиз: {quizLevelLabel(s.quizLevel)}
+                      JLPT: {s.jlptLevel ?? "не выставлен"}
                     </span>
-                  ) : null}
-                  <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
-                    {s.lastLessonAt
-                      ? `Последний: ${new Date(s.lastLessonAt).toLocaleDateString("ru-RU")}`
-                      : "Без уроков"}
-                  </span>
-                </div>
-              </li>
+                    {s.quizLevel ? (
+                      <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
+                        Квиз: {quizLevelLabel(s.quizLevel)}
+                      </span>
+                    ) : null}
+                    <span className="rounded-sm border border-black/10 px-2 py-1 text-gojo-ink-muted">
+                      {s.lastLessonAt
+                        ? `Последний: ${new Date(s.lastLessonAt).toLocaleDateString("ru-RU")}`
+                        : "Без уроков"}
+                    </span>
+                  </div>
+                </li>
+              </Card>
             ))}
           </ul>
         )}

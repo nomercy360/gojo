@@ -1,6 +1,11 @@
 "use client";
 
 import { Avatar, PRESET_CONFIGS } from "@/components/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { AVATAR_PRESET_PREFIX, PRESET_AVATARS, type UserDto } from "@gojo/shared";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -44,7 +49,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
   }, [uploadState]);
 
   return (
-    <div className="g-card p-6">
+    <Card className="p-6">
       {/* Header */}
       <div className="flex items-center gap-5 border-b border-black/10 pb-6">
         <Avatar value={selected} size={72} fallback={nickname || user.email} />
@@ -52,9 +57,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
           <p className="font-serif text-xl font-bold">{nickname || user.email}</p>
           <div className="mt-1 flex items-center gap-2">
             <span className="text-sm text-gojo-ink-muted">{user.email}</span>
-            <span className="rounded-sm bg-gojo-ink px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-              {user.role}
-            </span>
+            <Badge variant="secondary">{user.role}</Badge>
           </div>
         </div>
       </div>
@@ -63,14 +66,9 @@ export function ProfileForm({ user }: { user: UserDto }) {
       <form action={profileAction} className="mt-6 space-y-6">
         {/* Name */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label
-              className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-              htmlFor="firstName"
-            >
-              Имя
-            </label>
-            <input
+          <Field>
+            <FieldLabel htmlFor="firstName">Имя</FieldLabel>
+            <Input
               id="firstName"
               name="firstName"
               type="text"
@@ -78,17 +76,11 @@ export function ProfileForm({ user }: { user: UserDto }) {
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Имя"
               maxLength={100}
-              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
             />
-          </div>
-          <div>
-            <label
-              className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-              htmlFor="lastName"
-            >
-              Фамилия
-            </label>
-            <input
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="lastName">Фамилия</FieldLabel>
+            <Input
               id="lastName"
               name="lastName"
               type="text"
@@ -96,20 +88,14 @@ export function ProfileForm({ user }: { user: UserDto }) {
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Фамилия"
               maxLength={100}
-              className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
             />
-          </div>
+          </Field>
         </div>
 
         {/* Nickname */}
-        <div>
-          <label
-            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-            htmlFor="nickname"
-          >
-            Никнейм
-          </label>
-          <input
+        <Field>
+          <FieldLabel htmlFor="nickname">Никнейм</FieldLabel>
+          <Input
             id="nickname"
             name="nickname"
             type="text"
@@ -117,19 +103,13 @@ export function ProfileForm({ user }: { user: UserDto }) {
             onChange={(e) => setNickname(e.target.value)}
             placeholder="Как к тебе обращаться?"
             maxLength={40}
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
-        </div>
+        </Field>
 
         {/* Telegram ID — enables Telegram reminders for personal trainings */}
-        <div>
-          <label
-            className="mb-1.5 block text-[12px] font-bold text-gojo-ink-soft"
-            htmlFor="telegramId"
-          >
-            Telegram ID (для напоминаний)
-          </label>
-          <input
+        <Field>
+          <FieldLabel htmlFor="telegramId">Telegram ID (для напоминаний)</FieldLabel>
+          <Input
             id="telegramId"
             name="telegramId"
             type="text"
@@ -137,9 +117,8 @@ export function ProfileForm({ user }: { user: UserDto }) {
             value={telegramId}
             onChange={(e) => setTelegramId(e.target.value.replace(/[^0-9]/g, ""))}
             placeholder="Например, 412587349"
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-gojo-ink-ghost focus:outline-2 focus:outline-gojo-orange-soft focus:outline-offset-2"
           />
-          <p className="mt-1.5 text-[11px] text-gojo-ink-muted">
+          <FieldDescription className="text-[11px]">
             Узнать свой ID — напиши{" "}
             <a
               href="https://t.me/userinfobot"
@@ -151,8 +130,8 @@ export function ProfileForm({ user }: { user: UserDto }) {
             </a>{" "}
             в Telegram, он ответит числом. Вставь его сюда, чтобы получать напоминания о своих
             тренировках.
-          </p>
-        </div>
+          </FieldDescription>
+        </Field>
 
         {/* Avatar section */}
         <div>
@@ -160,43 +139,40 @@ export function ProfileForm({ user }: { user: UserDto }) {
 
           {/* Tabs */}
           <div className="mb-4 flex gap-1 rounded-md border border-black/10 bg-gojo-paper p-1">
-            <button
+            <Button
               type="button"
               onClick={() => setAvatarTab("preset")}
-              className={`flex-1 rounded px-3 py-1.5 text-[11px] font-bold ${
-                avatarTab === "preset"
-                  ? "bg-gojo-ink text-white"
-                  : "text-gojo-ink-muted hover:text-gojo-ink"
-              }`}
+              variant={avatarTab === "preset" ? "secondary" : "ghost"}
+              size="sm"
+              className="flex-1"
             >
               Маскоты
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => setAvatarTab("upload")}
-              className={`flex-1 rounded px-3 py-1.5 text-[11px] font-bold ${
-                avatarTab === "upload"
-                  ? "bg-gojo-ink text-white"
-                  : "text-gojo-ink-muted hover:text-gojo-ink"
-              }`}
+              variant={avatarTab === "upload" ? "secondary" : "ghost"}
+              size="sm"
+              className="flex-1"
             >
               Загрузить свой
-            </button>
+            </Button>
           </div>
 
           {avatarTab === "preset" ? (
             <>
-              <input type="hidden" name="avatarUrl" value={selected ?? ""} />
+              <Input unstyled type="hidden" name="avatarUrl" value={selected ?? ""} />
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 {PRESET_AVATARS.map((id) => {
                   const value = `${AVATAR_PRESET_PREFIX}${id}`;
                   const isActive = selected === value;
                   return (
-                    <button
+                    <Button
                       type="button"
                       key={id}
                       onClick={() => setSelected(value)}
-                      className={`flex flex-col items-center gap-2 rounded-lg border p-3 transition ${
+                      variant="outline"
+                      className={`h-auto flex-col gap-2 rounded-lg p-3 ${
                         isActive
                           ? "border-gojo-orange bg-gojo-orange-soft"
                           : "border-black/10 bg-gojo-surface hover:border-black/20"
@@ -206,7 +182,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
                       <span className="text-[10px] font-bold text-gojo-ink-soft">
                         {PRESET_CONFIGS[id].label}
                       </span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -215,9 +191,9 @@ export function ProfileForm({ user }: { user: UserDto }) {
         </div>
 
         {avatarTab === "preset" ? (
-          <button type="submit" disabled={profilePending} className="g-btn-primary w-full text-sm">
+          <Button type="submit" disabled={profilePending} className="w-full">
             {profilePending ? "Сохраняем..." : "Сохранить изменения"}
-          </button>
+          </Button>
         ) : null}
       </form>
 
@@ -225,14 +201,19 @@ export function ProfileForm({ user }: { user: UserDto }) {
       {avatarTab === "upload" ? (
         <form action={uploadAction} className="mt-4 space-y-4">
           <p className="text-sm text-gojo-ink-muted">PNG / JPEG / WebP / GIF, до 2 МБ.</p>
-          <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-black/15 bg-gojo-paper-2 px-6 py-8 text-center transition hover:border-gojo-orange">
+          <label
+            htmlFor="avatar-upload"
+            className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-black/15 bg-gojo-paper-2 px-6 py-8 text-center transition hover:border-gojo-orange"
+          >
             <div>
               <p className="text-sm font-bold text-gojo-ink-soft">
                 Перетащи файл или нажми для выбора
               </p>
               <p className="mt-1 text-[11px] text-gojo-ink-muted">Максимум 2 МБ</p>
             </div>
-            <input
+            <Input
+              unstyled
+              id="avatar-upload"
               type="file"
               name="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
@@ -240,11 +221,11 @@ export function ProfileForm({ user }: { user: UserDto }) {
               required
             />
           </label>
-          <button type="submit" disabled={uploadPending} className="g-btn-primary w-full text-sm">
+          <Button type="submit" disabled={uploadPending} className="w-full">
             {uploadPending ? "Загружаем..." : "Загрузить аватар"}
-          </button>
+          </Button>
         </form>
       ) : null}
-    </div>
+    </Card>
   );
 }

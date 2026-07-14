@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -177,7 +179,7 @@ export function Landing() {
   return (
     <div className="landing-root">
       <nav>
-        <a href="#" className="nav-logo">
+        <a href="/" className="nav-logo">
           <img className="nav-logo-img" src="/landing/logo.png" alt="Gojo Learn" />
           <span className="nav-logo-sub">Школа японского языка</span>
         </a>
@@ -194,10 +196,11 @@ export function Landing() {
           <a href="/login" className="nav-login">
             Войти
           </a>
-          <button type="button" className="nav-cta" onClick={openModal}>
+          <Button variant="unstyled" type="button" className="nav-cta" onClick={openModal}>
             Бесплатный первый урок
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="unstyled"
             type="button"
             className="nav-burger"
             aria-label="Меню"
@@ -206,22 +209,47 @@ export function Landing() {
             onClick={() => setNavOpen((o) => !o)}
           >
             {navOpen ? "✕" : "☰"}
-          </button>
+          </Button>
         </div>
         <div id="landing-mobile-nav" className={`nav-mobile ${navOpen ? "open" : ""}`}>
-          <a href="#how" onClick={() => setNavOpen(false)}>
+          <Button
+            variant="unstyled"
+            type="button"
+            className="nav-mobile-link"
+            onClick={() => {
+              setNavOpen(false);
+              document.querySelector("#how")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
             Как работает
-          </a>
-          <a href="#pricing" onClick={() => setNavOpen(false)}>
+          </Button>
+          <Button
+            variant="unstyled"
+            type="button"
+            className="nav-mobile-link"
+            onClick={() => {
+              setNavOpen(false);
+              document.querySelector("#pricing")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
             Цены
-          </a>
-          <a href="#mission" onClick={() => setNavOpen(false)}>
+          </Button>
+          <Button
+            variant="unstyled"
+            type="button"
+            className="nav-mobile-link"
+            onClick={() => {
+              setNavOpen(false);
+              document.querySelector("#mission")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
             Команда
-          </a>
+          </Button>
           <a href="/login" onClick={() => setNavOpen(false)}>
             Войти
           </a>
-          <button
+          <Button
+            variant="unstyled"
             type="button"
             className="nav-mobile-cta"
             onClick={() => {
@@ -230,7 +258,7 @@ export function Landing() {
             }}
           >
             Бесплатный первый урок
-          </button>
+          </Button>
         </div>
       </nav>
 
@@ -248,16 +276,9 @@ export function Landing() {
             дистанции. Первый урок — бесплатно, 25 минут.
           </p>
           <div className="hero-btns">
-            <a
-              href="#"
-              className="btn-primary"
-              onClick={(e) => {
-                e.preventDefault();
-                openModal();
-              }}
-            >
+            <Button variant="unstyled" type="button" className="btn-primary" onClick={openModal}>
               Бесплатный первый урок
-            </a>
+            </Button>
             <a href="#how" className="btn-secondary-dark">
               Как это работает
             </a>
@@ -296,7 +317,8 @@ export function Landing() {
                 const isCorrect = option === question.correct;
                 const className = selected ? (isCorrect ? "correct" : "wrong") : "";
                 return (
-                  <button
+                  <Button
+                    variant="unstyled"
                     key={option}
                     type="button"
                     className={className}
@@ -311,7 +333,7 @@ export function Landing() {
                     }}
                   >
                     {option}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -330,7 +352,8 @@ export function Landing() {
                   <span>
                     Верно — <strong>す</strong> читается <strong>su</strong>.
                   </span>
-                  <button
+                  <Button
+                    variant="unstyled"
                     type="button"
                     onClick={() => {
                       setHeroKanaStep(1);
@@ -339,7 +362,7 @@ export function Landing() {
                     }}
                   >
                     Следующий знак →
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <>
@@ -497,16 +520,9 @@ export function Landing() {
           </div>
         </div>
         <div className="pain-cta-wrap">
-          <a
-            href="#"
-            className="btn-primary"
-            onClick={(e) => {
-              e.preventDefault();
-              openModal();
-            }}
-          >
+          <Button variant="unstyled" type="button" className="btn-primary" onClick={openModal}>
             Начать по-другому
-          </a>
+          </Button>
         </div>
       </section>
 
@@ -768,16 +784,9 @@ export function Landing() {
                 <span className="pricing-feature-dot">✓</span>Приоритетная обратная связь
               </div>
             </div>
-            <a
-              href="#"
-              className="pricing-cta"
-              onClick={(e) => {
-                e.preventDefault();
-                openModal();
-              }}
-            >
+            <Button variant="unstyled" type="button" className="pricing-cta" onClick={openModal}>
               Начать индивидуально
-            </a>
+            </Button>
           </div>
 
           <div className="pricing-card">
@@ -809,16 +818,9 @@ export function Landing() {
                 <span className="pricing-feature-dot">✓</span>Разговорная практика с группой
               </div>
             </div>
-            <a
-              href="#"
-              className="pricing-cta"
-              onClick={(e) => {
-                e.preventDefault();
-                openModal();
-              }}
-            >
+            <Button variant="unstyled" type="button" className="pricing-cta" onClick={openModal}>
               Записаться в группу
-            </a>
+            </Button>
           </div>
 
           <div className="pricing-card">
@@ -858,16 +860,9 @@ export function Landing() {
                 <span style={{ color: "var(--muted)" }}>Без индивидуальной обратной связи</span>
               </div>
             </div>
-            <a
-              href="#"
-              className="pricing-cta"
-              onClick={(e) => {
-                e.preventDefault();
-                openModal();
-              }}
-            >
+            <Button variant="unstyled" type="button" className="pricing-cta" onClick={openModal}>
               Записаться на бесплатный урок
-            </a>
+            </Button>
           </div>
         </div>
         <p className="pricing-note">
@@ -1027,16 +1022,9 @@ export function Landing() {
         <p className="cta-sub">
           Познакомимся, определим уровень и подберём формат. Никакой оплаты на первом уроке.
         </p>
-        <a
-          href="#"
-          className="btn-cta"
-          onClick={(e) => {
-            e.preventDefault();
-            openModal();
-          }}
-        >
+        <Button variant="unstyled" type="button" className="btn-cta" onClick={openModal}>
           Первый урок — бесплатно
-        </a>
+        </Button>
 
         <div
           style={{
@@ -1163,11 +1151,19 @@ export function Landing() {
         onClick={(e) => {
           if (e.target === e.currentTarget) closeGuideModal();
         }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") closeGuideModal();
+        }}
       >
         <div className="modal-box">
-          <button type="button" className="modal-close" onClick={closeGuideModal}>
+          <Button
+            variant="unstyled"
+            type="button"
+            className="modal-close"
+            onClick={closeGuideModal}
+          >
             ✕
-          </button>
+          </Button>
 
           <div id="guide-form-view" style={{ display: guideSubmitted ? "none" : "block" }}>
             <div className="modal-tag">📄 Бесплатный гайд</div>
@@ -1186,7 +1182,8 @@ export function Landing() {
                 <label className="form-label" htmlFor="g-name">
                   Имя
                 </label>
-                <input
+                <Input
+                  unstyled
                   className="form-input"
                   type="text"
                   placeholder="Как тебя зовут?"
@@ -1197,7 +1194,8 @@ export function Landing() {
                 <label className="form-label" htmlFor="g-email">
                   Email
                 </label>
-                <input
+                <Input
+                  unstyled
                   className="form-input"
                   type="email"
                   placeholder="your@email.com"
@@ -1208,13 +1206,22 @@ export function Landing() {
                 <label className="form-label" htmlFor="g-tg">
                   Telegram (необязательно)
                 </label>
-                <input className="form-input" type="text" placeholder="@username" id="g-tg" />
+                <Input
+                  unstyled
+                  className="form-input"
+                  type="text"
+                  placeholder="@username"
+                  id="g-tg"
+                />
               </div>
               <label
+                htmlFor="guide-privacy-consent"
                 className="form-note"
                 style={{ display: "flex", gap: "9px", alignItems: "flex-start", textAlign: "left" }}
               >
-                <input
+                <Input
+                  unstyled
+                  id="guide-privacy-consent"
                   type="checkbox"
                   checked={guidePrivacyAccepted}
                   onChange={(event) => setGuidePrivacyAccepted(event.target.checked)}
@@ -1233,10 +1240,13 @@ export function Landing() {
                 </span>
               </label>
               <label
+                htmlFor="guide-marketing-consent"
                 className="form-note"
                 style={{ display: "flex", gap: "9px", alignItems: "flex-start", textAlign: "left" }}
               >
-                <input
+                <Input
+                  unstyled
+                  id="guide-marketing-consent"
                   type="checkbox"
                   checked={guideMarketingAccepted}
                   onChange={(event) => setGuideMarketingAccepted(event.target.checked)}
@@ -1247,9 +1257,14 @@ export function Landing() {
                   можно отказаться в любой момент).
                 </span>
               </label>
-              <button type="button" className="form-submit" onClick={submitGuideForm}>
+              <Button
+                variant="unstyled"
+                type="button"
+                className="form-submit"
+                onClick={submitGuideForm}
+              >
                 Получить гайд
-              </button>
+              </Button>
               <p className="form-note">Без второй отметки отправим только запрошенный гайд.</p>
             </div>
           </div>

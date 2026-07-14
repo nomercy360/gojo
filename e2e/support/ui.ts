@@ -5,7 +5,7 @@ export class LoginPage {
 
   async open() {
     await this.page.goto("/login");
-    await expect(this.page.getByRole("heading", { name: "Войти" })).toBeVisible();
+    await expect(this.page.getByRole("heading", { name: "Вход для студента" })).toBeVisible();
   }
 
   // Auth is passwordless (Telegram / email magic link). Request a magic link by

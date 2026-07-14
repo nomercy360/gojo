@@ -1,6 +1,13 @@
 "use client";
 
-import type { HomeworkAiReview, HomeworkSubmissionDto, HomeworkSubmissionStatus } from "@gojo/shared";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import type {
+  HomeworkAiReview,
+  HomeworkSubmissionDto,
+  HomeworkSubmissionStatus,
+} from "@gojo/shared";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { submitHomeworkAction } from "./homework-actions";
@@ -32,7 +39,10 @@ export function AiReviewCard({ review }: { review: HomeworkAiReview }) {
       {review.errors.length > 0 ? (
         <ul className="mt-3 space-y-2">
           {review.errors.map((e) => (
-            <li key={`${e.quote}-${e.issue}`} className="rounded-md bg-gojo-surface p-3 text-[13px]">
+            <li
+              key={`${e.quote}-${e.issue}`}
+              className="rounded-md bg-gojo-surface p-3 text-[13px]"
+            >
               <div className="font-bold">
                 「{e.quote}」 → 「{e.correction}」
               </div>
@@ -92,7 +102,7 @@ export function HomeworkSubmission({
       <h2 className="font-serif text-[22px] font-bold">Домашнее задание</h2>
 
       {latest ? (
-        <div className="mt-4 g-card p-4">
+        <Card className="mt-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span
               className={`rounded-md border px-3 py-1.5 text-[11px] font-bold ${STATUS_CLASS[latest.status]}`}
@@ -100,7 +110,8 @@ export function HomeworkSubmission({
               {STATUS_LABEL[latest.status]}
             </span>
             <span className="text-[11px] text-gojo-ink-muted">
-              Отправлено {new Date(latest.createdAt).toLocaleString("ru-RU", {
+              Отправлено{" "}
+              {new Date(latest.createdAt).toLocaleString("ru-RU", {
                 day: "numeric",
                 month: "long",
                 hour: "2-digit",
@@ -118,7 +129,7 @@ export function HomeworkSubmission({
               <p className="mt-2 text-sm">{latest.teacherComment}</p>
             </div>
           ) : null}
-        </div>
+        </Card>
       ) : (
         <p className="mt-1 text-[13px] text-gojo-ink-muted">
           Напиши задание по теме урока — ассистент разберёт текст, а преподаватель подтвердит
@@ -128,22 +139,16 @@ export function HomeworkSubmission({
 
       {canSubmit ? (
         <div className="mt-4">
-          <textarea
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={6}
             maxLength={8000}
             placeholder="Напиши свой текст на японском…"
-            className="w-full rounded-md border border-black/10 bg-gojo-surface px-3 py-2 text-sm"
           />
-          <button
-            type="button"
-            onClick={submit}
-            disabled={pending}
-            className="g-btn-primary mt-2 inline-flex text-sm disabled:opacity-50"
-          >
+          <Button type="button" onClick={submit} disabled={pending} className="mt-2">
             {pending ? "Отправляем…" : "Отправить на проверку"}
-          </button>
+          </Button>
         </div>
       ) : null}
     </section>

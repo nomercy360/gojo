@@ -1,5 +1,7 @@
 import { LessonCountdown } from "@/components/lesson-countdown";
 import { LocalTime } from "@/components/local-time";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   ApiError,
   type LessonStudentDto,
@@ -39,7 +41,7 @@ export default async function LessonDetailPage({ params }: Props) {
     return (
       <main className="min-h-screen bg-gojo-paper">
         <div className="mx-auto max-w-md px-6 py-24 text-center">
-          <div className="g-card px-6 py-8">
+          <Card className="px-6 py-8">
             <p className="text-sm font-bold text-gojo-error">
               {e instanceof ApiError ? `Урок не найден (${e.status})` : "Ошибка загрузки"}
             </p>
@@ -49,7 +51,7 @@ export default async function LessonDetailPage({ params }: Props) {
             >
               ← К урокам
             </Link>
-          </div>
+          </Card>
         </div>
       </main>
     );
@@ -146,7 +148,7 @@ export default async function LessonDetailPage({ params }: Props) {
                 href={lesson.meetingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="g-btn-primary inline-flex text-sm"
+                className={buttonVariants()}
               >
                 Войти в урок ▸
               </a>
@@ -188,25 +190,24 @@ export default async function LessonDetailPage({ params }: Props) {
           ) : (
             <ul className="mt-4 space-y-3">
               {materials.map((m) => (
-                <li
-                  key={m.id}
-                  className="g-card flex items-center justify-between p-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-bold">{m.title}</p>
-                    <p className="text-[11px] text-gojo-ink-muted">
-                      {m.fileType} · {new Date(m.createdAt).toLocaleDateString("ru-RU")}
-                    </p>
-                  </div>
-                  <a
-                    href={m.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-3 shrink-0 rounded-md border border-black/10 bg-gojo-surface px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-gojo-orange hover:text-gojo-orange"
-                  >
-                    Открыть
-                  </a>
-                </li>
+                <Card key={m.id} asChild className="flex-row items-center justify-between p-4">
+                  <li>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold">{m.title}</p>
+                      <p className="text-[11px] text-gojo-ink-muted">
+                        {m.fileType} · {new Date(m.createdAt).toLocaleDateString("ru-RU")}
+                      </p>
+                    </div>
+                    <a
+                      href={m.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-3 shrink-0 rounded-md border border-black/10 bg-gojo-surface px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-gojo-orange hover:text-gojo-orange"
+                    >
+                      Открыть
+                    </a>
+                  </li>
+                </Card>
               ))}
             </ul>
           )}

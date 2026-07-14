@@ -1,8 +1,13 @@
 import { LessonCountdown } from "@/components/lesson-countdown";
 import { LocalTime } from "@/components/local-time";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { fetchLessons } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
+import { cn } from "@/lib/utils";
 import type { LessonDto } from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -43,14 +48,16 @@ export default async function LessonsPage({
         </div>
 
         {error ? (
-          <div className="mt-10 rounded-lg border border-gojo-error/40 bg-gojo-error-soft px-5 py-4 text-sm font-bold text-gojo-error">
-            API недоступен: {error}
-          </div>
+          <Alert variant="destructive" className="mt-10 bg-gojo-error-soft">
+            <AlertDescription className="font-bold text-gojo-error">
+              API недоступен: {error}
+            </AlertDescription>
+          </Alert>
         ) : lessons.length === 0 ? (
-          <div className="g-card mt-10 px-5 py-10 text-center text-gojo-ink-muted">
+          <Card className="mt-10 px-5 py-10 text-center text-gojo-ink-muted">
             Пока нет запланированных занятий. Договоритесь о времени с преподавателем в Telegram —
             уроки появятся здесь.
-          </div>
+          </Card>
         ) : view === "calendar" ? (
           <div className="mt-10">
             <Suspense>
@@ -78,56 +85,50 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
   const durationMin = Math.round((ends.getTime() - starts.getTime()) / 60000);
 
   return (
-    <li className="g-card relative overflow-hidden p-5">
-      <div
-        className="absolute right-0 top-0 h-12 w-12 bg-gojo-orange"
-        style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
-      />
+    <Card asChild className="relative p-5">
+      <li>
+        <div
+          className="absolute right-0 top-0 h-12 w-12 bg-gojo-orange"
+          style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
+        />
 
-      <div className="flex items-center justify-between">
-        <div className="min-w-0 pr-14">
-          <div className="flex flex-wrap items-center gap-2">
-            {dayLabel ? (
-              <span className="-rotate-2 inline-block rounded-sm bg-gojo-orange px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-white">
-                {dayLabel}
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 pr-14">
+            <div className="flex flex-wrap items-center gap-2">
+              {dayLabel ? <Badge className="-rotate-2">{dayLabel}</Badge> : null}
+              {lesson.jlptLevel ? <Badge variant="secondary">{lesson.jlptLevel}</Badge> : null}
+              <span className="text-[11px] font-bold text-gojo-ink-muted">
+                <LocalTime
+                  iso={lesson.startsAt}
+                  options={{
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }}
+                />{" "}
+                · {durationMin} мин
               </span>
-            ) : null}
-            {lesson.jlptLevel ? (
-              <span className="rounded-sm bg-gojo-ink px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                {lesson.jlptLevel}
-              </span>
-            ) : null}
-            <span className="text-[11px] font-bold text-gojo-ink-muted">
-              <LocalTime
-                iso={lesson.startsAt}
-                options={{
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }}
-              />{" "}
-              · {durationMin} мин
-            </span>
+            </div>
+            <h3 className="mt-2 truncate font-serif text-[20px] font-bold">
+              <Link href={`/lessons/${lesson.id}`} className="hover:text-gojo-orange">
+                {lesson.title}
+              </Link>
+            </h3>
+            <p className="mt-1 text-sm text-gojo-ink-muted">
+              {lesson.teacherNickname ?? "Преподаватель"}
+            </p>
           </div>
-          <h3 className="mt-2 truncate font-serif text-[20px] font-bold">
-            <Link href={`/lessons/${lesson.id}`} className="hover:text-gojo-orange">
-              {lesson.title}
-            </Link>
-          </h3>
-          <p className="mt-1 text-sm text-gojo-ink-muted">
-            {lesson.teacherNickname ?? "Преподаватель"}
-          </p>
-        </div>
 
-        <LessonAction lesson={lesson} authenticated={authenticated} />
-      </div>
-      {lesson.joinState === "waiting" && lesson.joinOpensAt ? (
-        <div className="mt-3 flex justify-end">
-          <LessonCountdown target={lesson.joinOpensAt} label="Открытие за 15 мин · через" />
+          <LessonAction lesson={lesson} authenticated={authenticated} />
         </div>
-      ) : null}
-    </li>
+        {lesson.joinState === "waiting" && lesson.joinOpensAt ? (
+          <div className="mt-3 flex justify-end">
+            <LessonCountdown target={lesson.joinOpensAt} label="Открытие за 15 мин · через" />
+          </div>
+        ) : null}
+      </li>
+    </Card>
   );
 }
 
@@ -140,7 +141,7 @@ function LessonAction({
 }) {
   if (!authenticated) {
     return (
-      <Link href="/login" className="g-btn-secondary shrink-0 text-sm">
+      <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
         Войти
       </Link>
     );
@@ -174,14 +175,14 @@ function LessonAction({
           href={lesson.meetingUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="g-btn-primary shrink-0 text-sm"
+          className={cn(buttonVariants(), "shrink-0")}
         >
           Войти ▸
         </a>
       );
     }
     return (
-      <Link href={`/lessons/${lesson.id}`} className="g-btn-primary shrink-0 text-sm">
+      <Link href={`/lessons/${lesson.id}`} className={cn(buttonVariants(), "shrink-0")}>
         Открыть ▸
       </Link>
     );
@@ -203,7 +204,10 @@ function LessonAction({
   // remaining state is "waiting" before the join window — handled above. Any
   // other value just links to the lesson detail.
   return (
-    <Link href={`/lessons/${lesson.id}`} className="g-btn-secondary shrink-0 text-sm">
+    <Link
+      href={`/lessons/${lesson.id}`}
+      className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
+    >
       Открыть ▸
     </Link>
   );

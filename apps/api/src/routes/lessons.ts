@@ -59,7 +59,14 @@ lessonsRoute.get("/", async (c) => {
   if (!user || user.role !== "student") return c.json([]);
 
   const rows = await db
-    .select({ lesson: lessons, teacherNickname: userTable.nickname })
+    .select({
+      lesson: lessons,
+      teacherNickname: userTable.nickname,
+      studentCount:
+        sql<number>`(SELECT COUNT(*) FROM ${bookings} AS lesson_bookings WHERE lesson_bookings.lesson_id = ${lessons.id})`.as(
+          "student_count",
+        ),
+    })
     .from(bookings)
     .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
     .leftJoin(userTable, eq(userTable.id, lessons.teacherId))
@@ -77,7 +84,7 @@ lessonsRoute.get("/", async (c) => {
     rows.map((r) =>
       toLessonDto(r.lesson, r.teacherNickname, {
         booked: true,
-        studentCount: 1,
+        studentCount: Number(r.studentCount),
         isParticipant: true,
         now,
         includeMeetingUrl: true,

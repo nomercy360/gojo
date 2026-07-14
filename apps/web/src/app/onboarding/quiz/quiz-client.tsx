@@ -1,6 +1,8 @@
 "use client";
 
 import { BookingModal } from "@/components/booking-modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { track } from "@/lib/analytics";
 import type { JlptLevel, QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
 import type { FormEvent } from "react";
@@ -176,7 +178,8 @@ function DeclareScreen({ onPick }: { onPick: (choice: StartChoice) => void }) {
 
         <div style={{ display: "grid", gap: 10 }}>
           {START_OPTIONS.map((o) => (
-            <button
+            <Button
+              variant="unstyled"
               key={o.key}
               type="button"
               onClick={() => onPick(o.key)}
@@ -228,7 +231,7 @@ function DeclareScreen({ onPick }: { onPick: (choice: StartChoice) => void }) {
                   {o.sub}
                 </span>
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -295,9 +298,9 @@ function BeginnerScreen({ onTakeQuizAnyway }: { onTakeQuizAnyway: () => void }) 
           >
             Начать с каны →
           </a>
-          <button type="button" onClick={onTakeQuizAnyway} style={btnGhost}>
+          <Button variant="unstyled" type="button" onClick={onTakeQuizAnyway} style={btnGhost}>
             Всё равно пройти тест
-          </button>
+          </Button>
         </div>
       </div>
     </Shell>
@@ -463,7 +466,8 @@ function QuizScreen({
 
         <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
           {current.choices.map((choice, i) => (
-            <button
+            <Button
+              variant="unstyled"
               key={choice}
               type="button"
               disabled={pending}
@@ -500,13 +504,19 @@ function QuizScreen({
                 {i + 1}
               </span>
               {choice}
-            </button>
+            </Button>
           ))}
         </div>
 
-        <button type="button" onClick={() => pick(-1)} disabled={pending} style={quietLink}>
+        <Button
+          variant="unstyled"
+          type="button"
+          onClick={() => pick(-1)}
+          disabled={pending}
+          style={quietLink}
+        >
           {pending ? "Считаем результат…" : "Не знаю — пропустить"}
-        </button>
+        </Button>
 
         <p
           style={{
@@ -816,13 +826,14 @@ function ResultScreen({
           </p>
         </div>
 
-        <button
+        <Button
+          variant="unstyled"
           type="button"
           onClick={() => setBookingOpen(true)}
           style={{ ...btnPrimary, marginTop: 14 }}
         >
           Бесплатный урок с преподавателем
-        </button>
+        </Button>
 
         {/* a "start" placement hands off to kana, same as the declare screen */}
         {isStart && (
@@ -887,8 +898,8 @@ function ResultScreen({
           ) : (
             <form onSubmit={submitLead} style={{ display: "grid", gap: 10, marginTop: 14 }}>
               <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
-                <input name="name" required maxLength={200} placeholder="Имя" style={inputStyle} />
-                <input
+                <Input name="name" required maxLength={200} placeholder="Имя" style={inputStyle} />
+                <Input
                   name="email"
                   type="email"
                   required
@@ -898,6 +909,7 @@ function ResultScreen({
                 />
               </div>
               <label
+                htmlFor="quiz-privacy-consent"
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
@@ -908,7 +920,14 @@ function ResultScreen({
                   color: C.muted,
                 }}
               >
-                <input type="checkbox" name="privacyConsent" required style={{ marginTop: 2 }} />
+                <Input
+                  unstyled
+                  id="quiz-privacy-consent"
+                  type="checkbox"
+                  name="privacyConsent"
+                  required
+                  style={{ marginTop: 2 }}
+                />
                 <span>
                   Даю отдельное{" "}
                   <a href="/personal-data-consent" target="_blank" rel="noreferrer">
@@ -921,13 +940,14 @@ function ResultScreen({
                   .
                 </span>
               </label>
-              <button
+              <Button
+                variant="unstyled"
                 type="submit"
                 disabled={leadPending}
                 style={{ ...btnInk, padding: "13px", fontSize: 14 }}
               >
                 {leadPending ? "Отправляем…" : "Получить разбор на email"}
-              </button>
+              </Button>
             </form>
           )}
         </div>
@@ -943,9 +963,14 @@ function ResultScreen({
             </a>
           )
         )}
-        <button type="button" onClick={onRetake} style={{ ...quietLink, marginTop: 6 }}>
+        <Button
+          variant="unstyled"
+          type="button"
+          onClick={onRetake}
+          style={{ ...quietLink, marginTop: 6 }}
+        >
           Пройти заново
-        </button>
+        </Button>
       </div>
       <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} source="quiz" />
     </Shell>

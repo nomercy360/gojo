@@ -27,6 +27,7 @@ export async function createTrialLessonAction(formData: FormData) {
   if (!leadId || !date || !time) return;
   const startsAt = new Date(`${date}T${time}`);
   if (Number.isNaN(startsAt.getTime())) return;
+  if (startsAt.getTime() <= Date.now()) return;
   const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
 
   const lesson = await createTrialLessonForLead(leadId, {
