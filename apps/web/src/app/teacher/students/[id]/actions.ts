@@ -9,5 +9,6 @@ export async function setStudentPlanAction(formData: FormData) {
   if (!studentId || !planId) return;
 
   await setStudentPlan(studentId, planId);
+  revalidatePath("/teacher");
   revalidatePath(`/teacher/students/${studentId}`);
 }

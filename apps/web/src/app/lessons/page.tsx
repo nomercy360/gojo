@@ -1,5 +1,5 @@
 import { LessonCountdown } from "@/components/lesson-countdown";
-import { LocalTime } from "@/components/local-time";
+import { LocalTime, TimeZoneNote } from "@/components/local-time";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -46,6 +46,7 @@ export default async function LessonsPage({
             <ViewToggle />
           </Suspense>
         </div>
+        <TimeZoneNote className="mt-2 text-xs text-gojo-ink-muted" />
 
         {error ? (
           <Alert variant="destructive" className="mt-10 bg-gojo-error-soft">
@@ -106,6 +107,7 @@ function LessonRow({ lesson, authenticated }: { lesson: LessonDto; authenticated
                     hour: "2-digit",
                     minute: "2-digit",
                   }}
+                  showTimeZone
                 />{" "}
                 · {durationMin} мин
               </span>

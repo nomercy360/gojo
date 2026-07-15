@@ -1,4 +1,5 @@
 import { Avatar } from "@/components/avatar";
+import { LocalTime } from "@/components/local-time";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -195,7 +196,18 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
                           {lesson.title}
                         </Link>
                         <div className="mt-1 text-[12px] text-gojo-ink-muted">
-                          {new Date(lesson.startsAt).toLocaleString("ru-RU")} · {lesson.status}
+                          <LocalTime
+                            iso={lesson.startsAt}
+                            options={{
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }}
+                            showTimeZone
+                          />{" "}
+                          · {lesson.status}
                         </div>
                       </div>
                       <div className="text-right text-[12px] font-bold text-gojo-ink-muted">

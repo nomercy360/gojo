@@ -117,6 +117,7 @@ export default async function LessonDetailPage({ params }: Props) {
                 hour: "2-digit",
                 minute: "2-digit",
               }}
+              showTimeZone
             />{" "}
             · {durationMin} мин
           </p>

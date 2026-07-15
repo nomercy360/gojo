@@ -1,26 +1,72 @@
 "use client";
 
+import { TimeZoneNote } from "@/components/local-time";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import type { StudentDirectoryEntry } from "@/lib/api";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { type TeacherActionState, createLessonAction } from "./actions";
 
 const initial: TeacherActionState = {};
 
-export function CreateLessonForm({ students }: { students: StudentDirectoryEntry[] }) {
+export function CreateLessonForm({
+  students,
+  presentation = "card",
+  onSuccess,
+}: {
+  students: StudentDirectoryEntry[];
+  presentation?: "card" | "plain";
+  onSuccess?: () => void;
+}) {
   const [state, formAction, pending] = useActionState(createLessonAction, initial);
+  const router = useRouter();
+  const [studentIds, setStudentIds] = useState<string[]>([]);
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("19:00");
+  const [duration, setDuration] = useState("50");
+  const [meetingUrl, setMeetingUrl] = useState("");
+  const [today, setToday] = useState("");
+  const [formRevision, setFormRevision] = useState(0);
 
-  const today = formatDateInput(new Date());
-  const tomorrow = formatDateInput(new Date(Date.now() + 86400000));
+  useEffect(() => {
+    const now = new Date();
+    setToday(formatDateInput(now));
+    setDate(formatDateInput(new Date(now.getTime() + 86_400_000)));
+  }, []);
 
-  return (
-    <Card className="p-6">
-      <h2 className="font-serif text-[22px] font-bold">Новый урок</h2>
-      <form action={formAction} className="mt-5 space-y-4">
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Урок создан");
+    router.refresh();
+    onSuccess?.();
+  }, [onSuccess, router, state.ok]);
+
+  // React server actions reset the native form after submission. Remount it
+  // from our controlled state after an error so checkboxes/selects are restored too.
+  useEffect(() => {
+    if (state.error) setFormRevision((current) => current + 1);
+  }, [state]);
+
+  const startsAt = localDateTimeIso(date, time);
+
+  const form = (
+    <>
+      {presentation === "card" ? (
+        <h2 className="font-serif text-[22px] font-bold">Новый урок</h2>
+      ) : null}
+      <form
+        key={formRevision}
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className={presentation === "card" ? "mt-5 space-y-4" : "space-y-5"}
+      >
+        <Input type="hidden" name="startsAt" value={startsAt} />
         <FieldSet>
           <FieldLegend variant="label">Студенты (до 8)</FieldLegend>
           {students.length === 0 ? (
@@ -41,10 +87,18 @@ export function CreateLessonForm({ students }: { students: StudentDirectoryEntry
                     type="checkbox"
                     name="studentIds"
                     value={s.id}
+                    checked={studentIds.includes(s.id)}
+                    onChange={(event) =>
+                      setStudentIds((current) =>
+                        event.target.checked
+                          ? [...current, s.id]
+                          : current.filter((id) => id !== s.id),
+                      )
+                    }
                     className="mt-0.5"
                   />
                   <span>
-                    <span className="block font-bold">{s.name}</span>
+                    <span className="block font-bold">{s.nickname ?? s.name}</span>
                     <span className="block text-xs text-gojo-ink-muted">{s.email}</span>
                   </span>
                 </label>
@@ -54,20 +108,48 @@ export function CreateLessonForm({ students }: { students: StudentDirectoryEntry
         </FieldSet>
         <Field>
           <FieldLabel htmlFor="title">Название</FieldLabel>
-          <Input id="title" name="title" required placeholder="Грамматика ～ばかり" />
+          <Input
+            id="title"
+            name="title"
+            required
+            placeholder="Грамматика ～ばかり"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
         </Field>
+        <TimeZoneNote />
         <div className="grid grid-cols-3 gap-3">
           <Field>
             <FieldLabel htmlFor="date">Дата</FieldLabel>
-            <Input id="date" name="date" type="date" required min={today} defaultValue={tomorrow} />
+            <Input
+              id="date"
+              name="date"
+              type="date"
+              required
+              min={today}
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="time">Время</FieldLabel>
-            <Input id="time" name="time" type="time" required defaultValue="19:00" />
+            <Input
+              id="time"
+              name="time"
+              type="time"
+              required
+              value={time}
+              onChange={(event) => setTime(event.target.value)}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="duration">Мин</FieldLabel>
-            <NativeSelect id="duration" name="duration" defaultValue="50">
+            <NativeSelect
+              id="duration"
+              name="duration"
+              value={duration}
+              onChange={(event) => setDuration(event.target.value)}
+            >
               <option value="30">30</option>
               <option value="50">50</option>
               <option value="60">60</option>
@@ -79,18 +161,32 @@ export function CreateLessonForm({ students }: { students: StudentDirectoryEntry
           <FieldLabel htmlFor="meetingUrl">
             Ссылка на встречу (Zoom / Meet, можно добавить позже)
           </FieldLabel>
-          <Input id="meetingUrl" name="meetingUrl" type="url" placeholder="https://zoom.us/j/..." />
+          <Input
+            id="meetingUrl"
+            name="meetingUrl"
+            type="url"
+            placeholder="https://zoom.us/j/..."
+            value={meetingUrl}
+            onChange={(event) => setMeetingUrl(event.target.value)}
+          />
         </Field>
 
         {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
-        {state.ok ? <p className="text-sm font-bold text-gojo-success">Урок создан!</p> : null}
 
-        <Button type="submit" disabled={pending} className="w-full">
+        <Button type="submit" disabled={pending || !startsAt} className="w-full">
           {pending ? "Создаём..." : "Создать урок"}
         </Button>
       </form>
-    </Card>
+    </>
   );
+
+  return presentation === "card" ? <Card className="p-6">{form}</Card> : form;
+}
+
+function localDateTimeIso(date: string, time: string) {
+  if (!date || !time) return "";
+  const parsed = new Date(`${date}T${time}`);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
 }
 
 function formatDateInput(date: Date) {

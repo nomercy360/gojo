@@ -1,6 +1,7 @@
 "use server";
 
 import { ApiError, createStudent } from "@/lib/api";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type CreateStudentState = { error?: string; ok?: boolean };
@@ -29,5 +30,6 @@ export async function createStudentAction(
     return { error: "Не удалось создать аккаунт" };
   }
 
+  revalidatePath("/teacher");
   return { ok: true };
 }

@@ -19,23 +19,52 @@ export function LocalTime({
   iso,
   options,
   className,
+  showTimeZone = false,
 }: {
   iso: string;
   options: Intl.DateTimeFormatOptions;
   className?: string;
+  showTimeZone?: boolean;
 }) {
   const format = (timeZone?: string) =>
-    new Intl.DateTimeFormat(LOCALE, { ...options, timeZone }).format(new Date(iso));
+    new Intl.DateTimeFormat(LOCALE, {
+      ...options,
+      ...(showTimeZone && options.timeZoneName === undefined ? { timeZoneName: "short" } : {}),
+      timeZone,
+    }).format(new Date(iso));
 
   const [text, setText] = useState(() => format(FALLBACK_TZ));
   // biome-ignore lint/correctness/useExhaustiveDependencies: options is stable per instance
   useEffect(() => {
     setText(format());
-  }, [iso]);
+  }, [iso, showTimeZone]);
 
   return (
     <time dateTime={iso} className={className} suppressHydrationWarning>
       {text}
     </time>
+  );
+}
+
+/** Makes it explicit that date/time controls and lesson times use the browser zone. */
+export function TimeZoneNote({ className }: { className?: string }) {
+  const [timeZone, setTimeZone] = useState(FALLBACK_TZ);
+
+  useEffect(() => {
+    setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || FALLBACK_TZ);
+  }, []);
+
+  const zoneName = new Intl.DateTimeFormat(LOCALE, {
+    timeZone,
+    timeZoneName: "short",
+  })
+    .formatToParts(new Date())
+    .find((part) => part.type === "timeZoneName")?.value;
+
+  return (
+    <p className={className ?? "text-xs text-gojo-ink-muted"} suppressHydrationWarning>
+      Время в часовом поясе браузера: {timeZone}
+      {zoneName ? ` (${zoneName})` : ""}
+    </p>
   );
 }

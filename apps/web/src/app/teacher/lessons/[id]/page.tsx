@@ -1,5 +1,6 @@
 import { LessonCardsManager } from "@/app/lessons/[id]/cards-manager";
 import { HomeworkManager } from "@/app/lessons/[id]/homework-manager";
+import { LocalTime } from "@/components/local-time";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -86,12 +87,16 @@ export default async function TeacherLessonPage({ params }: Props) {
           <div className="mt-3">
             <h1 className="font-serif text-[32px] font-bold">{lesson.title}</h1>
             <p className="mt-2 text-sm text-gojo-ink-muted">
-              {starts.toLocaleString("ru-RU", {
-                day: "numeric",
-                month: "long",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
+              <LocalTime
+                iso={lesson.startsAt}
+                options={{
+                  day: "numeric",
+                  month: "long",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }}
+                showTimeZone
+              />{" "}
               · {durationMin} мин · {students.length} студ.
             </p>
           </div>

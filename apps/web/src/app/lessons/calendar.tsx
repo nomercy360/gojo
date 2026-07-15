@@ -1,5 +1,6 @@
 "use client";
 
+import { LocalTime } from "@/components/local-time";
 import type { LessonDto } from "@gojo/shared";
 import Link from "next/link";
 
@@ -47,7 +48,7 @@ export function CalendarView({
 
         return (
           <div
-            key={i}
+            key={key}
             className={`rounded-lg border transition ${
               isToday ? "border-gojo-orange bg-gojo-orange-soft" : "border-black/10 bg-gojo-surface"
             } ${isEmpty ? "py-3 px-4" : "p-4"}`}
@@ -73,32 +74,29 @@ export function CalendarView({
 
             {dayLessons.length > 0 ? (
               <div className="mt-3 space-y-2">
-                {dayLessons.map((l) => {
-                  const time = new Date(l.startsAt).toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-                  return (
-                    <Link
-                      key={l.id}
-                      href={`/lessons/${l.id}`}
-                      className="flex items-center justify-between rounded-md border border-gojo-orange bg-gojo-surface p-3 transition hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-[13px] font-bold text-gojo-ink-muted">
-                          {time}
+                {dayLessons.map((l) => (
+                  <Link
+                    key={l.id}
+                    href={`/lessons/${l.id}`}
+                    className="flex items-center justify-between rounded-md border border-gojo-orange bg-gojo-surface p-3 transition hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <LocalTime
+                        iso={l.startsAt}
+                        options={{ hour: "2-digit", minute: "2-digit" }}
+                        showTimeZone
+                        className="font-mono text-[13px] font-bold text-gojo-ink-muted"
+                      />
+                      {l.jlptLevel ? (
+                        <span className="rounded-sm bg-gojo-ink px-1.5 py-0.5 text-[9px] font-bold text-white">
+                          {l.jlptLevel}
                         </span>
-                        {l.jlptLevel ? (
-                          <span className="rounded-sm bg-gojo-ink px-1.5 py-0.5 text-[9px] font-bold text-white">
-                            {l.jlptLevel}
-                          </span>
-                        ) : null}
-                        <span className="text-sm font-bold">{l.title}</span>
-                      </div>
-                      <span className="text-[13px] text-gojo-ink-ghost">▸</span>
-                    </Link>
-                  );
-                })}
+                      ) : null}
+                      <span className="text-sm font-bold">{l.title}</span>
+                    </div>
+                    <span className="text-[13px] text-gojo-ink-ghost">▸</span>
+                  </Link>
+                ))}
               </div>
             ) : null}
           </div>

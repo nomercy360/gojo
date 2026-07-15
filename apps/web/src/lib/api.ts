@@ -146,17 +146,95 @@ export function createLesson(body: {
   });
 }
 
-export type StudentDirectoryEntry = { id: string; name: string; email: string };
+export type StudentDirectoryEntry = {
+  id: string;
+  name: string;
+  nickname: string | null;
+  email: string;
+  emailVerified: boolean;
+  avatarUrl: string | null;
+  telegramId: number | null;
+  jlptLevel: string | null;
+  quizLevel: string | null;
+  currentLevel: number;
+  assignedPlanId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export function fetchStudentDirectory(): Promise<StudentDirectoryEntry[]> {
   return apiFetch("/teacher/student-directory");
 }
 
-export function updateLessonMeetingUrl(lessonId: string, meetingUrl: string | null) {
+export type AdminDirectoryEntry = {
+  id: string;
+  name: string;
+  nickname: string | null;
+  email: string;
+  emailVerified: boolean;
+  avatarUrl: string | null;
+  telegramId: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function fetchAdminDirectory(): Promise<AdminDirectoryEntry[]> {
+  return apiFetch("/teacher/admins");
+}
+
+export function updateAdmin(
+  adminId: string,
+  body: {
+    name: string;
+    nickname: string | null;
+    email: string;
+    avatarUrl: string | null;
+    telegramId: number | null;
+  },
+) {
+  return apiFetch<AdminDirectoryEntry>(`/teacher/admins/${adminId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateStudent(
+  studentId: string,
+  body: {
+    name: string;
+    nickname: string | null;
+    email: string;
+    avatarUrl: string | null;
+    telegramId: number | null;
+    jlptLevel: string | null;
+    quizLevel: string | null;
+    currentLevel: number;
+    assignedPlanId: string | null;
+  },
+) {
+  return apiFetch<{ ok: boolean }>(`/teacher/students/${studentId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateLesson(
+  lessonId: string,
+  body: {
+    title?: string;
+    startsAt?: string;
+    endsAt?: string;
+    meetingUrl?: string | null;
+  },
+) {
   return apiFetch<LessonDto>(`/teacher/lessons/${lessonId}`, {
     method: "PATCH",
-    body: JSON.stringify({ meetingUrl }),
+    body: JSON.stringify(body),
   });
+}
+
+export function updateLessonMeetingUrl(lessonId: string, meetingUrl: string | null) {
+  return updateLesson(lessonId, { meetingUrl });
 }
 
 export function cancelLesson(lessonId: string) {

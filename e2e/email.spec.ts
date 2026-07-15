@@ -28,7 +28,7 @@ for (const loginCase of [
     email: e2eAccounts.admin.email,
     role: "admin",
     destination: "/teacher",
-    heading: "Мои уроки",
+    heading: "Студенты",
   },
 ] as const) {
   test(`${loginCase.label} magic link opens the correct dashboard`, async ({ page, request }) => {

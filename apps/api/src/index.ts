@@ -25,12 +25,19 @@ import { trainingRoute } from "./routes/training.ts";
 import { usersRoute } from "./routes/users.ts";
 
 const app = new Hono<AuthContext>();
+const corsOrigins = [
+  env.WEB_ORIGIN,
+  ...(env.TRUSTED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? []),
+  ...(env.NODE_ENV === "development"
+    ? ["http://localhost:3000", "http://127.0.0.1:3000"]
+    : []),
+];
 
 app.use("*", logger());
 app.use(
   "*",
   cors({
-    origin: env.TRUSTED_ORIGINS?.split(",").map((s) => s.trim()) ?? "*",
+    origin: [...new Set(corsOrigins)],
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],

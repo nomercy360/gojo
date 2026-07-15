@@ -1,8 +1,8 @@
 "use client";
 
-import { Avatar } from "@/components/avatar";
+import { AdminAccountMenu } from "@/components/admin-account-menu";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { authClient, type Session } from "@/lib/auth-client";
 import { linkPendingBookingLead, migrateGuestTrainerProgress } from "@/lib/post-login-sync";
 import { isTeacherUser } from "@/lib/roles";
 import type { UserDto } from "@gojo/shared";
@@ -20,9 +20,33 @@ import { toast } from "sonner";
  * The overlay mode gives the landing hero a full-bleed cinematic feel without
  * the cream slab cutting it at the top.
  */
-export function HeaderClient({ user }: { user: UserDto | null }) {
+export function HeaderClient({ user: serverUser }: { user: UserDto | null }) {
   const router = useRouter();
   const pathname = usePathname();
+  const clientSession = authClient.useSession();
+  const sessionUser = clientSession.data?.user as
+    | (Session["user"] & {
+        role?: string;
+        nickname?: string | null;
+        jlptLevel?: string | null;
+        quizLevel?: string | null;
+        telegramId?: number | null;
+      })
+    | undefined;
+  const user: UserDto | null = sessionUser
+    ? {
+        id: sessionUser.id,
+        email: sessionUser.email,
+        name: sessionUser.name,
+        nickname: sessionUser.nickname ?? sessionUser.name ?? null,
+        avatarUrl: sessionUser.image ?? null,
+        role: sessionUser.role === "admin" ? "admin" : "student",
+        jlptLevel: sessionUser.jlptLevel ?? null,
+        quizLevel: sessionUser.quizLevel ?? null,
+        telegramId: sessionUser.telegramId ?? null,
+        createdAt: new Date(sessionUser.createdAt).toISOString(),
+      }
+    : serverUser;
   const overlayRoute = pathname === "/" && !user;
   const [scrolled, setScrolled] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -53,8 +77,8 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
     };
   }, [user]);
 
-  // Landing has its own nav built into the Landing component.
-  if (pathname === "/") return null;
+  // Landing has its own nav; the admin workspace owns the full viewport.
+  if (pathname === "/" || pathname === "/teacher") return null;
 
   const overlay = overlayRoute && !scrolled;
   const frosted = overlayRoute && scrolled;
@@ -112,33 +136,18 @@ export function HeaderClient({ user }: { user: UserDto | null }) {
             teacherUser ? (
               <>
                 <Link
-                  href="/teacher"
+                  href="/teacher?collection=lessons"
                   className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                 >
                   Учитель
                 </Link>
                 <Link
-                  href="/teacher/students"
+                  href="/teacher?collection=students"
                   className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
                 >
                   Студенты
                 </Link>
-                <Link
-                  href="/profile"
-                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
-                >
-                  <Avatar value={user.avatarUrl} size={26} fallback={user.nickname ?? user.email} />
-                </Link>
-                <form onSubmit={handleLogout}>
-                  <Button
-                    type="submit"
-                    disabled={loggingOut}
-                    variant="ghost"
-                    className={`h-auto p-0 hover:bg-transparent hover:text-gojo-error disabled:cursor-wait ${mutedClass}`}
-                  >
-                    Выйти
-                  </Button>
-                </form>
+                <AdminAccountMenu user={user} />
               </>
             ) : (
               <>

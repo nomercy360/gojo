@@ -76,6 +76,26 @@ const createTrialLessonInput = z.object({
   endsAt: z.string().datetime(),
 });
 
+const updateAdminInput = z.object({
+  name: z.string().trim().min(1).max(200),
+  nickname: z.string().trim().max(200).nullable(),
+  email: z.string().trim().email().max(320),
+  avatarUrl: z.string().trim().max(2000).nullable(),
+  telegramId: z.number().int().positive().nullable(),
+});
+
+const updateStudentInput = z.object({
+  name: z.string().trim().min(1).max(200),
+  nickname: z.string().trim().max(200).nullable(),
+  email: z.string().trim().email().max(320),
+  avatarUrl: z.string().trim().max(2000).nullable(),
+  telegramId: z.number().int().positive().nullable(),
+  jlptLevel: z.enum(["N5", "N4", "N3", "N2"]).nullable(),
+  quizLevel: z.enum(["start", "N5", "N4", "N3", "N2"]).nullable(),
+  currentLevel: z.number().int().min(1).max(30),
+  assignedPlanId: z.string().min(1).nullable(),
+});
+
 const postLessonInput = z.object({
   attendanceStatus: z
     .enum(["scheduled", "attended", "no_show", "cancelled_by_student", "cancelled_by_teacher"])
@@ -245,14 +265,198 @@ teacherRoute.get("/student-directory", async (c) => {
       nickname: userTable.nickname,
       name: userTable.name,
       email: userTable.email,
+      emailVerified: userTable.emailVerified,
+      avatarUrl: userTable.image,
+      jlptLevel: userTable.jlptLevel,
+      quizLevel: userTable.quizLevel,
+      currentLevel: userTable.currentLevel,
+      telegramId: userTable.telegramId,
+      assignedPlanId: studentAccess.assignedPlanId,
+      createdAt: userTable.createdAt,
+      updatedAt: userTable.updatedAt,
     })
     .from(userTable)
+    .leftJoin(studentAccess, eq(studentAccess.userId, userTable.id))
     .where(eq(userTable.role, "student"))
     .orderBy(asc(userTable.nickname), asc(userTable.email));
 
   return c.json(
-    rows.map((r) => ({ id: r.id, name: r.nickname ?? r.name ?? r.email, email: r.email })),
+    rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      nickname: r.nickname ?? null,
+      email: r.email,
+      emailVerified: r.emailVerified,
+      avatarUrl: r.avatarUrl ?? null,
+      jlptLevel: r.jlptLevel ?? null,
+      quizLevel: r.quizLevel ?? null,
+      currentLevel: r.currentLevel,
+      telegramId: r.telegramId ?? null,
+      assignedPlanId: r.assignedPlanId ?? null,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    })),
   );
+});
+
+teacherRoute.get("/admins", async (c) => {
+  const rows = await db
+    .select({
+      id: userTable.id,
+      name: userTable.name,
+      nickname: userTable.nickname,
+      email: userTable.email,
+      emailVerified: userTable.emailVerified,
+      avatarUrl: userTable.image,
+      telegramId: userTable.telegramId,
+      createdAt: userTable.createdAt,
+      updatedAt: userTable.updatedAt,
+    })
+    .from(userTable)
+    .where(eq(userTable.role, "admin"))
+    .orderBy(asc(userTable.nickname), asc(userTable.email));
+
+  return c.json(
+    rows.map((row) => ({
+      ...row,
+      nickname: row.nickname ?? null,
+      avatarUrl: row.avatarUrl ?? null,
+      telegramId: row.telegramId ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+  );
+});
+
+teacherRoute.patch("/admins/:adminId", zValidator("json", updateAdminInput), async (c) => {
+  const adminId = c.req.param("adminId");
+  const { name, nickname, email, avatarUrl, telegramId } = c.req.valid("json");
+  const normalizedEmail = email.toLowerCase();
+
+  const [target] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(and(eq(userTable.id, adminId), eq(userTable.role, "admin")))
+    .limit(1);
+  if (!target) throw new HTTPException(404, { message: "admin_not_found" });
+
+  const [emailOwner] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(eq(userTable.email, normalizedEmail))
+    .limit(1);
+  if (emailOwner && emailOwner.id !== adminId) {
+    throw new HTTPException(400, { message: "email_already_in_use" });
+  }
+
+  if (telegramId !== null) {
+    const [telegramOwner] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.telegramId, telegramId))
+      .limit(1);
+    if (telegramOwner && telegramOwner.id !== adminId) {
+      throw new HTTPException(400, { message: "telegram_already_in_use" });
+    }
+  }
+
+  const [updated] = await db
+    .update(userTable)
+    .set({
+      name,
+      nickname: nickname || null,
+      email: normalizedEmail,
+      image: avatarUrl || null,
+      telegramId,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(userTable.id, adminId), eq(userTable.role, "admin")))
+    .returning({
+      id: userTable.id,
+      name: userTable.name,
+      nickname: userTable.nickname,
+      email: userTable.email,
+      emailVerified: userTable.emailVerified,
+      avatarUrl: userTable.image,
+      telegramId: userTable.telegramId,
+      createdAt: userTable.createdAt,
+      updatedAt: userTable.updatedAt,
+    });
+  if (!updated) throw new HTTPException(500, { message: "admin_update_failed" });
+
+  return c.json({
+    ...updated,
+    nickname: updated.nickname ?? null,
+    avatarUrl: updated.avatarUrl ?? null,
+    telegramId: updated.telegramId ?? null,
+    createdAt: updated.createdAt.toISOString(),
+    updatedAt: updated.updatedAt.toISOString(),
+  });
+});
+
+teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput), async (c) => {
+  const studentId = c.req.param("studentId");
+  const body = c.req.valid("json");
+  const normalizedEmail = body.email.toLowerCase();
+
+  if (body.assignedPlanId && !paymentPlans.some((plan) => plan.id === body.assignedPlanId)) {
+    throw new HTTPException(400, { message: "unknown_plan" });
+  }
+
+  const [target] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(and(eq(userTable.id, studentId), eq(userTable.role, "student")))
+    .limit(1);
+  if (!target) throw new HTTPException(404, { message: "student_not_found" });
+
+  const [emailOwner] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(eq(userTable.email, normalizedEmail))
+    .limit(1);
+  if (emailOwner && emailOwner.id !== studentId) {
+    throw new HTTPException(400, { message: "email_already_in_use" });
+  }
+
+  if (body.telegramId !== null) {
+    const [telegramOwner] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.telegramId, body.telegramId))
+      .limit(1);
+    if (telegramOwner && telegramOwner.id !== studentId) {
+      throw new HTTPException(400, { message: "telegram_already_in_use" });
+    }
+  }
+
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(userTable)
+      .set({
+        name: body.name,
+        nickname: body.nickname || null,
+        email: normalizedEmail,
+        image: body.avatarUrl || null,
+        telegramId: body.telegramId,
+        jlptLevel: body.jlptLevel,
+        quizLevel: body.quizLevel,
+        currentLevel: body.currentLevel,
+        updatedAt: now,
+      })
+      .where(and(eq(userTable.id, studentId), eq(userTable.role, "student")));
+
+    await tx
+      .insert(studentAccess)
+      .values({ userId: studentId, assignedPlanId: body.assignedPlanId, updatedAt: now })
+      .onConflictDoUpdate({
+        target: studentAccess.userId,
+        set: { assignedPlanId: body.assignedPlanId, updatedAt: now },
+      });
+  });
+
+  return c.json({ ok: true });
 });
 
 teacherRoute.get("/students", async (c) => {
