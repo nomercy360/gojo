@@ -86,6 +86,7 @@ services:
       # New-lead notifications: token + target chat. Values live in .env.prod
       # (never committed). If unset, leads still save — the ping is skipped.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-gojolearn_bot}
       TELEGRAM_LEAD_CHAT_ID: ${TELEGRAM_LEAD_CHAT_ID:-}
       # Bot-initiated one-tap login: secret Telegram echoes on webhook calls.
       # PUBLIC_APP_URL defaults to WEB_ORIGIN (correct behind Caddy); override

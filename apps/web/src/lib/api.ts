@@ -111,6 +111,10 @@ export function updateProfile(body: UpdateProfileInput) {
   });
 }
 
+export function createTelegramLinkToken() {
+  return apiFetch<{ url: string }>("/telegram/link-token", { method: "POST" });
+}
+
 export async function uploadAvatar(file: File): Promise<UserDto> {
   const form = new FormData();
   form.append("file", file);

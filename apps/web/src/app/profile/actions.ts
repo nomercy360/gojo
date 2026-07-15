@@ -1,6 +1,6 @@
 "use server";
 
-import { ApiError, updateProfile, uploadAvatar } from "@/lib/api";
+import { ApiError, createTelegramLinkToken, updateProfile, uploadAvatar } from "@/lib/api";
 import { updateProfileInput } from "@gojo/shared";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -11,15 +11,14 @@ export async function updateProfileAction(
   _prev: ProfileState,
   formData: FormData,
 ): Promise<ProfileState> {
-  const telegramIdRaw = String(formData.get("telegramId") ?? "").trim();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const name = [firstName, lastName].filter(Boolean).join(" ") || undefined;
+  // Telegram linking is its own flow (deep-link + bot), not part of this form.
   const parsed = updateProfileInput.safeParse({
     name,
     nickname: String(formData.get("nickname") ?? "").trim() || undefined,
     avatarUrl: formData.get("avatarUrl") ? String(formData.get("avatarUrl")) : undefined,
-    telegramId: telegramIdRaw === "" ? null : Number(telegramIdRaw),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -41,6 +40,36 @@ export async function updateProfileAction(
   revalidatePath("/profile");
   revalidatePath("/", "layout");
   redirect("/dashboard?saved=1");
+}
+
+export type LinkState = { url?: string; error?: string };
+
+export async function linkTelegramAction(): Promise<LinkState> {
+  try {
+    const { url } = await createTelegramLinkToken();
+    return { url };
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/login");
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось создать ссылку" };
+  }
+}
+
+export async function unlinkTelegramAction(): Promise<LinkState> {
+  try {
+    await updateProfile({ telegramId: null });
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/login");
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось отвязать" };
+  }
+  revalidatePath("/profile");
+  revalidatePath("/", "layout");
+  return {};
 }
 
 export async function uploadAvatarAction(

@@ -4,7 +4,7 @@ import { Avatar, PRESET_CONFIGS } from "@/components/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AVATAR_PRESET_PREFIX, PRESET_AVATARS, type UserDto } from "@gojo/shared";
 import { useActionState, useEffect, useState } from "react";
@@ -17,7 +17,6 @@ export function ProfileForm({ user }: { user: UserDto }) {
   const [selected, setSelected] = useState<string | null>(user.avatarUrl);
   const [avatarTab, setAvatarTab] = useState<"preset" | "upload">("preset");
   const [nickname, setNickname] = useState(user.nickname ?? "");
-  const [telegramId, setTelegramId] = useState(user.telegramId?.toString() ?? "");
   const [nameParts] = useState(() => {
     const [firstName = "", ...rest] = user.name.trim().split(/\s+/);
     return { firstName, lastName: rest.join(" ") };
@@ -104,33 +103,6 @@ export function ProfileForm({ user }: { user: UserDto }) {
             placeholder="Как к тебе обращаться?"
             maxLength={40}
           />
-        </Field>
-
-        {/* Telegram ID — enables Telegram reminders for personal trainings */}
-        <Field>
-          <FieldLabel htmlFor="telegramId">Telegram ID (для напоминаний)</FieldLabel>
-          <Input
-            id="telegramId"
-            name="telegramId"
-            type="text"
-            inputMode="numeric"
-            value={telegramId}
-            onChange={(e) => setTelegramId(e.target.value.replace(/[^0-9]/g, ""))}
-            placeholder="Например, 412587349"
-          />
-          <FieldDescription className="text-[11px]">
-            Узнать свой ID — напиши{" "}
-            <a
-              href="https://t.me/userinfobot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-gojo-orange hover:underline"
-            >
-              @userinfobot
-            </a>{" "}
-            в Telegram, он ответит числом. Вставь его сюда, чтобы получать напоминания о своих
-            тренировках.
-          </FieldDescription>
         </Field>
 
         {/* Avatar section */}

@@ -13,6 +13,8 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true" || v === "1"),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
+  // Bot @username (no @) used to build t.me deep links for account linking.
+  TELEGRAM_BOT_USERNAME: z.string().default("gojolearn_bot"),
   // Optional: chat id to ping on new landing leads. If unset, leads are still
   // saved to the DB — the Telegram notification is just skipped.
   TELEGRAM_LEAD_CHAT_ID: z.string().optional(),

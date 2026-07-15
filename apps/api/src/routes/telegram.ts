@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { leads, user as userTable, verification } from "@gojo/db";
 import { and, eq, gt, inArray, lt } from "drizzle-orm";
 import { Hono } from "hono";
-import type { AuthContext } from "../auth/middleware.ts";
+import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { createSessionCookie } from "../auth/session.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
@@ -19,6 +19,7 @@ import { type TelegramReplyMarkup, sendTelegramMessage } from "../reminders.ts";
 // ("request") instead — they aren't a student yet.
 
 const LOGIN_TOKEN_TTL_MS = 5 * 60_000;
+const LINK_TOKEN_TTL_MS = 10 * 60_000;
 const REQUEST_THROTTLE_MS = 60_000;
 
 // Browser-facing origin of the app. Behind Caddy the API is reachable at
@@ -65,17 +66,101 @@ telegramRoute.post("/webhook", async (c) => {
   const chatId = msg?.chat?.id;
   // Always 200 so Telegram doesn't retry; do the work best-effort.
   if (from && !from.is_bot && chatId != null && msg?.text) {
-    const command = msg.text.trim().split(/\s+/)[0]?.toLowerCase().replace(/@.*$/, "");
-    if (command === "/start" || command === "/login") {
-      try {
+    const parts = msg.text.trim().split(/\s+/);
+    const command = parts[0]?.toLowerCase().replace(/@.*$/, "");
+    const payload = parts[1];
+    try {
+      if (command === "/start" && payload) {
+        // Deep-link account linking: t.me/<bot>?start=<link-token>.
+        await handleLinkCommand(from, chatId, payload);
+      } else if (command === "/start" || command === "/login") {
         await handleLoginCommand(from, chatId);
-      } catch (err) {
-        console.error("telegram login command failed:", err);
       }
+    } catch (err) {
+      console.error("telegram command failed:", err);
     }
   }
   return c.json({ ok: true });
 });
+
+// POST /telegram/link-token — a signed-in user requests a deep link that, once
+// opened, ties their Telegram account to this user (see handleLinkCommand).
+telegramRoute.post("/link-token", requireAuth, async (c) => {
+  const user = c.get("user")!;
+  const token = randomBytes(16).toString("base64url"); // fits Telegram's start payload
+  await db.insert(verification).values({
+    id: randomBytes(16).toString("hex"),
+    identifier: linkKey(token),
+    value: JSON.stringify({ userId: user.id }),
+    expiresAt: new Date(Date.now() + LINK_TOKEN_TTL_MS),
+    updatedAt: new Date(),
+  });
+  void db.delete(verification).where(lt(verification.expiresAt, new Date()));
+  return c.json({ url: `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${token}` });
+});
+
+async function handleLinkCommand(
+  from: TelegramFrom,
+  chatId: number,
+  payload: string,
+): Promise<void> {
+  const [row] = await db
+    .select({ id: verification.id, value: verification.value })
+    .from(verification)
+    .where(
+      and(eq(verification.identifier, linkKey(payload)), gt(verification.expiresAt, new Date())),
+    )
+    .limit(1);
+
+  // Not a (valid) link token — treat as an ordinary /start.
+  if (!row) return handleLoginCommand(from, chatId);
+
+  await db.delete(verification).where(eq(verification.id, row.id)); // single-use
+  const userId = (JSON.parse(row.value) as { userId: string }).userId;
+
+  try {
+    // telegramId is the login key and must be unique; set it first so a rare
+    // username clash can't block linking.
+    await db
+      .update(userTable)
+      .set({ telegramId: from.id, updatedAt: new Date() })
+      .where(eq(userTable.id, userId));
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      await sendTelegramMessage(
+        chatId,
+        "Этот Telegram уже привязан к другому аккаунту. " +
+          "Отвяжите его там или войдите под тем аккаунтом.",
+        "auth.telegram_link_conflict",
+      );
+      return;
+    }
+    throw err;
+  }
+
+  if (from.username) {
+    // Best-effort: username is also unique, but a stale clash shouldn't undo the
+    // successful telegramId link above.
+    await db
+      .update(userTable)
+      .set({ telegramUsername: from.username.toLowerCase(), updatedAt: new Date() })
+      .where(eq(userTable.id, userId))
+      .catch((err) => {
+        if (!isUniqueViolation(err)) throw err;
+      });
+  }
+
+  await sendTelegramMessage(
+    chatId,
+    "✅ Telegram привязан! Теперь входите одной кнопкой — отправьте /login.",
+    "auth.telegram_linked",
+    userId,
+  );
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return err instanceof Error && "code" in err && (err as { code?: string }).code === "23505";
+}
 
 async function handleLoginCommand(from: TelegramFrom, chatId: number): Promise<void> {
   const [account] = await db
@@ -196,6 +281,10 @@ telegramRoute.get("/login/:token", async (c) => {
 
 function tokenKey(token: string) {
   return `tg-login:${token}`;
+}
+
+function linkKey(token: string) {
+  return `tg-link:${token}`;
 }
 
 function loginUrl(token: string) {

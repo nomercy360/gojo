@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
+import { redirect } from "next/navigation";
 import { ProfileForm } from "./profile-form";
+import { TelegramConnect } from "./telegram-connect";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +15,14 @@ export default async function ProfilePage() {
         <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
           Профиль
         </div>
-        <h1 className="mt-2 font-serif text-[28px] font-bold">
-          {user.nickname ?? user.email}
-        </h1>
+        <h1 className="mt-2 font-serif text-[28px] font-bold">{user.nickname ?? user.email}</h1>
         <p className="mt-1 text-sm text-gojo-ink-muted">
           {user.email} · {user.role}
         </p>
 
         <div className="mt-12">
           <ProfileForm user={user} />
+          <TelegramConnect user={user} />
         </div>
       </div>
     </main>
