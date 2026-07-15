@@ -113,7 +113,7 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
     try {
       const sent = await sendTelegramMessage(
         account.telegramId,
-        `Код для входа в Gojo Learn: ${code}\n\nОн действует 10 минут. Никому не сообщайте этот код.`,
+        `Код для входа в Gojo Learn: ${code}`,
         "auth.telegram_otp",
         account.id,
       );
