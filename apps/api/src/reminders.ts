@@ -13,9 +13,17 @@ import { env } from "./env.ts";
 const REMINDER_LEAD_MINUTES = 15;
 const CHECK_INTERVAL_MS = 60_000;
 
-// Minimal shape for an inline-keyboard reply markup (url / callback buttons).
+// Minimal shape for an inline-keyboard reply markup. `login_url` is Telegram's
+// native login button — smoother than a plain `url` button (no raw-URL
+// "Open this link?" warning), but its domain must be registered via BotFather
+// /setdomain and match the button URL.
 export type TelegramReplyMarkup = {
-  inline_keyboard: { text: string; url?: string; callback_data?: string }[][];
+  inline_keyboard: {
+    text: string;
+    url?: string;
+    login_url?: { url: string; request_write_access?: boolean };
+    callback_data?: string;
+  }[][];
 };
 
 export async function sendTelegramMessage(

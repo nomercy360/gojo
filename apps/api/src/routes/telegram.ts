@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { leads, user as userTable, verification } from "@gojo/db";
 import { and, eq, gt, inArray, lt } from "drizzle-orm";
 import { Hono } from "hono";
@@ -10,17 +10,20 @@ import { notifyLead } from "../lead-notifications.ts";
 import { type TelegramReplyMarkup, sendTelegramMessage } from "../reminders.ts";
 
 // Bot-initiated one-tap web login (getmatch-style). The bot receives a /start
-// or /login command via webhook, mints a single-use token, and replies with a
-// url button. Clicking it hits GET /telegram/login/:token, which sets the
-// session cookie and redirects into the app — no password, no OTP typing.
+// or /login command via webhook and replies with a Telegram `login_url` button.
+// Tapping it opens GET /telegram/login with Telegram's signed identity appended
+// (id, auth_date, hash, …); we verify the hash — no password, no OTP, no token.
 //
 // The bot can only DM a user who has pressed Start, and we identify them by the
 // `telegramId` already linked to their account. Unlinked users become a lead
 // ("request") instead — they aren't a student yet.
 
-const LOGIN_TOKEN_TTL_MS = 5 * 60_000;
 const LINK_TOKEN_TTL_MS = 10 * 60_000;
 const REQUEST_THROTTLE_MS = 60_000;
+// Reject a login_url payload older than this. Telegram stamps auth_date at tap
+// time, so a fresh tap is seconds old; the window only guards against replay of
+// a stale signed URL sitting in chat history.
+const LOGIN_MAX_AGE_SEC = 5 * 60;
 
 // Browser-facing origin of the app. Behind Caddy the API is reachable at
 // `${appUrl}/api/*`; the same holds for the dev Next.js rewrite and an ngrok
@@ -170,22 +173,18 @@ async function handleLoginCommand(from: TelegramFrom, chatId: number): Promise<v
     .limit(1);
 
   if (account) {
-    const token = randomBytes(32).toString("base64url");
-    await db.insert(verification).values({
-      id: randomBytes(16).toString("hex"),
-      identifier: tokenKey(token),
-      value: JSON.stringify({ userId: account.id }),
-      expiresAt: new Date(Date.now() + LOGIN_TOKEN_TTL_MS),
-      updatedAt: new Date(),
-    });
-    void db.delete(verification).where(lt(verification.expiresAt, new Date()));
-
+    // login_url (not a plain url button) shows the native "Log in to <domain>?"
+    // prompt instead of the raw-URL "Open this link?" warning, is instant after
+    // the first authorization, AND makes Telegram append a signed identity to
+    // the URL (id, auth_date, hash, …) which GET /login verifies. Requires the
+    // host be registered via BotFather /setdomain (gojolearn.ru in prod; the
+    // ngrok host for local testing) — else BOT_DOMAIN_INVALID on send.
     const markup: TelegramReplyMarkup = {
-      inline_keyboard: [[{ text: "Открыть Gojo Learn ↗", url: loginUrl(token) }]],
+      inline_keyboard: [[{ text: "Открыть Gojo Learn ↗", login_url: { url: loginUrl() } }]],
     };
     await sendTelegramMessage(
       chatId,
-      "Нажмите кнопку, чтобы войти на сайт. Ссылка одноразовая и действует 5 минут.",
+      "Нажмите кнопку, чтобы войти на сайт.",
       "auth.telegram_login_link",
       account.id,
       markup,
@@ -246,47 +245,51 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
   );
 }
 
-telegramRoute.get("/login/:token", async (c) => {
-  const token = c.req.param("token");
-  const [row] = await db
-    .select({ id: verification.id, value: verification.value })
-    .from(verification)
-    .where(
-      and(eq(verification.identifier, tokenKey(token)), gt(verification.expiresAt, new Date())),
-    )
-    .limit(1);
-
-  if (!row) return c.redirect(`${appUrl}/login?tg=expired`);
-
-  // Single-use: burn the token before minting a session.
-  await db.delete(verification).where(eq(verification.id, row.id));
-
-  let userId: string;
-  try {
-    userId = (JSON.parse(row.value) as { userId: string }).userId;
-  } catch {
-    return c.redirect(`${appUrl}/login?tg=expired`);
-  }
+// GET /telegram/login — Telegram redirects the login_url button here with the
+// signed identity in the query string. We verify the hash (proving Telegram —
+// i.e. our bot token — signed it), check freshness, then log the user in by
+// their telegramId. Stateless: no token to mint or store.
+telegramRoute.get("/login", async (c) => {
+  const params = c.req.query();
+  if (!verifyTelegramLogin(params)) return c.redirect(`${appUrl}/login?tg=invalid`);
 
   const [account] = await db
     .select({ id: userTable.id })
     .from(userTable)
-    .where(eq(userTable.id, userId))
+    .where(eq(userTable.telegramId, Number(params.id)))
     .limit(1);
-  if (!account) return c.redirect(`${appUrl}/login?tg=expired`);
+  if (!account) return c.redirect(`${appUrl}/login?tg=notlinked`);
 
   c.header("Set-Cookie", await createSessionCookie(account.id), { append: true });
   return c.redirect(`${appUrl}/dashboard`);
 });
 
-function tokenKey(token: string) {
-  return `tg-login:${token}`;
+// Verify the Telegram Login Widget signature (the scheme login_url uses):
+// hash = HMAC-SHA256(sorted "k=v\n" data-check-string, key = SHA256(bot_token)).
+function verifyTelegramLogin(params: Record<string, string>): boolean {
+  const token = env.TELEGRAM_BOT_TOKEN;
+  const { hash, ...rest } = params;
+  if (!token || !hash || !rest.id || !rest.auth_date) return false;
+
+  const dataCheckString = Object.keys(rest)
+    .sort()
+    .map((k) => `${k}=${rest[k]}`)
+    .join("\n");
+  const secret = createHash("sha256").update(token).digest();
+  const expected = createHmac("sha256", secret).update(dataCheckString).digest("hex");
+
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(hash, "hex");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+
+  const authDate = Number(rest.auth_date);
+  return Number.isFinite(authDate) && Date.now() / 1000 - authDate <= LOGIN_MAX_AGE_SEC;
 }
 
 function linkKey(token: string) {
   return `tg-link:${token}`;
 }
 
-function loginUrl(token: string) {
-  return `${appUrl}/api/telegram/login/${token}`;
+function loginUrl() {
+  return `${appUrl}/api/telegram/login`;
 }

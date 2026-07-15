@@ -1,24 +1,36 @@
 # Telegram bot-initiated login
 
 One-tap web login started from the bot (getmatch-style). User sends `/start` or
-`/login` to the bot → bot replies with a URL button → clicking it opens the site
-already signed in. No password, no OTP typing.
+`/login` to the bot → bot replies with a Telegram `login_url` button → tapping it
+opens the site already signed in. No password, no OTP typing.
 
 ## How it works
 
 1. Telegram delivers the command to `POST /telegram/webhook` (registered via
    `setWebhook`, authenticated with `TELEGRAM_WEBHOOK_SECRET`).
 2. The handler looks the user up by `telegramId`:
-   - **Linked account** → mint a single-use token (5-min TTL, stored in the
-     `verification` table), reply with an inline `url` button pointing at
-     `${PUBLIC_APP_URL}/api/telegram/login/<token>`.
+   - **Linked account** → reply with a `login_url` button pointing at
+     `${PUBLIC_APP_URL}/api/telegram/login`. `login_url` (not a plain `url`
+     button) gives the native "Log in to <domain>?" prompt and makes Telegram
+     append a **signed identity** to the URL (`id`, `auth_date`, `hash`, …).
    - **Unlinked** → create a lead ("request", not a student) and notify the
      team. Repeat `/start` taps are throttled so they don't spawn duplicates.
-3. `GET /telegram/login/:token` validates + burns the token, sets the
-   better-auth session cookie, and 302-redirects to `/dashboard`.
+3. `GET /telegram/login` verifies the `hash`
+   (`HMAC-SHA256(sorted data-check-string, key = SHA256(bot_token))` — the Login
+   Widget scheme), checks `auth_date` freshness (5-min replay window), then logs
+   the user in by `telegramId` and 302-redirects to `/dashboard`. Stateless — no
+   token minted or stored.
 
-The token is opaque and single-use — unlike the legacy Login Widget hash, no
-reusable identity claims ever sit in the URL / chat history.
+> `login_url` requires the button host be registered in BotFather via
+> `/setdomain` (the ngrok host locally, `gojolearn.ru` in prod); an unregistered
+> host is rejected on send with `BOT_DOMAIN_INVALID`. A plain `url` button would
+> avoid `/setdomain` but does **not** append the signed fields, so login would
+> have nothing to verify.
+
+Account **linking** (Connect Telegram in `/profile`) is separate: it mints a
+single-use token in the `verification` table (`tg-link:<token>`), opens
+`t.me/<bot>?start=<token>`, and the `/start <token>` webhook ties `telegramId` to
+the account.
 
 ## Local testing with ngrok
 
