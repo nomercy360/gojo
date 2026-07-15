@@ -22,6 +22,7 @@ import { paymentsRoute } from "./routes/payments.ts";
 import { personalEventsRoute } from "./routes/personal-events.ts";
 import { reviewRoute } from "./routes/review.ts";
 import { teacherRoute } from "./routes/teacher.ts";
+import { telegramRoute } from "./routes/telegram.ts";
 import { trainingRoute } from "./routes/training.ts";
 import { usersRoute } from "./routes/users.ts";
 
@@ -66,6 +67,9 @@ app.route("/leads", leadsRoute);
 // Public product-funnel events (guest kana trainer etc.) — no auth.
 app.route("/events", eventsRoute);
 app.route("/login", loginRoute);
+
+// Telegram bot webhook + one-tap login link — no session cookie required.
+app.route("/telegram", telegramRoute);
 
 // Custom dev-login lives under /dev-auth to avoid conflicting with better-auth
 app.route("/dev-auth", authRoute);

@@ -15,6 +15,7 @@
     "db:migrate": "cd packages/db && bun run migrate",
     "db:studio": "cd packages/db && bun run studio",
     "seed:local-users": "cd apps/api && bun run seed:local-users",
+    "tg:webhook": "cd apps/api && bun run tg:webhook",
     "test:e2e": "bun run db:migrate && playwright test",
     "test:e2e:headed": "bun run db:migrate && playwright test --headed",
     "test:e2e:ui": "bun run db:migrate && playwright test --ui",

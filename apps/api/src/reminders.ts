@@ -13,18 +13,28 @@ import { env } from "./env.ts";
 const REMINDER_LEAD_MINUTES = 15;
 const CHECK_INTERVAL_MS = 60_000;
 
+// Minimal shape for an inline-keyboard reply markup (url / callback buttons).
+export type TelegramReplyMarkup = {
+  inline_keyboard: { text: string; url?: string; callback_data?: string }[][];
+};
+
 export async function sendTelegramMessage(
   chatId: number,
   text: string,
   event = "telegram.message",
   userId?: string,
+  replyMarkup?: TelegramReplyMarkup,
 ): Promise<boolean> {
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) return false;
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    }),
   });
   if (!res.ok) {
     const error = `telegram sendMessage failed: ${res.status}`;

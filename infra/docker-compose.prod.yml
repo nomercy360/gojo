@@ -87,6 +87,11 @@ services:
       # (never committed). If unset, leads still save — the ping is skipped.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_LEAD_CHAT_ID: ${TELEGRAM_LEAD_CHAT_ID:-}
+      # Bot-initiated one-tap login: secret Telegram echoes on webhook calls.
+      # PUBLIC_APP_URL defaults to WEB_ORIGIN (correct behind Caddy); override
+      # only if the browser-facing origin differs.
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-}
       # Transactional email (verification, password reset) — SMTP, provider-
       # agnostic. Values live in .env.prod (never committed). Unset SMTP_HOST
       # falls back to localhost:1025, which doesn't exist in prod, so mail

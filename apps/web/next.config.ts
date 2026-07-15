@@ -13,6 +13,18 @@ const config: NextConfig = {
       { protocol: "http", hostname: "localhost", port: "9000", pathname: "/gojo-dev/**" },
     ],
   },
+  // Dev-only single-origin proxy so localhost:3000 fronts the API exactly like
+  // Caddy does in prod (/api/* stripped, /auth/* kept). This lets an ngrok
+  // tunnel of :3000 exercise the Telegram webhook + one-tap login end-to-end
+  // with shared cookies. Inert in prod (Caddy handles /api and /auth at the edge).
+  async rewrites() {
+    if (process.env.NODE_ENV === "production") return [];
+    const api = process.env.API_PROXY_TARGET ?? "http://localhost:3001";
+    return [
+      { source: "/api/:path*", destination: `${api}/:path*` },
+      { source: "/auth/:path*", destination: `${api}/auth/:path*` },
+    ];
+  },
 };
 
 // No org/project/authToken configured yet -- source map upload is skipped
