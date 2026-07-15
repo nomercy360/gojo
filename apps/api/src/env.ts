@@ -26,7 +26,9 @@ const schema = z.object({
   // to build Telegram deep links + the webhook URL. Behind Caddy the API lives
   // under `${PUBLIC_APP_URL}/api/*`. Defaults to WEB_ORIGIN; override for a
   // tunnel (ngrok/cloudflared) during local webhook testing.
-  PUBLIC_APP_URL: z.string().url().optional(),
+  // Empty string (docker-compose passes `${PUBLIC_APP_URL:-}` when unset) is
+  // coerced to undefined so `.url()` doesn't reject it and crash boot.
+  PUBLIC_APP_URL: z.preprocess((v) => (v === "" ? undefined : v), z.string().url().optional()),
   S3_ENDPOINT: z.string().default("http://localhost:9000"),
   S3_PUBLIC_URL: z.string().default("http://localhost:9000"),
   S3_REGION: z.string().default("us-east-1"),
