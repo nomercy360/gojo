@@ -4,7 +4,7 @@ import { auth } from "../auth.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 
-// Local-only passwordless accounts (auth is Telegram/magic-link). Sign in to
+// Local-only passwordless accounts. Sign in to
 // these in dev via POST /dev-auth/dev-login. This script runs automatically
 // before the development servers start, but is never part of migrations or the
 // production entrypoint.

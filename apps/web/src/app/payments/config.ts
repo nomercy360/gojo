@@ -1,0 +1,1 @@
+export const PAYMENT_EXPIRY_NUDGE_DAYS = 7;

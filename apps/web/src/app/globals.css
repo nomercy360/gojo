@@ -40,6 +40,8 @@
   --color-gojo-error-soft: #fbe5e3;
   --color-gojo-info: #2c5f7c;
   --color-gojo-info-soft: #e0ecf2;
+  --color-gojo-warning: #b57a16;
+  --color-gojo-warning-soft: #f7ecd4;
 
   /* Typography */
   --font-serif: "PT Serif", Georgia, serif;
@@ -2250,9 +2252,7 @@ html:has(.landing-root) {
   margin-top: 0;
   line-height: 1.5;
 }
-/* Quiet fallback toggles inside the booking modal (Другой способ связи /
-   Хочу, чтобы позвонили). Deliberately low-contrast so they don't compete
-   with the primary Telegram path. */
+/* Quiet fallback toggles inside the booking modal. */
 .landing-root .bm-alt-link {
   align-self: flex-start;
   background: none;
@@ -2269,17 +2269,6 @@ html:has(.landing-root) {
 }
 .landing-root .bm-alt-link:hover {
   color: var(--ink);
-}
-.landing-root .bm-telegram-login {
-  margin-top: 0;
-  background: #229ed9;
-}
-.landing-root .bm-telegram-login:hover {
-  background: #168ac2;
-}
-.landing-root .bm-telegram-login:disabled {
-  cursor: wait;
-  opacity: 0.7;
 }
 .landing-root .form-success {
   display: none;

@@ -21,7 +21,7 @@ for (const loginCase of [
     email: e2eAccounts.student.email,
     role: "student",
     destination: "/dashboard",
-    heading: "Твой личный кабинет",
+    heading: "Личный кабинет",
   },
   {
     label: "admin",
@@ -32,7 +32,7 @@ for (const loginCase of [
   },
 ] as const) {
   test(`${loginCase.label} magic link opens the correct dashboard`, async ({ page, request }) => {
-    const before = await mailCount(request, loginCase.email);
+    const beforeMessageId = await latestMailIdOrNull(request, loginCase.email);
     const response = await request.post(`${apiURL}/auth/sign-in/magic-link`, {
       data: {
         email: loginCase.email,
@@ -43,8 +43,8 @@ for (const loginCase of [
     });
     expect(response.ok()).toBeTruthy();
     await expect
-      .poll(() => mailCount(request, loginCase.email), { timeout: 10_000 })
-      .toBeGreaterThan(before);
+      .poll(() => latestMailIdOrNull(request, loginCase.email), { timeout: 10_000 })
+      .not.toBe(beforeMessageId);
 
     const messageId = await latestMailId(request, loginCase.email);
     const messageResponse = await request.get(`${mailpitURL}/api/v1/message/${messageId}`);
@@ -58,6 +58,31 @@ for (const loginCase of [
     await expect(page.getByRole("heading", { name: loginCase.heading })).toBeVisible();
   });
 }
+
+test("student signs in with a one-time email code", async ({ page, request }) => {
+  const email = e2eAccounts.student.email;
+  const beforeMessageId = await latestMailIdOrNull(request, email);
+
+  await page.goto("/login");
+  await page.getByLabel("Email или Telegram").fill(email);
+  await page.getByRole("button", { name: "Получить код" }).click();
+  await expect(page.getByLabel("Код для входа")).toBeVisible();
+  await expect
+    .poll(() => latestMailIdOrNull(request, email), { timeout: 10_000 })
+    .not.toBe(beforeMessageId);
+
+  const messageId = await latestMailId(request, email);
+  const messageResponse = await request.get(`${mailpitURL}/api/v1/message/${messageId}`);
+  await expect(messageResponse).toBeOK();
+  const message = (await messageResponse.json()) as { HTML: string };
+  const code = message.HTML.match(/>(\d{6})</)?.[1];
+  expect(code).toBeTruthy();
+
+  await page.getByLabel("Код для входа").fill(code!);
+  await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await expect(page).toHaveURL(`${webURL}/dashboard`);
+  await expect(page.getByRole("heading", { name: "Личный кабинет" })).toBeVisible();
+});
 
 test("booking submission sends a confirmation email", async ({ request }) => {
   const email = `e2e-booking-mail-${Date.now()}@gojo.local`;
@@ -111,10 +136,18 @@ async function mailCount(request: import("@playwright/test").APIRequestContext, 
 }
 
 async function latestMailId(request: import("@playwright/test").APIRequestContext, email: string) {
+  const messageId = await latestMailIdOrNull(request, email);
+  expect(messageId).toBeTruthy();
+  return messageId!;
+}
+
+async function latestMailIdOrNull(
+  request: import("@playwright/test").APIRequestContext,
+  email: string,
+) {
   const response = await request.get(`${mailpitURL}/api/v1/messages`);
   await expect(response).toBeOK();
   const body = (await response.json()) as MailpitMessages;
   const message = body.messages.find((item) => item.To.some((to) => to.Address === email));
-  expect(message).toBeTruthy();
-  return message!.ID;
+  return message?.ID ?? null;
 }

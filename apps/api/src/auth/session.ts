@@ -32,8 +32,7 @@ export async function findOrCreateUserByEmail(input: NewUser): Promise<string> {
  * Mint a better-auth session for a user and return the signed Set-Cookie header
  * value. The cookie is the session token signed with the auth secret in the
  * exact format better-call/better-auth expect, so `auth.api.getSession` accepts
- * it (verified by round-trip). Mirrors what better-auth's own OAuth callback
- * does via `setSessionCookie`, but usable from a plain Hono handler.
+ * it (verified by round-trip), but usable from a plain Hono handler.
  */
 export async function createSessionCookie(userId: string): Promise<string> {
   const ctx = await auth.$context;

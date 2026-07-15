@@ -90,10 +90,16 @@ const updateStudentInput = z.object({
   email: z.string().trim().email().max(320),
   avatarUrl: z.string().trim().max(2000).nullable(),
   telegramId: z.number().int().positive().nullable(),
+  telegramUsername: z
+    .string()
+    .regex(/^[a-z0-9_]{5,32}$/)
+    .nullable(),
   jlptLevel: z.enum(["N5", "N4", "N3", "N2"]).nullable(),
   quizLevel: z.enum(["start", "N5", "N4", "N3", "N2"]).nullable(),
   currentLevel: z.number().int().min(1).max(30),
   assignedPlanId: z.string().min(1).nullable(),
+  activeUntil: z.string().datetime().nullable(),
+  lessonCredits: z.number().int().min(0).max(1000),
 });
 
 const postLessonInput = z.object({
@@ -238,17 +244,12 @@ teacherRoute.post(
           bookingId: booking?.id,
           userId: lead.userId,
           email: lead.email,
-          telegramId: lead.telegramId,
         },
         lesson.title,
         lesson.startsAt,
       );
     } else {
-      await sendLessonConfirmation(
-        { email: lead.email, telegramId: lead.telegramId },
-        lesson.title,
-        lesson.startsAt,
-      );
+      await sendLessonConfirmation({ email: lead.email }, lesson.title, lesson.startsAt);
     }
 
     return c.json(toLessonDto(lesson, null), 201);
@@ -259,6 +260,7 @@ teacherRoute.post(
 // GET /students (which is derived from bookings), this includes students who
 // have no lessons yet — e.g. a freshly provisioned account.
 teacherRoute.get("/student-directory", async (c) => {
+  const now = Date.now();
   const rows = await db
     .select({
       id: userTable.id,
@@ -271,7 +273,10 @@ teacherRoute.get("/student-directory", async (c) => {
       quizLevel: userTable.quizLevel,
       currentLevel: userTable.currentLevel,
       telegramId: userTable.telegramId,
+      telegramUsername: userTable.telegramUsername,
       assignedPlanId: studentAccess.assignedPlanId,
+      activeUntil: studentAccess.activeUntil,
+      lessonCredits: studentAccess.lessonCredits,
       createdAt: userTable.createdAt,
       updatedAt: userTable.updatedAt,
     })
@@ -292,7 +297,13 @@ teacherRoute.get("/student-directory", async (c) => {
       quizLevel: r.quizLevel ?? null,
       currentLevel: r.currentLevel,
       telegramId: r.telegramId ?? null,
+      telegramUsername: r.telegramUsername ?? null,
       assignedPlanId: r.assignedPlanId ?? null,
+      activeUntil: r.activeUntil ? r.activeUntil.toISOString() : null,
+      lessonCredits: r.lessonCredits ?? 0,
+      isActive: Boolean(
+        (r.activeUntil && r.activeUntil.getTime() > now) || (r.lessonCredits ?? 0) > 0,
+      ),
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     })),
@@ -403,6 +414,22 @@ teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput
     throw new HTTPException(400, { message: "unknown_plan" });
   }
 
+  const activeUntil = body.activeUntil ? new Date(body.activeUntil) : null;
+  if (body.assignedPlanId === "monthly-standard") {
+    if (!activeUntil || activeUntil.getTime() <= Date.now()) {
+      throw new HTTPException(400, { message: "invalid_access_end" });
+    }
+    if (body.lessonCredits !== 0) {
+      throw new HTTPException(400, { message: "monthly_plan_cannot_have_credits" });
+    }
+  } else if (body.assignedPlanId === "bundle-8") {
+    if (activeUntil || body.lessonCredits < 1) {
+      throw new HTTPException(400, { message: "invalid_lesson_credits" });
+    }
+  } else if (activeUntil || body.lessonCredits !== 0) {
+    throw new HTTPException(400, { message: "access_requires_plan" });
+  }
+
   const [target] = await db
     .select({ id: userTable.id })
     .from(userTable)
@@ -430,6 +457,17 @@ teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput
     }
   }
 
+  if (body.telegramUsername !== null) {
+    const [telegramUsernameOwner] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.telegramUsername, body.telegramUsername))
+      .limit(1);
+    if (telegramUsernameOwner && telegramUsernameOwner.id !== studentId) {
+      throw new HTTPException(400, { message: "telegram_username_already_in_use" });
+    }
+  }
+
   const now = new Date();
   await db.transaction(async (tx) => {
     await tx
@@ -440,6 +478,7 @@ teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput
         email: normalizedEmail,
         image: body.avatarUrl || null,
         telegramId: body.telegramId,
+        telegramUsername: body.telegramUsername,
         jlptLevel: body.jlptLevel,
         quizLevel: body.quizLevel,
         currentLevel: body.currentLevel,
@@ -449,10 +488,21 @@ teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput
 
     await tx
       .insert(studentAccess)
-      .values({ userId: studentId, assignedPlanId: body.assignedPlanId, updatedAt: now })
+      .values({
+        userId: studentId,
+        assignedPlanId: body.assignedPlanId,
+        activeUntil,
+        lessonCredits: body.lessonCredits,
+        updatedAt: now,
+      })
       .onConflictDoUpdate({
         target: studentAccess.userId,
-        set: { assignedPlanId: body.assignedPlanId, updatedAt: now },
+        set: {
+          assignedPlanId: body.assignedPlanId,
+          activeUntil,
+          lessonCredits: body.lessonCredits,
+          updatedAt: now,
+        },
       });
   });
 
@@ -604,18 +654,58 @@ teacherRoute.get("/students/:studentId", async (c) => {
 
 // Accounts are admin-provisioned only (no public self-signup) — this is the
 // one path that creates a student login. Auth is passwordless: we create the
-// user directly, then email a magic-link invite that both activates the account
-// and signs them in. (They can also sign in with Telegram afterwards.)
+// user directly, then email a magic-link invite that activates the account.
 teacherRoute.post("/students", zValidator("json", createStudentInput), async (c) => {
-  const { email, name, nickname, planId } = c.req.valid("json");
+  const {
+    email,
+    name,
+    nickname,
+    telegramUsername,
+    telegramId,
+    planId,
+    activeUntil: activeUntilIso,
+    lessonCredits,
+  } = c.req.valid("json");
   const normalizedEmail = email.toLowerCase();
   if (!paymentPlans.some((p) => p.id === planId)) {
     throw new HTTPException(400, { message: "unknown plan" });
+  }
+  const activeUntil = activeUntilIso ? new Date(activeUntilIso) : null;
+  if (planId === "monthly-standard") {
+    if (!activeUntil || activeUntil.getTime() <= Date.now()) {
+      throw new HTTPException(400, { message: "invalid_access_end" });
+    }
+    if (lessonCredits !== 0) {
+      throw new HTTPException(400, { message: "monthly_plan_cannot_have_credits" });
+    }
+  }
+  if (planId === "bundle-8" && (activeUntil || lessonCredits < 1)) {
+    throw new HTTPException(400, { message: "invalid_lesson_credits" });
   }
 
   const ctx = await auth.$context;
   if (await ctx.internalAdapter.findUserByEmail(normalizedEmail)) {
     throw new HTTPException(400, { message: "email already registered" });
+  }
+  if (telegramUsername) {
+    const [existingTelegram] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.telegramUsername, telegramUsername))
+      .limit(1);
+    if (existingTelegram) {
+      throw new HTTPException(400, { message: "telegram_username_already_in_use" });
+    }
+  }
+  if (telegramId) {
+    const [existingTelegramId] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.telegramId, telegramId))
+      .limit(1);
+    if (existingTelegramId) {
+      throw new HTTPException(400, { message: "telegram_already_in_use" });
+    }
   }
   const created = await ctx.internalAdapter.createUser({
     email: normalizedEmail,
@@ -623,11 +713,15 @@ teacherRoute.post("/students", zValidator("json", createStudentInput), async (c)
     emailVerified: false,
     role: "student",
     ...(nickname ? { nickname } : {}),
+    ...(telegramUsername ? { telegramUsername } : {}),
+    ...(telegramId ? { telegramId } : {}),
   });
 
   await db.insert(studentAccess).values({
     userId: created.id,
     assignedPlanId: planId,
+    activeUntil: planId === "monthly-standard" ? activeUntil : null,
+    lessonCredits: planId === "bundle-8" ? lessonCredits : 0,
     updatedAt: new Date(),
   });
 

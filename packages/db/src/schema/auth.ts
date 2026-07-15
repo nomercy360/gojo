@@ -23,6 +23,7 @@ export const user = pgTable("user", {
   /** Position on the 30-level curriculum ladder. Advancement is gated (SRS coverage + homework), not self-served. */
   currentLevel: integer().notNull().default(1),
   telegramId: bigint({ mode: "number" }).unique(),
+  telegramUsername: text().unique(),
   personalDataConsentAt: timestamp({ withTimezone: true }),
   personalDataConsentVersion: text(),
 

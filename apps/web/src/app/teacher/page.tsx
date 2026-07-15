@@ -68,9 +68,9 @@ export default async function TeacherPage({
       lessonCount: student?.lessonCount ?? 0,
       attendedCount: student?.attendedCount ?? 0,
       lastLessonAt: student?.lastLessonAt ?? null,
-      activeUntil: student?.activeUntil ?? null,
-      lessonCredits: student?.lessonCredits ?? 0,
-      isActive: student?.isActive ?? false,
+      activeUntil: student?.activeUntil ?? entry.activeUntil,
+      lessonCredits: student?.lessonCredits ?? entry.lessonCredits,
+      isActive: student?.isActive ?? entry.isActive,
     };
   });
 

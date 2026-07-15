@@ -154,10 +154,14 @@ export type StudentDirectoryEntry = {
   emailVerified: boolean;
   avatarUrl: string | null;
   telegramId: number | null;
+  telegramUsername: string | null;
   jlptLevel: string | null;
   quizLevel: string | null;
   currentLevel: number;
   assignedPlanId: string | null;
+  activeUntil: string | null;
+  lessonCredits: number;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -206,10 +210,13 @@ export function updateStudent(
     email: string;
     avatarUrl: string | null;
     telegramId: number | null;
+    telegramUsername: string | null;
     jlptLevel: string | null;
     quizLevel: string | null;
     currentLevel: number;
     assignedPlanId: string | null;
+    activeUntil: string | null;
+    lessonCredits: number;
   },
 ) {
   return apiFetch<{ ok: boolean }>(`/teacher/students/${studentId}`, {
@@ -411,7 +418,11 @@ export function createStudent(body: {
   email: string;
   name: string;
   nickname?: string;
+  telegramUsername?: string;
+  telegramId?: number | null;
   planId: string;
+  activeUntil: string | null;
+  lessonCredits: number;
 }) {
   return apiFetch<{ ok: boolean; userId: string }>("/teacher/students", {
     method: "POST",

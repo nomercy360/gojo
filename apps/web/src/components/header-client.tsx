@@ -67,8 +67,7 @@ export function HeaderClient({
     return () => window.removeEventListener("scroll", onScroll);
   }, [overlayRoute]);
 
-  // Post-login sync. Telegram OIDC and magic-link both redirect away from the
-  // login page, so this (formerly inline in the password login) runs here on
+  // Post-login sync runs here on
   // the first authenticated page load. Both helpers are idempotent.
   useEffect(() => {
     if (!user) return;
@@ -85,9 +84,8 @@ export function HeaderClient({
     };
   }, [user]);
 
-  // Landing owns its navigation. All authenticated app routes share this
-  // global top bar; the teacher sidebar remains local collection navigation.
-  if (pathname === "/") return null;
+  // Landing and the teacher workspace own their navigation.
+  if (pathname === "/" || pathname.startsWith("/teacher")) return null;
 
   const overlay = overlayRoute && !scrolled;
   const frosted = overlayRoute && scrolled;

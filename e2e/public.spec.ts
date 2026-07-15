@@ -79,6 +79,12 @@ test("student and admin have separate invite-only login screens", async ({ page 
   ).toHaveCount(0);
   await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
   await expect(page.getByText(/согласие на обработку персональных данных/i)).toHaveCount(0);
+  await expect(page.getByLabel("Email или Telegram")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Получить код" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Зарегистрироваться/ })).toHaveAttribute(
+    "href",
+    "https://t.me/gojolearn_bot?start=u_landing_ca_header",
+  );
 
   await page.getByRole("link", { name: "Войти в панель" }).click();
   await expect(page).toHaveURL(/\/admin\/login$/);
@@ -89,7 +95,7 @@ test("student and admin have separate invite-only login screens", async ({ page 
       exact: true,
     }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Войти через Telegram" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Зарегистрироваться/ })).toHaveCount(0);
   await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
 });
 

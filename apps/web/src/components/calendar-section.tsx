@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { LessonDto } from "@gojo/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +16,10 @@ interface Session {
   time: string;
   duration: string;
   topic: string;
+}
+
+function localDateKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
 function formatLesson(lesson: LessonDto): Session {
@@ -43,24 +48,24 @@ function getWeekStart(offset: number) {
 
 function buildWeek(monday: Date, isoDates: string[]) {
   const today = new Date();
-  const lessonDates = new Set(
-    isoDates.map((iso) => {
-      const date = new Date(iso);
-      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-    }),
-  );
+  const lessonDates = new Set(isoDates.map((iso) => localDateKey(new Date(iso))));
   const labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + index);
-    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const key = localDateKey(date);
     return {
       label: labels[index],
       date: date.getDate(),
       key,
       hasLesson: lessonDates.has(key),
       isToday: date.toDateString() === today.toDateString(),
+      accessibleLabel: date.toLocaleDateString("ru-RU", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
     };
   });
 }
@@ -69,7 +74,7 @@ export function CalendarSection() {
   const [lessons, setLessons] = useState<LessonDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(() => localDateKey(new Date()));
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -100,10 +105,11 @@ export function CalendarSection() {
   const visibleLessons = selectedDate
     ? lessons.filter((lesson) => {
         const date = new Date(lesson.startsAt);
-        return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}` === selectedDate;
+        return localDateKey(date) === selectedDate;
       })
     : lessons;
   const sessions = visibleLessons.map(formatLesson);
+  const selectedDay = week.find((day) => day.key === selectedDate);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   const weekLabel = `${monday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} — ${sunday.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
@@ -128,7 +134,7 @@ export function CalendarSection() {
   return (
     <Card
       id="calendar"
-      className="scroll-mt-20 gap-0 p-7"
+      className="scroll-mt-20 gap-0 p-4 sm:p-7"
       onTouchStart={(event) => {
         const touch = event.touches[0];
         touchStart.current = { x: touch.clientX, y: touch.clientY };
@@ -154,7 +160,7 @@ export function CalendarSection() {
             variant="ghost"
             size="sm"
             onClick={() => {
-              setSelectedDate(null);
+              setSelectedDate(localDateKey(new Date()));
               setWeekOffset(0);
             }}
           >
@@ -172,7 +178,7 @@ export function CalendarSection() {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-7 gap-1 sm:gap-2">
+      <div className="mt-6 grid grid-cols-7 gap-0 sm:gap-2">
         {week.map((day) => {
           const selected = selectedDate === day.key;
           return (
@@ -180,33 +186,73 @@ export function CalendarSection() {
               variant="unstyled"
               key={day.key}
               type="button"
-              aria-label={`${day.label}, ${day.date}`}
+              aria-label={`${day.accessibleLabel}${day.isToday ? ", сегодня" : ""}${day.hasLesson ? ", есть урок" : ""}`}
               aria-pressed={selected}
-              onClick={() => setSelectedDate((current) => (current === day.key ? null : day.key))}
-              className="flex min-w-0 flex-col items-center gap-1 rounded-xl py-1.5 transition-colors hover:bg-gojo-paper"
+              onClick={() => setSelectedDate(day.key)}
+              className="group/day flex min-w-0 flex-col items-center rounded-xl py-1 outline-none focus-visible:ring-2 focus-visible:ring-gojo-orange focus-visible:ring-offset-2"
             >
-              <span className="g-mono text-[9px] font-bold uppercase tracking-wider text-gojo-ink-ghost sm:text-[10px]">
+              <span
+                className={cn(
+                  "g-mono text-[9px] font-bold uppercase tracking-wider sm:text-[10px]",
+                  day.isToday ? "text-gojo-orange" : "text-gojo-ink-ghost",
+                )}
+              >
                 {day.label}
               </span>
               <span
-                className={`flex h-8 w-8 items-center justify-center rounded-[10px] text-[13px] font-bold transition-colors sm:h-9 sm:w-9 ${
-                  selected
-                    ? "bg-gojo-ink text-white"
-                    : day.hasLesson
-                      ? "bg-gojo-orange text-white"
-                      : day.isToday
-                        ? "bg-gojo-orange-soft text-gojo-orange ring-1 ring-gojo-orange"
-                        : "text-gojo-ink"
-                }`}
+                className={cn(
+                  "mt-1.5 flex h-8 w-8 items-center justify-center rounded-[10px] border-2 border-transparent text-[13px] font-bold transition-colors min-[400px]:h-10 min-[400px]:w-10 min-[400px]:text-[15px] sm:h-11 sm:w-11 sm:rounded-xl sm:text-[16px]",
+                  selected && "bg-gojo-orange text-white",
+                  !selected &&
+                    day.isToday &&
+                    "border-gojo-orange bg-gojo-orange-soft text-gojo-orange",
+                  !selected &&
+                    !day.isToday &&
+                    "text-gojo-ink group-hover/day:bg-gojo-orange-soft group-hover/day:text-gojo-orange",
+                )}
               >
                 {day.date}
+              </span>
+
+              <span className="mt-1 flex h-4 max-w-full items-center justify-center gap-1">
+                {day.hasLesson ? (
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-gojo-orange"
+                  />
+                ) : null}
+                {day.isToday ? (
+                  <span className="g-mono truncate text-[7px] font-bold uppercase tracking-[0.05em] text-gojo-orange sm:text-[8px]">
+                    Сегодня
+                  </span>
+                ) : null}
               </span>
             </Button>
           );
         })}
       </div>
 
-      <div className="mt-5">
+      <ul
+        aria-label="Обозначения календаря"
+        className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-black/10 pt-4 sm:gap-x-6"
+      >
+        <LegendItem
+          swatch={<span className="h-4 w-4 rounded-[5px] bg-gojo-orange" />}
+          label="Выбран"
+        />
+        <LegendItem
+          swatch={
+            <span className="h-4 w-4 rounded-[5px] border-2 border-gojo-orange bg-gojo-orange-soft" />
+          }
+          label="Сегодня"
+        />
+        <LegendItem
+          swatch={<span className="h-1.5 w-1.5 rounded-full bg-gojo-orange" />}
+          label="Есть урок"
+        />
+      </ul>
+
+      <div className="mt-5" aria-live="polite">
         {loading ? (
           <div className="space-y-2" aria-label="Загрузка расписания">
             {[1, 2].map((item) => (
@@ -216,8 +262,8 @@ export function CalendarSection() {
         ) : sessions.length === 0 ? (
           <div className="rounded-xl bg-gojo-paper px-5 py-6 text-center">
             <p className="g-body text-[13px] text-gojo-ink-muted">
-              {selectedDate
-                ? "На выбранный день занятий нет."
+              {selectedDay
+                ? `${selectedDay.label.toLocaleUpperCase("ru-RU")}, ${selectedDay.date} — занятий нет.`
                 : "На этой неделе занятий нет. Следующее появится после согласования с преподавателем."}
             </p>
           </div>
@@ -254,5 +300,16 @@ export function CalendarSection() {
         )}
       </div>
     </Card>
+  );
+}
+
+function LegendItem({ swatch, label }: { swatch: React.ReactNode; label: string }) {
+  return (
+    <li className="flex items-center gap-2">
+      <span aria-hidden="true" className="flex h-4 w-4 items-center justify-center">
+        {swatch}
+      </span>
+      <span className="g-body text-[11px] text-gojo-ink-muted sm:text-[12px]">{label}</span>
+    </li>
   );
 }

@@ -49,6 +49,7 @@ jobs:
           # Harmless for the api build (its Dockerfile ignores unused args).
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://gojolearn.ru/api' }}
+            NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${{ vars.TELEGRAM_BOT_USERNAME || 'gojolearn_bot' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/gojo-${{ matrix.app }}:latest

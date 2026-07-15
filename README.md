@@ -7,7 +7,7 @@
 - **Web**: Next.js 15 (App Router, React 19, Tailwind v4)
 - **API**: Hono on Bun
 - **DB**: PostgreSQL 18 + pgvector
-- **Auth**: better-auth (email/password, sessions, OAuth-ready)
+- **Auth**: passwordless email/Telegram codes with better-auth sessions
 - **Video**: внешние ссылки (Zoom/Meet) на уроке
 - **Storage**: S3-compatible (Minio локально / R2 в проде)
 - **DevOps**: Docker Compose, Caddy, GitHub Actions

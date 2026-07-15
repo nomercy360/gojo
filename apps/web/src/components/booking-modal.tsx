@@ -3,17 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { track } from "@/lib/analytics";
+import { telegramBotStartUrl } from "@/lib/telegram";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const PENDING_LEAD_KEY = "gojo:pending-lead-email";
-
-type TelegramLoginPayload = {
-  proof?: string;
-  user?: { id: number; name: string; username?: string; picture?: string };
-  error?: string;
-};
+const TELEGRAM_CONTACT_URL = telegramBotStartUrl("u_landing_ca_booking");
 
 type ContactMethod = "telegram" | "email" | "phone";
 
@@ -45,7 +41,6 @@ export function BookingModal({
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [submissionReason, setSubmissionReason] = useState<string | undefined>();
   const [confirmationEmailSent, setConfirmationEmailSent] = useState(true);
-  const [telegramLoading, setTelegramLoading] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
@@ -64,7 +59,6 @@ export function BookingModal({
     setAlreadySubmitted(false);
     setSubmissionReason(undefined);
     setConfirmationEmailSent(true);
-    setTelegramLoading(false);
     setFormSubmitting(false);
     setPrivacyAccepted(false);
   }, [open, source]);
@@ -80,14 +74,9 @@ export function BookingModal({
 
   const submitLead = useCallback(
     async ({
-      telegram,
       submittedEmail,
       submittedPhone,
-    }: {
-      telegram?: { proof: string; name: string };
-      submittedEmail?: string;
-      submittedPhone?: string;
-    }) => {
+    }: { submittedEmail?: string; submittedPhone?: string }) => {
       if (!privacyAccepted) {
         toast.error("Подтверди согласие на обработку персональных данных");
         return;
@@ -101,10 +90,7 @@ export function BookingModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             kind: "booking",
-            // Telegram supplies the person's verified display name. The compact
-            // email/phone redesign deliberately asks for one contact value only.
-            name: telegram?.name || "Гость",
-            telegramProof: telegram?.proof,
+            name: "Гость",
             email: normalizedEmail || undefined,
             phone: normalizedPhone || undefined,
             personalDataConsent: true,
@@ -132,41 +118,6 @@ export function BookingModal({
     },
     [privacyAccepted, source],
   );
-
-  useEffect(() => {
-    if (!open) return;
-    const apiOrigin = new URL(API_URL, window.location.href).origin;
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== apiOrigin || event.data?.type !== "gojo:telegram-login") return;
-      setTelegramLoading(false);
-      const payload = event.data.payload as TelegramLoginPayload;
-      if (!payload.proof || !payload.user) {
-        console.error("Telegram Login failed:", payload.error);
-        toast.error(`Telegram: ${payload.error ?? "login_failed"}`);
-        return;
-      }
-      void submitLead({ telegram: { proof: payload.proof, name: payload.user.name } });
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [open, submitLead]);
-
-  const openTelegramLogin = () => {
-    if (!privacyAccepted) {
-      toast.error("Сначала подтверди согласие на обработку персональных данных");
-      return;
-    }
-    setTelegramLoading(true);
-    const popup = window.open(
-      `${API_URL}/leads/telegram/start`,
-      "gojo-telegram-login",
-      "popup=yes,width=550,height=650",
-    );
-    if (!popup) {
-      setTelegramLoading(false);
-      toast.error("Разреши всплывающие окна, чтобы войти через Telegram.");
-    }
-  };
 
   const submitContact = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -245,20 +196,20 @@ export function BookingModal({
                 aria-labelledby="booking-tab-telegram"
                 hidden={contactMethod !== "telegram"}
               >
-                <Button
-                  variant="unstyled"
+                <a
                   className="booking-contact-action booking-telegram-action"
-                  type="button"
-                  disabled={telegramLoading || formSubmitting}
-                  onClick={openTelegramLogin}
+                  href={TELEGRAM_CONTACT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M21.8 3.2 18.6 19c-.2 1.1-.9 1.4-1.8.9l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.1 12.8 1.3 11.3C.2 11.1.2 10.3 1.5 9.8L20.3 2.6c.9-.3 1.7.2 1.5.6Z" />
                   </svg>
-                  {telegramLoading || formSubmitting
-                    ? "Открываем Telegram…"
-                    : "Войти через Telegram"}
-                </Button>
+                  Написать боту в Telegram
+                </a>
+                <p className="mt-3 text-center text-xs leading-5 text-gojo-ink-muted">
+                  Откроем чат с Gojo, чтобы договориться о первом уроке.
+                </p>
               </div>
 
               <div
@@ -320,36 +271,40 @@ export function BookingModal({
                 </Button>
               </div>
 
-              <label
-                htmlFor="booking-privacy-consent"
-                className="booking-modal-policy"
-                style={{ display: "flex", gap: 8, textAlign: "left" }}
-              >
-                <Input
-                  unstyled
-                  id="booking-privacy-consent"
-                  type="checkbox"
-                  checked={privacyAccepted}
-                  onChange={(event) => setPrivacyAccepted(event.target.checked)}
-                  style={{ marginTop: 2, flex: "0 0 auto" }}
-                />
-                <span>
-                  Я даю отдельное{" "}
-                  <a href="/personal-data-consent" target="_blank" rel="noopener noreferrer">
-                    согласие на обработку персональных данных
-                  </a>{" "}
-                  и ознакомился(-ась) с{" "}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer">
-                    Политикой
-                  </a>
-                  .
-                </span>
-              </label>
+              {contactMethod !== "telegram" ? (
+                <label
+                  htmlFor="booking-privacy-consent"
+                  className="booking-modal-policy"
+                  style={{ display: "flex", gap: 8, textAlign: "left" }}
+                >
+                  <Input
+                    unstyled
+                    id="booking-privacy-consent"
+                    type="checkbox"
+                    checked={privacyAccepted}
+                    onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                    style={{ marginTop: 2, flex: "0 0 auto" }}
+                  />
+                  <span>
+                    Я даю отдельное{" "}
+                    <a href="/personal-data-consent" target="_blank" rel="noopener noreferrer">
+                      согласие на обработку персональных данных
+                    </a>{" "}
+                    и ознакомился(-ась) с{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer">
+                      Политикой
+                    </a>
+                    .
+                  </span>
+                </label>
+              ) : null}
             </form>
 
-            <p className="booking-modal-policy">
-              Согласие не включает рекламные рассылки; контакт используется для заявки и записи.
-            </p>
+            {contactMethod !== "telegram" ? (
+              <p className="booking-modal-policy">
+                Согласие не включает рекламные рассылки; контакт используется для заявки и записи.
+              </p>
+            ) : null}
           </div>
 
           <div className="form-success booking-modal-success" hidden={!submitted}>

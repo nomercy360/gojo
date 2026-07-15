@@ -13,7 +13,7 @@ export const authRoute = new Hono<AuthContext>();
 
 /**
  * Dev-only login. Creates or reuses a user by email and returns a passwordless
- * better-auth session (auth is Telegram/magic-link only in prod). Gated by
+ * better-auth session (production auth is passwordless). Gated by
  * NODE_ENV + ALLOW_DEV_LOGIN env flag.
  */
 authRoute.post("/dev-login", zValidator("json", devLoginInput), async (c) => {

@@ -13,15 +13,6 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true" || v === "1"),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
-  TELEGRAM_BOT_USERNAME: z.string().optional(),
-  // Telegram Login (OIDC) — Client ID / Secret / redirect URI all come from
-  // @BotFather → Bot Settings → Web Login. The server-side token exchange uses
-  // HTTP Basic auth, so BOTH the secret and a redirect URI that exactly matches
-  // a BotFather-registered URL are required for the flow to work. CLIENT_ID is
-  // the bot id (digits before the `:` in the bot token).
-  TELEGRAM_LOGIN_CLIENT_ID: z.string().regex(/^\d+$/).default("8280971819"),
-  TELEGRAM_LOGIN_CLIENT_SECRET: z.string().min(20).optional(),
-  TELEGRAM_LOGIN_REDIRECT_URI: z.string().url().optional(),
   // Optional: chat id to ping on new landing leads. If unset, leads are still
   // saved to the DB — the Telegram notification is just skipped.
   TELEGRAM_LEAD_CHAT_ID: z.string().optional(),

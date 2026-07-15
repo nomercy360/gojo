@@ -54,18 +54,10 @@ services:
     pull_policy: always
     container_name: gojo-api
     restart: unless-stopped
-    # Telegram hosts publish AAAA records, but the docker network has no IPv6
-    # route, so Bun's fetch stalls on IPv6. Pin them to IPv4 so resolution stays
-    # IPv4 and SNI/cert remain valid. Both hostnames point at .220: it's the one
-    # Telegram edge IP reachable from this VM (oauth's own DNS IP 149.154.167.99
-    # is blackholed here by Timeweb) and it serves BOTH api and oauth via SNI.
-    # api.telegram.org = bot sendMessage (lead pings/reminders/user DMs);
-    # oauth.telegram.org = Telegram Login OIDC discovery/token/JWKS — without
-    # this pin /leads/telegram/start hangs and Caddy returns 502. If Telegram
-    # moves this IP, re-check reachability (curl --resolve) and repin.
+    # Telegram publishes AAAA records, but the docker network has no IPv6 route.
+    # Pin the Bot API to the reachable IPv4 edge for login codes and reminders.
     extra_hosts:
       - "api.telegram.org:149.154.167.220"
-      - "oauth.telegram.org:149.154.167.220"
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,9 +87,6 @@ services:
       # (never committed). If unset, leads still save — the ping is skipped.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_LEAD_CHAT_ID: ${TELEGRAM_LEAD_CHAT_ID:-}
-      TELEGRAM_LOGIN_CLIENT_ID: ${TELEGRAM_LOGIN_CLIENT_ID:-8280971819}
-      TELEGRAM_LOGIN_CLIENT_SECRET: ${TELEGRAM_LOGIN_CLIENT_SECRET:-}
-      TELEGRAM_LOGIN_REDIRECT_URI: ${TELEGRAM_LOGIN_REDIRECT_URI:-https://gojolearn.ru/api/leads/telegram/callback}
       # Transactional email (verification, password reset) — SMTP, provider-
       # agnostic. Values live in .env.prod (never committed). Unset SMTP_HOST
       # falls back to localhost:1025, which doesn't exist in prod, so mail
@@ -128,6 +117,7 @@ services:
       - api
     environment:
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:?set PUBLIC_API_URL}
+      NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-gojolearn_bot}
       # Web's own Sentry project (server/edge side — runtime env is fine
       # here). Same project's DSN the CLIENT bundle uses, but the client one
       # (NEXT_PUBLIC_SENTRY_DSN) must be a build ARG (see apps/web/Dockerfile

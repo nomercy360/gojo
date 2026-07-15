@@ -145,17 +145,37 @@ export async function updateStudentAction(
   const avatarUrl = String(formData.get("avatarUrl") ?? "").trim();
   const telegramRaw = String(formData.get("telegramId") ?? "").trim();
   const telegramId = telegramRaw ? Number(telegramRaw) : null;
+  const telegramUsernameRaw = String(formData.get("telegramUsername") ?? "").trim();
+  const telegramUsername = telegramUsernameRaw.replace(/^@/, "").toLowerCase() || null;
   const jlptLevel = String(formData.get("jlptLevel") ?? "") || null;
   const quizLevel = String(formData.get("quizLevel") ?? "") || null;
   const currentLevel = Number(formData.get("currentLevel") ?? 1);
   const assignedPlanId = String(formData.get("assignedPlanId") ?? "") || null;
+  const activeUntilRaw = String(formData.get("activeUntil") ?? "").trim();
+  const activeUntil = activeUntilRaw || null;
+  const lessonCredits = Number(formData.get("lessonCredits") ?? 0);
 
   if (!studentId || !name || !email) return { error: "Заполни имя и email" };
   if (telegramId !== null && (!Number.isSafeInteger(telegramId) || telegramId <= 0)) {
     return { error: "Telegram ID должен быть положительным числом" };
   }
+  if (telegramUsername !== null && !/^[a-z0-9_]{5,32}$/.test(telegramUsername)) {
+    return { error: "Проверь ник в Telegram" };
+  }
   if (!Number.isInteger(currentLevel) || currentLevel < 1 || currentLevel > 30) {
     return { error: "Уровень программы должен быть от 1 до 30" };
+  }
+  if (assignedPlanId === "monthly-standard") {
+    const end = activeUntil ? new Date(activeUntil) : null;
+    if (!end || Number.isNaN(end.getTime()) || end.getTime() <= Date.now()) {
+      return { error: "Укажи будущую дату окончания доступа" };
+    }
+  }
+  if (
+    assignedPlanId === "bundle-8" &&
+    (!Number.isInteger(lessonCredits) || lessonCredits < 1 || lessonCredits > 1000)
+  ) {
+    return { error: "Количество оставшихся уроков должно быть от 1 до 1000" };
   }
 
   try {
@@ -165,10 +185,13 @@ export async function updateStudentAction(
       email,
       avatarUrl: avatarUrl || null,
       telegramId,
+      telegramUsername,
       jlptLevel,
       quizLevel,
       currentLevel,
       assignedPlanId,
+      activeUntil: assignedPlanId === "monthly-standard" ? activeUntil : null,
+      lessonCredits: assignedPlanId === "bundle-8" ? lessonCredits : 0,
     });
   } catch (e) {
     if (e instanceof ApiError) {
@@ -179,6 +202,15 @@ export async function updateStudentAction(
       }
       if (e.status === 400 && e.message.includes("telegram_already_in_use")) {
         return { error: "Этот Telegram ID уже используется" };
+      }
+      if (e.status === 400 && e.message.includes("telegram_username_already_in_use")) {
+        return { error: "Этот ник Telegram уже используется" };
+      }
+      if (e.status === 400 && e.message.includes("invalid_access_end")) {
+        return { error: "Укажи будущую дату окончания доступа" };
+      }
+      if (e.status === 400 && e.message.includes("invalid_lesson_credits")) {
+        return { error: "Укажи количество оставшихся уроков" };
       }
       if (e.status === 400) return { error: "Проверь значения полей" };
       return { error: `API ${e.status}: ${e.message}` };

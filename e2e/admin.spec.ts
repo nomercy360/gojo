@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { adminAuthFile, e2eAccounts } from "./support/auth";
+import { adminAuthFile, e2eAccounts, mutableStudentAuthFile } from "./support/auth";
+import { findUserId, getStudentAccess, resetMutableStudent } from "./support/data";
 import { expectPageHeading } from "./support/ui";
 
 const webURL = process.env.E2E_WEB_URL ?? "http://localhost:3000";
@@ -15,9 +16,7 @@ test.describe("admin", () => {
     await expect(page.locator("body > header")).toHaveCount(0);
 
     await page.getByRole("button", { name: e2eAccounts.admin.email }).click();
-    await expect(
-      page.getByRole("menuitem", { name: "Управлять администраторами" }),
-    ).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Управлять администраторами" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Выйти" })).toBeVisible();
     await page.keyboard.press("Escape");
 
@@ -26,6 +25,11 @@ test.describe("admin", () => {
     await expect(
       page.getByRole("dialog").getByRole("heading", { name: "Новый студент" }),
     ).toBeVisible();
+    const newStudentDialog = page.getByRole("dialog");
+    await newStudentDialog.getByLabel("Тариф и доступ").selectOption("monthly-standard");
+    await expect(newStudentDialog.getByLabel("Доступ до (включительно)")).toBeVisible();
+    await newStudentDialog.getByLabel("Тариф и доступ").selectOption("bundle-8");
+    await expect(newStudentDialog.getByLabel("Количество уроков")).toHaveValue("8");
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Уроки" }).click();
@@ -84,10 +88,89 @@ test.describe("admin", () => {
     await expect(dialog.getByLabel(/Аватар/)).toBeVisible();
     await expect(dialog.getByLabel("Telegram ID")).toBeVisible();
     await expect(dialog.getByLabel("JLPT")).toBeVisible();
-    await expect(dialog.getByLabel("Уровень квиза")).toBeVisible();
+    await expect(dialog.getByLabel("Уровень квиза")).toHaveCount(0);
+    await expect(dialog.getByText("Квиз · онбординг", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Учебный уровень", { exact: true })).toBeVisible();
     await expect(dialog.getByLabel(/Уровень программы/)).toBeVisible();
     await expect(dialog.getByLabel("Тариф")).toBeVisible();
     await expect(dialog.getByRole("link", { name: "Полный профиль" })).toHaveCount(0);
+  });
+
+  test("grants monthly or lesson-package access without a payment", async ({ page, browser }) => {
+    const studentId = await findUserId(e2eAccounts.mutableStudent.email);
+    await resetMutableStudent(studentId);
+
+    try {
+      await page.goto("/teacher");
+      const search = page.getByPlaceholder("Поиск по имени, email или уровню");
+      await search.fill(e2eAccounts.mutableStudent.email);
+      let row = page.locator("tbody tr").filter({ hasText: e2eAccounts.mutableStudent.email });
+      await row.getByRole("button").first().click();
+
+      let dialog = page.getByRole("dialog");
+      const plan = dialog.getByLabel("Тариф и доступ");
+      await plan.selectOption("monthly-standard");
+      const accessEnd = dialog.getByLabel("Доступ до (включительно)");
+      await expect(accessEnd).toBeVisible();
+      const futureDate = await page.evaluate(() => {
+        const date = new Date();
+        date.setDate(date.getDate() + 30);
+        return [
+          date.getFullYear(),
+          String(date.getMonth() + 1).padStart(2, "0"),
+          String(date.getDate()).padStart(2, "0"),
+        ].join("-");
+      });
+      await accessEnd.fill(futureDate);
+      await dialog.getByRole("button", { name: "Сохранить студента" }).click();
+      await expect(page.getByText("Студент сохранён")).toBeVisible();
+      await expect(dialog).toBeHidden();
+
+      await expect
+        .poll(async () => {
+          const access = await getStudentAccess(studentId);
+          return {
+            plan: access?.assignedPlanId,
+            active: Boolean(access?.activeUntil && access.activeUntil.getTime() > Date.now()),
+            credits: access?.lessonCredits,
+          };
+        })
+        .toEqual({ plan: "monthly-standard", active: true, credits: 0 });
+
+      const studentContext = await browser.newContext({ storageState: mutableStudentAuthFile });
+      try {
+        const studentPage = await studentContext.newPage();
+        await studentPage.goto("/dashboard");
+        await expect(studentPage.getByText("Первые шаги", { exact: true })).toHaveCount(0);
+        await expect(studentPage.getByText("Активен", { exact: true })).toBeVisible();
+      } finally {
+        await studentContext.close();
+      }
+
+      await search.fill(e2eAccounts.mutableStudent.email);
+      row = page.locator("tbody tr").filter({ hasText: e2eAccounts.mutableStudent.email });
+      await row.getByRole("button").first().click();
+      dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Тариф и доступ").selectOption("bundle-8");
+      const credits = dialog.getByLabel("Осталось уроков");
+      await expect(credits).toHaveValue("8");
+      await dialog.getByRole("button", { name: "Сохранить студента" }).click();
+      await expect(page.getByText("Студент сохранён")).toBeVisible();
+      await expect(dialog).toBeHidden();
+
+      await expect
+        .poll(async () => {
+          const access = await getStudentAccess(studentId);
+          return {
+            plan: access?.assignedPlanId,
+            activeUntil: access?.activeUntil ?? null,
+            credits: access?.lessonCredits,
+          };
+        })
+        .toEqual({ plan: "bundle-8", activeUntil: null, credits: 8 });
+    } finally {
+      await resetMutableStudent(studentId);
+    }
   });
 
   test("rejects a past local lesson time without resetting the form", async ({ page }) => {

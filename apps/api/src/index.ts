@@ -16,6 +16,7 @@ import { kanjiRoute } from "./routes/kanji.ts";
 import { leadsRoute } from "./routes/leads.ts";
 import { lessonsRoute } from "./routes/lessons.ts";
 import { levelsRoute } from "./routes/levels.ts";
+import { loginRoute } from "./routes/login.ts";
 import { onboardingRoute } from "./routes/onboarding.ts";
 import { paymentsRoute } from "./routes/payments.ts";
 import { personalEventsRoute } from "./routes/personal-events.ts";
@@ -27,10 +28,10 @@ import { usersRoute } from "./routes/users.ts";
 const app = new Hono<AuthContext>();
 const corsOrigins = [
   env.WEB_ORIGIN,
-  ...(env.TRUSTED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? []),
-  ...(env.NODE_ENV === "development"
-    ? ["http://localhost:3000", "http://127.0.0.1:3000"]
-    : []),
+  ...(env.TRUSTED_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? []),
+  ...(env.NODE_ENV === "development" ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
 ];
 
 app.use("*", logger());
@@ -64,6 +65,7 @@ app.route("/leads", leadsRoute);
 
 // Public product-funnel events (guest kana trainer etc.) — no auth.
 app.route("/events", eventsRoute);
+app.route("/login", loginRoute);
 
 // Custom dev-login lives under /dev-auth to avoid conflicting with better-auth
 app.route("/dev-auth", authRoute);

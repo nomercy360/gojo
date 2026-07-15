@@ -28,10 +28,34 @@ test.describe("student", () => {
     await page.goto("/teacher");
     await expect(page).toHaveURL(/\/dashboard$/);
   });
+
+  test("shows aligned payment choices without an empty status summary", async ({ page }) => {
+    await page.goto("/payments");
+    await expectPageHeading(page, "Доступ к занятиям");
+
+    const main = page.locator("main");
+    await expect(main.getByText("Оплата", { exact: true })).toHaveCount(0);
+    await expect(main.getByText("Текущий статус", { exact: true })).toHaveCount(0);
+    await expect(main.getByText("История платежей", { exact: true })).toHaveCount(0);
+
+    const checkoutButtons = main.getByRole("button", { name: "Оплатить через ЮKassa" });
+    await expect(checkoutButtons).toHaveCount(2);
+    const positions = await checkoutButtons.evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const price = button.parentElement?.firstElementChild;
+        return {
+          buttonTop: button.getBoundingClientRect().top,
+          priceTop: price?.getBoundingClientRect().top ?? -1,
+        };
+      }),
+    );
+    expect(Math.abs(positions[0]!.buttonTop - positions[1]!.buttonTop)).toBeLessThan(1);
+    expect(Math.abs(positions[0]!.priceTop - positions[1]!.priceTop)).toBeLessThan(1);
+  });
 });
 
 test("passwordless session opens the dashboard in a real browser", async ({ page }) => {
-  // Auth is passwordless (Telegram / magic link); dev-login is the supported
+  // Auth is passwordless; dev-login is the supported
   // way to establish a session in tests. Drive it through the browser context
   // so the session cookie is exercised end-to-end, then load the dashboard.
   const res = await page.request.post(`${apiURL}/dev-auth/dev-login`, {

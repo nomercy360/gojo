@@ -8,12 +8,11 @@ export class LoginPage {
     await expect(this.page.getByRole("heading", { name: "Вход для студента" })).toBeVisible();
   }
 
-  // Auth is passwordless (Telegram / email magic link). Request a magic link by
-  // email — the login form no longer has a password field.
-  async requestMagicLink(email: string) {
+  // Auth is passwordless. Request a one-time code by email.
+  async requestCode(email: string) {
     const form = this.page.locator("main form");
-    await form.getByLabel("Email").fill(email);
-    await form.getByRole("button", { name: /ссылк|Войти по/i }).click();
+    await form.getByLabel("Email или Telegram").fill(email);
+    await form.getByRole("button", { name: "Получить код" }).click();
   }
 }
 

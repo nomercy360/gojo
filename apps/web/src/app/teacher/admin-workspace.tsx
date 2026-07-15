@@ -40,6 +40,7 @@ import {
   CalendarDays,
   ChevronRight,
   Inbox,
+  Info,
   LayoutDashboard,
   Plus,
   Search,
@@ -813,20 +814,25 @@ function AdminPanel({ admin, onSuccess }: { admin: AdminDirectoryEntry; onSucces
   }, [onSuccess, router, state.ok]);
 
   return (
-    <div className="space-y-7">
-      <div className="flex items-center gap-4 rounded-xl border border-gojo-ink/10 bg-gojo-paper p-4">
+    <div>
+      <div className="flex items-center gap-4 rounded-2xl bg-gojo-paper-2 p-4">
         <Avatar value={avatarUrl || null} size={56} fallback={nickname || name} />
-        <div className="min-w-0">
-          <div className="truncate font-bold">{nickname || name}</div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-bold">{nickname || name}</div>
           <div className="truncate text-sm text-gojo-ink-muted">{email}</div>
-          <Badge className="mt-2 bg-gojo-orange-soft text-gojo-orange">
-            Администратор / преподаватель
-          </Badge>
         </div>
+        <Badge className="shrink-0 bg-gojo-orange-soft text-gojo-orange">Администратор</Badge>
       </div>
 
-      <form action={formAction} onReset={(event) => event.preventDefault()} className="space-y-5">
+      <form
+        action={formAction}
+        onReset={(event) => event.preventDefault()}
+        className="mt-7 space-y-5 border-t border-gojo-ink/10 pt-6"
+      >
         <Input type="hidden" name="adminId" value={admin.id} />
+        <div className="g-mono text-[10px] font-bold uppercase tracking-[0.16em] text-gojo-ink-ghost">
+          Данные
+        </div>
         <Field>
           <FieldLabel htmlFor={`admin-name-${admin.id}`}>Имя</FieldLabel>
           <Input
@@ -882,45 +888,41 @@ function AdminPanel({ admin, onSuccess }: { admin: AdminDirectoryEntry; onSucces
           />
         </Field>
         {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
-        <Button type="submit" disabled={pending} className="w-full">
+        <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
           {pending ? "Сохраняем..." : "Сохранить администратора"}
         </Button>
       </form>
 
-      <div className="space-y-3 border-t border-gojo-ink/10 pt-6 text-sm">
-        <div>
-          <div className="text-xs text-gojo-ink-muted">ID</div>
-          <div className="g-mono mt-1 break-all text-xs">{admin.id}</div>
+      <div className="mt-7 flex flex-wrap items-start justify-between gap-4 border-t border-gojo-ink/8 pt-5 opacity-70">
+        <div className="min-w-0">
+          <div className="g-mono text-[9px] font-bold uppercase tracking-[0.12em] text-gojo-ink-ghost">
+            Системный ID
+          </div>
+          <div className="g-mono mt-1 break-all text-[10px] text-gojo-ink-muted">{admin.id}</div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <div className="text-xs text-gojo-ink-muted">Создан</div>
+        <div className="ml-auto text-right">
+          <div className="g-mono text-[9px] font-bold uppercase tracking-[0.12em] text-gojo-ink-ghost">
+            Создан · обновлён
+          </div>
+          <div className="mt-1 flex items-center justify-end gap-1 text-[11px] text-gojo-ink-muted">
             <LocalTime
               iso={admin.createdAt}
               options={{
                 day: "2-digit",
-                month: "2-digit",
+                month: "short",
                 year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
               }}
-              showTimeZone
-              className="mt-1 block text-xs font-semibold"
+              className="whitespace-nowrap"
             />
-          </div>
-          <div>
-            <div className="text-xs text-gojo-ink-muted">Обновлён</div>
+            <span aria-hidden="true">·</span>
             <LocalTime
               iso={admin.updatedAt}
               options={{
                 day: "2-digit",
-                month: "2-digit",
+                month: "short",
                 year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
               }}
-              showTimeZone
-              className="mt-1 block text-xs font-semibold"
+              className="whitespace-nowrap"
             />
           </div>
         </div>
@@ -948,10 +950,17 @@ function StudentPanel({
   const [email, setEmail] = useState(student.email);
   const [avatarUrl, setAvatarUrl] = useState(student.avatarUrl ?? "");
   const [telegramId, setTelegramId] = useState(student.telegramId?.toString() ?? "");
+  const [telegramUsername, setTelegramUsername] = useState(student.telegramUsername ?? "");
   const [jlptLevel, setJlptLevel] = useState(student.jlptLevel ?? "");
   const [quizLevel, setQuizLevel] = useState(student.quizLevel ?? "");
   const [currentLevel, setCurrentLevel] = useState(String(student.currentLevel));
   const [assignedPlanId, setAssignedPlanId] = useState(student.assignedPlanId ?? "");
+  const [accessEndDate, setAccessEndDate] = useState(
+    student.activeUntil ? formatDateInput(new Date(student.activeUntil)) : "",
+  );
+  const [lessonCredits, setLessonCredits] = useState(String(student.lessonCredits));
+  const quizReference = quizLevel ? quizLevelLabel(quizLevel) : "—";
+  const levelMismatch = Boolean(jlptLevel && quizLevel && jlptLevel !== quizLevel);
 
   useEffect(() => {
     setName(student.name);
@@ -959,10 +968,13 @@ function StudentPanel({
     setEmail(student.email);
     setAvatarUrl(student.avatarUrl ?? "");
     setTelegramId(student.telegramId?.toString() ?? "");
+    setTelegramUsername(student.telegramUsername ?? "");
     setJlptLevel(student.jlptLevel ?? "");
     setQuizLevel(student.quizLevel ?? "");
     setCurrentLevel(String(student.currentLevel));
     setAssignedPlanId(student.assignedPlanId ?? "");
+    setAccessEndDate(student.activeUntil ? formatDateInput(new Date(student.activeUntil)) : "");
+    setLessonCredits(String(student.lessonCredits));
   }, [student]);
 
   useEffect(() => {
@@ -973,31 +985,47 @@ function StudentPanel({
   }, [onSuccess, router, state.ok]);
 
   return (
-    <div className="space-y-7">
-      <div className="flex items-center gap-4 rounded-xl border border-gojo-ink/10 bg-gojo-paper p-4">
+    <div>
+      <div className="flex items-center gap-4 rounded-2xl bg-gojo-paper-2 p-4">
         <Avatar value={avatarUrl || null} size={56} fallback={nickname || name} />
-        <div className="min-w-0">
-          <div className="truncate font-bold">{nickname || name}</div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-bold">{nickname || name}</div>
           <div className="truncate text-sm text-gojo-ink-muted">{email}</div>
-          <div className="mt-2">
-            <AccessBadge student={student} />
-          </div>
         </div>
+        <AccessBadge student={student} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Metric label="Уроков" value={String(student.lessonCount)} />
-        <Metric label="Посещено" value={String(student.attendedCount)} />
-        <Metric label="JLPT" value={student.jlptLevel ?? "—"} />
-        <Metric label="Квиз" value={student.quizLevel ? quizLevelLabel(student.quizLevel) : "—"} />
+      <div className="mt-4 grid grid-cols-3 rounded-2xl border border-gojo-ink/10 px-4 py-4">
+        <StudentSummaryStat label="Уроков" value={String(student.lessonCount)} />
+        <StudentSummaryStat
+          label="Посещено"
+          value={String(student.attendedCount)}
+          className="border-l border-gojo-ink/10 pl-4"
+        />
+        <StudentSummaryStat
+          label="Квиз · онбординг"
+          value={quizReference}
+          accent
+          className="border-l border-gojo-ink/10 pl-4"
+        />
       </div>
+      <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-gojo-ink-ghost">
+        <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+        Квиз — самооценка при регистрации. Справочно, не редактируется.
+      </p>
 
       <form
         action={formAction}
         onReset={(event) => event.preventDefault()}
-        className="space-y-5 border-t border-gojo-ink/10 pt-6"
+        className="mt-7 space-y-5 border-t border-gojo-ink/10 pt-6"
       >
         <Input type="hidden" name="studentId" value={student.id} />
+        <Input type="hidden" name="quizLevel" value={quizLevel} />
+        <div>
+          <div className="g-mono text-[10px] font-bold uppercase tracking-[0.16em] text-gojo-ink-ghost">
+            Данные
+          </div>
+        </div>
         <Field>
           <FieldLabel htmlFor={`student-name-${student.id}`}>Имя</FieldLabel>
           <Input
@@ -1041,20 +1069,53 @@ function StudentPanel({
             placeholder="https://... или preset:kitsune"
           />
         </Field>
-        <Field>
-          <FieldLabel htmlFor={`student-telegram-${student.id}`}>Telegram ID</FieldLabel>
-          <Input
-            id={`student-telegram-${student.id}`}
-            name="telegramId"
-            type="number"
-            min="1"
-            step="1"
-            value={telegramId}
-            onChange={(event) => setTelegramId(event.target.value)}
-            placeholder="Числовой ID"
-          />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={`student-telegram-username-${student.id}`}>Telegram</FieldLabel>
+            <Input
+              id={`student-telegram-username-${student.id}`}
+              name="telegramUsername"
+              value={telegramUsername}
+              onChange={(event) => setTelegramUsername(event.target.value)}
+              placeholder="@username"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`student-telegram-${student.id}`}>Telegram ID</FieldLabel>
+            <Input
+              id={`student-telegram-${student.id}`}
+              name="telegramId"
+              type="number"
+              min="1"
+              step="1"
+              value={telegramId}
+              onChange={(event) => setTelegramId(event.target.value)}
+              placeholder="Числовой ID"
+            />
+          </Field>
+        </div>
+        <p className="text-xs leading-relaxed text-gojo-ink-muted">
+          Оба поля нужны для входа по коду через Telegram.
+        </p>
+        <div className="border-t border-gojo-ink/10 pt-6">
+          <div className="g-mono text-[10px] font-bold uppercase tracking-[0.16em] text-gojo-ink-ghost">
+            Учебный уровень
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-gojo-ink-muted">
+            Выставляет преподаватель. Этот уровень ведёт обучение и показывается студенту.
+          </p>
+        </div>
+        {levelMismatch ? (
+          <div className="flex items-start gap-2 rounded-xl border border-gojo-orange/15 bg-gojo-orange-soft/50 px-3.5 py-3 text-sm leading-relaxed text-gojo-ink-muted">
+            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-gojo-orange" />
+            <span>
+              Квиз показал <strong className="text-gojo-ink">{quizReference}</strong>, преподаватель
+              выставил <strong className="text-gojo-ink">{jlptLevel}</strong>. Студент видит уровень
+              преподавателя.
+            </span>
+          </div>
+        ) : null}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor={`student-jlpt-${student.id}`}>JLPT</FieldLabel>
             <NativeSelect
@@ -1072,45 +1133,49 @@ function StudentPanel({
             </NativeSelect>
           </Field>
           <Field>
-            <FieldLabel htmlFor={`student-quiz-${student.id}`}>Уровень квиза</FieldLabel>
-            <NativeSelect
-              id={`student-quiz-${student.id}`}
-              name="quizLevel"
-              value={quizLevel}
-              onChange={(event) => setQuizLevel(event.target.value)}
-            >
-              <option value="">Не задан</option>
-              {["start", "N5", "N4", "N3", "N2"].map((level) => (
-                <option key={level} value={level}>
-                  {quizLevelLabel(level)}
-                </option>
-              ))}
-            </NativeSelect>
+            <FieldLabel htmlFor={`student-current-level-${student.id}`}>
+              Уровень программы
+            </FieldLabel>
+            <Input
+              id={`student-current-level-${student.id}`}
+              name="currentLevel"
+              type="number"
+              min="1"
+              max="30"
+              step="1"
+              value={currentLevel}
+              onChange={(event) => setCurrentLevel(event.target.value)}
+              required
+            />
+            <p className="text-xs text-gojo-ink-muted">1–30 · позиция в курсе gojo</p>
           </Field>
         </div>
+        <div className="border-t border-gojo-ink/10 pt-6">
+          <div className="g-mono text-[10px] font-bold uppercase tracking-[0.16em] text-gojo-ink-ghost">
+            Доступ к занятиям
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-gojo-ink-muted">
+            Тариф задаёт срок доступа или количество оставшихся уроков.
+          </p>
+        </div>
         <Field>
-          <FieldLabel htmlFor={`student-current-level-${student.id}`}>
-            Уровень программы (1–30)
-          </FieldLabel>
-          <Input
-            id={`student-current-level-${student.id}`}
-            name="currentLevel"
-            type="number"
-            min="1"
-            max="30"
-            step="1"
-            value={currentLevel}
-            onChange={(event) => setCurrentLevel(event.target.value)}
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor={`plan-${student.id}`}>Тариф</FieldLabel>
+          <FieldLabel htmlFor={`plan-${student.id}`}>Тариф и доступ</FieldLabel>
           <NativeSelect
             id={`plan-${student.id}`}
             name="assignedPlanId"
             value={assignedPlanId}
-            onChange={(event) => setAssignedPlanId(event.target.value)}
+            onChange={(event) => {
+              const planId = event.target.value;
+              setAssignedPlanId(planId);
+              if (planId === "monthly-standard" && !accessEndDate) {
+                const defaultEnd = new Date();
+                defaultEnd.setDate(defaultEnd.getDate() + 30);
+                setAccessEndDate(formatDateInput(defaultEnd));
+              }
+              if (planId === "bundle-8" && Number(lessonCredits) < 1) {
+                setLessonCredits("8");
+              }
+            }}
           >
             <option value="">Без тарифа</option>
             {plans.map((plan) => (
@@ -1119,21 +1184,70 @@ function StudentPanel({
               </option>
             ))}
           </NativeSelect>
+          <p className="text-xs leading-relaxed text-gojo-ink-muted">
+            Назначение тарифа открывает доступ без отдельной оплаты.
+          </p>
         </Field>
+        {assignedPlanId === "monthly-standard" ? (
+          <Field>
+            <FieldLabel htmlFor={`access-end-${student.id}`}>Доступ до (включительно)</FieldLabel>
+            <Input
+              id={`access-end-${student.id}`}
+              type="date"
+              min={formatDateInput(new Date())}
+              value={accessEndDate}
+              onChange={(event) => setAccessEndDate(event.target.value)}
+              required
+            />
+            <Input
+              type="hidden"
+              name="activeUntil"
+              value={localDateTimeIso(accessEndDate, "23:59")}
+            />
+            <Input type="hidden" name="lessonCredits" value="0" />
+          </Field>
+        ) : assignedPlanId === "bundle-8" ? (
+          <Field>
+            <FieldLabel htmlFor={`lesson-credits-${student.id}`}>Осталось уроков</FieldLabel>
+            <Input
+              id={`lesson-credits-${student.id}`}
+              name="lessonCredits"
+              type="number"
+              min="1"
+              max="1000"
+              step="1"
+              value={lessonCredits}
+              onChange={(event) => setLessonCredits(event.target.value)}
+              required
+            />
+            <Input type="hidden" name="activeUntil" value="" />
+          </Field>
+        ) : (
+          <>
+            <Input type="hidden" name="activeUntil" value="" />
+            <Input type="hidden" name="lessonCredits" value="0" />
+          </>
+        )}
         {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
-        <Button type="submit" disabled={pending} className="w-full">
+        <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
           {pending ? "Сохраняем..." : "Сохранить студента"}
         </Button>
       </form>
 
-      <div className="space-y-3 border-t border-gojo-ink/10 pt-6 text-sm">
-        <div>
-          <div className="text-xs text-gojo-ink-muted">ID</div>
-          <div className="g-mono mt-1 break-all text-xs">{student.id}</div>
+      <div className="mt-7 flex flex-wrap items-start justify-between gap-4 border-t border-gojo-ink/8 pt-5 opacity-70">
+        <div className="min-w-0">
+          <div className="g-mono text-[9px] font-bold uppercase tracking-[0.12em] text-gojo-ink-ghost">
+            Системный ID
+          </div>
+          <div className="g-mono mt-1 break-all text-[10px] text-gojo-ink-muted">{student.id}</div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Metric label="Создан" value={formatDate(student.createdAt)} />
-          <Metric label="Обновлён" value={formatDate(student.updatedAt)} />
+        <div className="ml-auto text-right">
+          <div className="g-mono text-[9px] font-bold uppercase tracking-[0.12em] text-gojo-ink-ghost">
+            Создан · обновлён
+          </div>
+          <div className="mt-1 text-[11px] text-gojo-ink-muted">
+            {formatDate(student.createdAt)} · {formatDate(student.updatedAt)}
+          </div>
         </div>
       </div>
     </div>
@@ -1450,6 +1564,34 @@ function LeadStatusBadge({ status }: { status: string }) {
     >
       {LEAD_STATUS[status] ?? status}
     </Badge>
+  );
+}
+
+function StudentSummaryStat({
+  label,
+  value,
+  accent = false,
+  className,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0 px-1", className)}>
+      <div className="g-mono text-[9px] font-bold uppercase leading-relaxed tracking-[0.12em] text-gojo-ink-ghost">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "mt-1 truncate font-serif text-2xl font-bold text-gojo-ink",
+          accent && "text-gojo-orange",
+        )}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 

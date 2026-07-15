@@ -62,8 +62,23 @@ export async function resetMutableStudent(userId: string) {
     .values({ userId, trialUsed: false, updatedAt: new Date() })
     .onConflictDoUpdate({
       target: studentAccess.userId,
-      set: { trialUsed: false, updatedAt: new Date() },
+      set: {
+        assignedPlanId: null,
+        activeUntil: null,
+        lessonCredits: 0,
+        trialUsed: false,
+        updatedAt: new Date(),
+      },
     });
+}
+
+export async function getStudentAccess(userId: string) {
+  const [row] = await db
+    .select()
+    .from(studentAccess)
+    .where(eq(studentAccess.userId, userId))
+    .limit(1);
+  return row;
 }
 
 export async function setTrialUsed(userId: string, trialUsed: boolean) {

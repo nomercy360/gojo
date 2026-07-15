@@ -217,6 +217,7 @@ async function grantPlanAccess(userId: string, planId: string) {
     .insert(studentAccess)
     .values({
       userId,
+      assignedPlanId: plan.id,
       activeUntil,
       lessonCredits,
       trialUsed: existing?.trialUsed ?? false,
@@ -225,6 +226,7 @@ async function grantPlanAccess(userId: string, planId: string) {
     .onConflictDoUpdate({
       target: studentAccess.userId,
       set: {
+        assignedPlanId: plan.id,
         activeUntil,
         lessonCredits,
         updatedAt: now,

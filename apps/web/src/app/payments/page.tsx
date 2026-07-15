@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { checkoutAction } from "./actions";
+import { PaidPayments } from "./paid-payments";
 
 export const dynamic = "force-dynamic";
 
@@ -54,14 +55,11 @@ export default async function PaymentsPage({
 
   return (
     <main className="min-h-screen bg-gojo-paper">
-      <div className="mx-auto max-w-4xl px-6 py-16">
-        <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-          {account.access.isActive ? "Платежи" : "Оплата"}
-        </div>
-        <h1 className="mt-2 font-serif text-[32px] font-bold">
+      <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10 sm:py-14">
+        <h1 className="g-display text-[42px] font-extrabold leading-[1.02] tracking-[-0.03em] text-gojo-ink sm:text-[52px]">
           {account.access.isActive ? "Платежи и доступ" : "Доступ к занятиям"}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gojo-ink-muted">
+        <p className="g-body mt-3 max-w-2xl text-[15px] font-medium leading-relaxed text-gojo-ink-muted sm:text-[16px]">
           {account.access.isActive
             ? "Здесь можно проверить текущий доступ, историю операций и при необходимости продлить занятия. "
             : "Оплата проходит через ЮKassa. Сейчас это разовый платёж без автоматического продления и повторных списаний. После успешного платежа доступ обновится автоматически. "}
@@ -80,85 +78,73 @@ export default async function PaymentsPage({
           </Alert>
         ) : null}
 
-        <Card id="payment-status" className="mt-8 scroll-mt-24 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-            Текущий статус
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <StatusTile label="Доступ" value={account.access.isActive ? "Активен" : "Нет"} />
-            <StatusTile
-              label="До"
-              value={
-                account.access.activeUntil
-                  ? new Date(account.access.activeUntil).toLocaleDateString("ru-RU")
-                  : account.access.lessonCredits > 0
-                    ? "По пакету"
-                    : "—"
-              }
-            />
-            <StatusTile
-              label="Уроки"
-              value={
-                account.access.lessonCredits > 0
-                  ? String(account.access.lessonCredits)
-                  : account.access.activeUntil
-                    ? "По плану"
-                    : "0"
-              }
-            />
-          </div>
-        </Card>
-
-        <section className="mt-8">
-          <h2 className="font-serif text-[24px] font-bold">
-            {account.access.isActive ? "Продлить или пополнить" : "Выбери формат занятий"}
-          </h2>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
-            {plans.map((plan) => (
-              <Card key={plan.id} className="p-5">
-                <form action={checkoutAction}>
-                  <Input type="hidden" name="planId" value={plan.id} />
-                  <h3 className="font-serif text-[24px] font-bold">{plan.title}</h3>
-                  <p className="mt-2 text-sm text-gojo-ink-muted">{plan.description}</p>
-                  <div className="mt-5 font-serif text-[34px] font-bold">
-                    {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
-                  </div>
-                  <Button type="submit" className="mt-5 w-full">
-                    {account.access.isActive ? "Продлить через ЮKassa" : "Оплатить через ЮKassa"}
-                  </Button>
-                </form>
+        {account.access.isActive ? (
+          <PaidPayments account={account} plans={plans} />
+        ) : (
+          <>
+            {account.payments.length > 0 ? (
+              <Card id="payment-status" className="mt-8 scroll-mt-24 p-5">
+                <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+                  Текущий статус
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <StatusTile label="Доступ" value="Нет" />
+                  <StatusTile label="До" value="—" />
+                  <StatusTile label="Уроки" value="0" />
+                </div>
               </Card>
-            ))}
-          </div>
-        </section>
+            ) : null}
 
-        <ContactBlock />
+            <section className="mt-8">
+              <h2 className="font-serif text-[24px] font-bold">Выбери формат занятий</h2>
+              <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                {plans.map((plan) => (
+                  <Card key={plan.id} className="p-5">
+                    <form action={checkoutAction} className="flex flex-1 flex-col">
+                      <Input type="hidden" name="planId" value={plan.id} />
+                      <h3 className="font-serif text-[24px] font-bold">{plan.title}</h3>
+                      <p className="mt-2 text-sm text-gojo-ink-muted">{plan.description}</p>
+                      <div className="mt-auto pt-5">
+                        <div className="font-serif text-[34px] font-bold">
+                          {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+                        </div>
+                        <Button type="submit" className="mt-5 w-full">
+                          Оплатить через ЮKassa
+                        </Button>
+                      </div>
+                    </form>
+                  </Card>
+                ))}
+              </div>
+            </section>
 
-        <section id="payment-history" className="mt-10 scroll-mt-24">
-          <h2 className="font-serif text-[24px] font-bold">История платежей</h2>
-          {account.payments.length === 0 ? (
-            <p className="mt-3 text-sm text-gojo-ink-muted">Платежей пока нет.</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {account.payments.map((payment) => (
-                <li
-                  key={payment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gojo-ink/10 bg-gojo-surface-2 px-4 py-3 text-sm"
-                >
-                  <div>
-                    <div className="font-bold">{payment.planId}</div>
-                    <div className="text-gojo-ink-muted">
-                      {new Date(payment.createdAt).toLocaleString("ru-RU")}
-                    </div>
-                  </div>
-                  <div className="font-bold">
-                    {Number(payment.amountValue).toLocaleString("ru-RU")} ₽ · {payment.status}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            <ContactBlock />
+
+            {account.payments.length > 0 ? (
+              <section id="payment-history" className="mt-10 scroll-mt-24">
+                <h2 className="font-serif text-[24px] font-bold">История платежей</h2>
+                <ul className="mt-4 space-y-3">
+                  {account.payments.map((payment) => (
+                    <li
+                      key={payment.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gojo-ink/10 bg-gojo-surface-2 px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <div className="font-bold">{payment.planId}</div>
+                        <div className="text-gojo-ink-muted">
+                          {new Date(payment.createdAt).toLocaleString("ru-RU")}
+                        </div>
+                      </div>
+                      <div className="font-bold">
+                        {Number(payment.amountValue).toLocaleString("ru-RU")} ₽ · {payment.status}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+          </>
+        )}
 
         <Link href="/dashboard" className="mt-10 inline-block text-sm font-bold text-gojo-orange">
           ← В кабинет
