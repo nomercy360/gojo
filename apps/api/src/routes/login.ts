@@ -1,7 +1,7 @@
 import { createHmac, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { user as userTable, verification } from "@gojo/db";
 import { zValidator } from "@hono/zod-validator";
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, eq, gt, lt, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthContext } from "../auth/middleware.ts";
@@ -22,6 +22,8 @@ const OTP_RESEND_MS = 60_000;
 const OTP_MAX_ATTEMPTS = 5;
 const recentRequests = new Map<string, number>();
 
+type DeliveryChannel = { type: "email" | "telegram"; label: string };
+
 type OtpRecord = { userId: string; digest: string; attempts: number };
 
 export const loginRoute = new Hono<AuthContext>();
@@ -30,9 +32,32 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
   const parsed = parseIdentifier(c.req.valid("json").identifier);
   if (!parsed) return c.json({ error: "invalid_identifier" }, 400);
 
+  const [account] = await db
+    .select({
+      id: userTable.id,
+      email: userTable.email,
+      telegramId: userTable.telegramId,
+      telegramUsername: userTable.telegramUsername,
+    })
+    .from(userTable)
+    .where(
+      and(
+        eq(userTable.role, "student"),
+        or(
+          sql`lower(${userTable.email}) = ${parsed.email}`,
+          sql`lower(${userTable.telegramUsername}) = ${parsed.telegram}`,
+        ),
+      ),
+    )
+    .limit(1);
+
+  if (!account) return c.json({ error: "account_not_found" }, 404);
+
   const now = Date.now();
   if (env.NODE_ENV === "production") {
-    const lastRequest = recentRequests.get(parsed.key) ?? 0;
+    // One account may be addressed by email or Telegram. Limiting by the
+    // resolved user id prevents alternating identifiers to bypass cooldowns.
+    const lastRequest = recentRequests.get(account.id) ?? 0;
     if (now - lastRequest < OTP_RESEND_MS) {
       return c.json(
         {
@@ -42,80 +67,73 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
         429,
       );
     }
-    recentRequests.set(parsed.key, now);
-    for (const [key, requestedAt] of recentRequests) {
-      if (now - requestedAt > OTP_TTL_MS) recentRequests.delete(key);
+    recentRequests.set(account.id, now);
+    for (const [userId, requestedAt] of recentRequests) {
+      if (now - requestedAt > OTP_TTL_MS) recentRequests.delete(userId);
     }
   }
-
-  const [account] = await db
-    .select({
-      id: userTable.id,
-      email: userTable.email,
-      telegramId: userTable.telegramId,
-    })
-    .from(userTable)
-    .where(
-      and(
-        eq(userTable.role, "student"),
-        parsed.channel === "email"
-          ? eq(userTable.email, parsed.value)
-          : eq(userTable.telegramUsername, parsed.value),
-      ),
-    )
-    .limit(1);
 
   const challengeId = randomUUID();
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
 
-  // Unknown identifiers receive the same public response, but no usable code
-  // or verification record. This keeps account discovery out of the login UI.
-  if (account) {
-    const expiresAt = new Date(now + OTP_TTL_MS);
-    await db.insert(verification).values({
-      id: randomUUID(),
-      identifier: challengeKey(challengeId),
-      value: JSON.stringify({
-        userId: account.id,
-        digest: codeDigest(challengeId, code),
-        attempts: 0,
-      } satisfies OtpRecord),
-      expiresAt,
-      updatedAt: new Date(),
-    });
+  // A login attempt owns exactly one OTP record and one code, regardless of
+  // how many linked channels can receive it.
+  await db.insert(verification).values({
+    id: randomUUID(),
+    identifier: challengeKey(challengeId),
+    value: JSON.stringify({
+      userId: account.id,
+      digest: codeDigest(challengeId, code),
+      attempts: 0,
+    } satisfies OtpRecord),
+    expiresAt: new Date(now + OTP_TTL_MS),
+    updatedAt: new Date(),
+  });
 
-    try {
-      if (parsed.channel === "email") {
-        await sendEmail(
-          account.email,
-          "Код для входа в Gojo Learn",
-          `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
+  const channels: DeliveryChannel[] = [];
+  try {
+    await sendEmail(
+      account.email,
+      "Код для входа в Gojo Learn",
+      `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
             <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
             <h1 style="margin-bottom:8px">Код для входа</h1>
             <p style="font-size:28px;letter-spacing:6px;font-weight:700;margin:16px 0">${code}</p>
             <p>Код действует 10 минут. Если это были не вы, просто проигнорируйте письмо.</p>
           </div>`,
-        );
-      } else if (account.telegramId != null) {
-        const sent = await sendTelegramMessage(
-          account.telegramId,
-          `Код для входа в Gojo Learn: ${code}\n\nОн действует 10 минут. Никому не сообщайте этот код.`,
-          "auth.telegram_otp",
-          account.id,
-        );
-        if (!sent) throw new Error("telegram_bot_not_configured");
-      } else {
-        throw new Error("telegram_not_linked");
+    );
+    channels.push({ type: "email", label: maskEmail(account.email) });
+  } catch (error) {
+    console.error("login email OTP delivery failed:", error);
+  }
+
+  // A username alone is not deliverable. Telegram messages always use the
+  // chat id saved when the student started the bot.
+  if (account.telegramId != null) {
+    try {
+      const sent = await sendTelegramMessage(
+        account.telegramId,
+        `Код для входа в Gojo Learn: ${code}\n\nОн действует 10 минут. Никому не сообщайте этот код.`,
+        "auth.telegram_otp",
+        account.id,
+      );
+      if (sent) {
+        channels.push({
+          type: "telegram",
+          label: account.telegramUsername ? maskTelegram(account.telegramUsername) : "Telegram",
+        });
       }
     } catch (error) {
-      await db.delete(verification).where(eq(verification.identifier, challengeKey(challengeId)));
-      console.error("login OTP delivery failed:", error);
-      return c.json({ error: "delivery_failed" }, 503);
+      console.error("login Telegram OTP delivery failed:", error);
     }
   }
 
+  if (channels.length === 0) {
+    await db.delete(verification).where(eq(verification.identifier, challengeKey(challengeId)));
+  }
+
   void db.delete(verification).where(lt(verification.expiresAt, new Date()));
-  return c.json({ ok: true, challengeId, channel: parsed.channel, retryAfter: 60 });
+  return c.json({ ok: true, challengeId, channels, retryAfter: 60 });
 });
 
 loginRoute.post("/code/verify", zValidator("json", verifyCodeInput), async (c) => {
@@ -167,19 +185,27 @@ loginRoute.post("/code/verify", zValidator("json", verifyCodeInput), async (c) =
   return c.json({ ok: true });
 });
 
-function parseIdentifier(
-  raw: string,
-): { channel: "email" | "telegram"; value: string; key: string } | undefined {
+function parseIdentifier(raw: string): { email: string; telegram: string } | undefined {
   const value = raw.trim().toLowerCase();
-  if (z.string().email().safeParse(value).success) {
-    return { channel: "email", value, key: `email:${value}` };
-  }
   const username = value
     .replace(/^https?:\/\//, "")
     .replace(/^t\.me\//, "")
     .replace(/^@/, "");
-  if (!/^[a-z0-9_]{5,32}$/.test(username)) return undefined;
-  return { channel: "telegram", value: username, key: `telegram:${username}` };
+  const isEmail = z.string().email().safeParse(value).success;
+  const isTelegram = /^[a-z0-9_]{5,32}$/.test(username);
+  if (!isEmail && !isTelegram) return undefined;
+  return { email: isEmail ? value : "", telegram: isTelegram ? username : "" };
+}
+
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return email;
+  return `${local.slice(0, 1)}•••@${domain}`;
+}
+
+function maskTelegram(username: string) {
+  const normalized = username.replace(/^@/, "");
+  return `@${normalized}`;
 }
 
 function challengeKey(challengeId: string) {

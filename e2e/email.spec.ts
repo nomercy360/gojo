@@ -64,9 +64,9 @@ test("student signs in with a one-time email code", async ({ page, request }) =>
   const beforeMessageId = await latestMailIdOrNull(request, email);
 
   await page.goto("/login");
-  await page.getByLabel("Email или Telegram").fill(email);
+  await page.getByLabel("Email или Telegram").fill(email.toUpperCase());
   await page.getByRole("button", { name: "Получить код" }).click();
-  await expect(page.getByLabel("Код для входа")).toBeVisible();
+  await expect(page.getByLabel("Цифра кода 1")).toBeVisible();
   await expect
     .poll(() => latestMailIdOrNull(request, email), { timeout: 10_000 })
     .not.toBe(beforeMessageId);
@@ -78,8 +78,8 @@ test("student signs in with a one-time email code", async ({ page, request }) =>
   const code = message.HTML.match(/>(\d{6})</)?.[1];
   expect(code).toBeTruthy();
 
-  await page.getByLabel("Код для входа").fill(code!);
-  await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await page.getByLabel("Цифра кода 1").fill(code!);
+  await page.getByRole("button", { name: "Подтвердить", exact: true }).click();
   await expect(page).toHaveURL(`${webURL}/dashboard`);
   await expect(page.getByRole("heading", { name: "Личный кабинет" })).toBeVisible();
 });

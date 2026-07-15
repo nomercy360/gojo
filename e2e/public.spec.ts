@@ -70,6 +70,7 @@ test("guest is redirected away from protected pages", async ({ page }) => {
 
 test("student and admin have separate invite-only login screens", async ({ page }) => {
   await page.goto("/login");
+  await page.getByRole("button", { name: "Только необходимые" }).click();
   await expect(page.getByRole("heading", { name: "Вход для студента" })).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Основная навигация" }).getByRole("link", {
@@ -81,7 +82,7 @@ test("student and admin have separate invite-only login screens", async ({ page 
   await expect(page.getByText(/согласие на обработку персональных данных/i)).toHaveCount(0);
   await expect(page.getByLabel("Email или Telegram")).toBeVisible();
   await expect(page.getByRole("button", { name: "Получить код" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Зарегистрироваться/ })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Оставить заявку" })).toHaveAttribute(
     "href",
     "https://t.me/gojolearn_bot?start=u_landing_ca_header",
   );
@@ -95,8 +96,20 @@ test("student and admin have separate invite-only login screens", async ({ page 
       exact: true,
     }),
   ).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /Зарегистрироваться/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Оставить заявку" })).toHaveCount(0);
   await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
+});
+
+test("an unknown student identifier routes to an application", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email или Telegram").fill("newstudent");
+  await page.getByRole("button", { name: "Получить код" }).click();
+
+  await expect(page.getByRole("heading", { name: "Аккаунт не найден" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Оставить заявку" })).toHaveAttribute(
+    "href",
+    "https://t.me/gojolearn_bot?start=u_landing_ca_header",
+  );
 });
 
 test("API health and authorization boundary respond correctly", async ({ request }) => {

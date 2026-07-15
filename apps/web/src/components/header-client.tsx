@@ -56,6 +56,7 @@ export function HeaderClient({
       }
     : serverUser;
   const overlayRoute = pathname === "/" && !user;
+  const loginRoute = pathname === "/login" || pathname === "/admin/login";
   const [scrolled, setScrolled] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -96,11 +97,12 @@ export function HeaderClient({
           ? "border-b border-white/10 bg-[rgba(20,20,20,0.75)] backdrop-blur-md"
           : "border-b border-transparent bg-transparent"
       }`
-    : "border-b border-black/10 bg-gojo-paper";
+    : loginRoute
+      ? "border-b border-[#E7DECF] bg-[#F3ECE0]"
+      : "border-b border-black/10 bg-gojo-paper";
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
   const teacherUser = isTeacherUser(user);
-  const loginRoute = pathname === "/login" || pathname === "/admin/login";
   const logoHref = user ? (teacherUser ? "/teacher" : "/dashboard") : "/";
   const studentAppLink = (active: boolean) =>
     cn(
