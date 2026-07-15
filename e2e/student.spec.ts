@@ -10,8 +10,18 @@ test.describe("student", () => {
   test("can open the dashboard", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expectPageHeading(page, "Твой личный кабинет");
-    await expect(page.getByText(e2eAccounts.student.nickname, { exact: true })).toBeVisible();
+    await expectPageHeading(page, "Личный кабинет");
+    await expect(page.getByText("Первые шаги", { exact: true })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "Основная навигация" });
+    await expect(navigation.getByRole("link", { name: "Кабинет" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(navigation.getByRole("link", { name: "Оплата" })).toHaveAttribute(
+      "href",
+      "/payments",
+    );
+    await expect(navigation.getByRole("button", { name: "Выйти" })).toBeVisible();
   });
 
   test("cannot open the teacher area", async ({ page }) => {
@@ -30,5 +40,5 @@ test("passwordless session opens the dashboard in a real browser", async ({ page
   expect(res.ok()).toBeTruthy();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expectPageHeading(page, "Твой личный кабинет");
+  await expectPageHeading(page, "Личный кабинет");
 });

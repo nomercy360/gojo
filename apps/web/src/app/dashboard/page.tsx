@@ -1,42 +1,27 @@
-import { Avatar } from "@/components/avatar";
 import { CalendarSection } from "@/components/calendar-section";
 import { LocalTime } from "@/components/local-time";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { fetchMyPayments, fetchMyRecordings, fetchStudentStats } from "@/lib/api";
+import { fetchLessons, fetchMyPayments, fetchStudentStats } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import type { StudentStatsDto } from "@gojo/shared";
+import type { LessonDto, StudentStatsDto } from "@gojo/shared";
+import { ArrowRight, Check, Flame, Layers3, MessageCircle, Type, Video } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 import { SavedToast } from "./saved-toast";
 
-const ROLE_LABEL: Record<string, string> = {
-  student: "Студент",
-  admin: "Админ",
+const EMPTY_STATS: StudentStatsDto = {
+  completedLessons: 0,
+  upcomingLessons: 0,
+  totalBookings: 0,
+  homeworkDone: 0,
+  homeworkTotal: 0,
+  trainingSeconds: 0,
+  currentStreak: 0,
 };
-
-const LEVEL_BLURB: Record<string, string> = {
-  N5: "Базовый уровень · хирагана, катакана, первые иероглифы",
-  N4: "Уверенный новичок · базовая грамматика, 250+ кандзи",
-  N3: "Средний уровень · простые тексты, поддержка диалога",
-  N2: "Продвинутый уровень · новости, деловой язык",
-};
-
-function calcScore(stats: {
-  lessonsCompleted: number;
-  homeworkSubmitted: number;
-  trainingHours: number;
-}) {
-  const lessons = Math.round((Math.min(stats.lessonsCompleted, 20) / 20) * 40);
-  const homework = Math.round((Math.min(stats.homeworkSubmitted, 20) / 20) * 35);
-  const training = Math.round((Math.min(stats.trainingHours, 10) / 10) * 25);
-  return { lessons, homework, training, total: lessons + homework + training };
-}
 
 export const dynamic = "force-dynamic";
 
@@ -45,353 +30,474 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   if (isTeacherUser(user)) redirect("/teacher");
 
-  const greeting = getGreeting();
+  const [stats, paymentAccount, lessons] = await Promise.all([
+    fetchStudentStats().catch(() => EMPTY_STATS),
+    fetchMyPayments().catch(() => null),
+    fetchLessons().catch((): LessonDto[] => []),
+  ]);
 
-  const apiStats = await fetchStudentStats().catch(
-    (): StudentStatsDto => ({
-      completedLessons: 0,
-      upcomingLessons: 0,
-      totalBookings: 0,
-      homeworkDone: 0,
-      homeworkTotal: 0,
-      trainingSeconds: 0,
-      currentStreak: 0,
-    }),
-  );
-
-  const recordings = await fetchMyRecordings().catch(() => []);
-  const isPaid = await fetchMyPayments()
-    .then((p) => p.access.isActive)
-    .catch(() => false);
-
-  const trainingHoursWhole = Math.floor(apiStats.trainingSeconds / 3600);
-  const trainingMinutes = Math.floor((apiStats.trainingSeconds % 3600) / 60);
-
-  const stats = {
-    lessonsCompleted: apiStats.completedLessons,
-    homeworkSubmitted: apiStats.homeworkDone,
-    trainingHours: apiStats.trainingSeconds / 3600,
-    trainingHoursWhole,
-    trainingMinutes,
-  };
-
-  const score = calcScore(stats);
-  const progressPercent = Math.min(score.total, 100);
-  const hasMeaningfulTraining = apiStats.trainingSeconds >= 60;
-  const hasAnyProgress =
-    stats.lessonsCompleted > 0 || stats.homeworkSubmitted > 0 || hasMeaningfulTraining;
-  const streakLabel =
-    apiStats.currentStreak > 0
-      ? `${apiStats.currentStreak} ${pluralizeDays(apiStats.currentStreak)} подряд`
-      : "начни серию";
-  const hasAssessedLevel = Boolean(user.jlptLevel || user.quizLevel);
-  const hasLessonHistory = apiStats.totalBookings > 0;
+  const level = getLevelState(user.jlptLevel, user.quizLevel);
+  const isPaid = paymentAccount?.access.isActive ?? false;
 
   return (
     <main className="min-h-screen bg-gojo-paper">
       <Suspense fallback={null}>
         <SavedToast />
       </Suspense>
-      <div className="mx-auto max-w-4xl px-10 py-14">
-        {/* ── Greeting ── */}
-        <div className="mb-10">
-          <div className="g-mono mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gojo-orange">
-            <span className="inline-block h-0.5 w-6 bg-gojo-orange" />
-            {greeting}
-          </div>
-          <h1 className="g-display text-[42px] font-extrabold leading-tight tracking-[-0.025em] text-gojo-ink">
-            Твой личный кабинет
-          </h1>
-          <p className="g-body mt-2 text-[16px] font-medium text-gojo-ink-muted">
-            Индивидуальные занятия · японский язык
-            <span className="g-jp ml-2 text-[14px] text-gojo-ink-ghost">いらっしゃい</span>
-          </p>
-        </div>
 
-        {/* ── Profile card ── */}
-        <Card className="mb-6 flex-row items-center gap-5 px-7 py-5">
-          <Avatar value={user.avatarUrl} size={64} fallback={user.nickname ?? user.email} />
-          <div className="min-w-0 flex-1">
-            <div className="g-display truncate text-[18px] font-extrabold leading-tight text-gojo-ink">
-              {user.nickname ?? user.email}
-            </div>
-            <div className="g-mono mt-0.5 flex flex-wrap items-center gap-2 truncate text-[12px] text-gojo-ink-ghost">
-              <span>
-                @{user.nickname ?? user.email.split("@")[0]} · {ROLE_LABEL[user.role] ?? user.role}
-              </span>
-              <Badge variant={isPaid ? "secondary" : "destructive"}>
-                {isPaid ? "Оплачено" : "Не оплачено"}
-              </Badge>
-            </div>
-          </div>
-          <Link href="/profile" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
-            Редактировать
-          </Link>
-        </Card>
+      <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10 sm:py-14">
+        <DashboardHeader
+          subtitle={
+            isPaid
+              ? `Индивидуальные занятия · ${activeLevelLabel(level)}`
+              : `Пробный урок пройден · ${unpaidLevelSubtitle(level)}`
+          }
+        />
 
-        {/* ── Library ── */}
-        <Card id="library" className="mb-6 scroll-mt-20 px-7 py-5">
-          <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
-            Библиотека
-          </div>
-          {recordings.length === 0 ? (
-            <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">
-              Видеоуроки и материалы появятся здесь после первых занятий.
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {recordings.map((rec) => (
-                <li key={rec.lessonId}>
-                  <Link
-                    href={`/lessons/${rec.lessonId}`}
-                    className="g-body flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-gojo-paper px-4 py-3 text-[14px] transition-colors hover:border-gojo-orange"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-bold text-gojo-ink">{rec.title}</div>
-                      <div className="mt-0.5 text-[12px] text-gojo-ink-muted">
-                        <LocalTime
-                          iso={rec.startsAt}
-                          options={{ day: "numeric", month: "numeric", year: "numeric" }}
-                        />
-                      </div>
-                    </div>
-                    <span className="shrink-0 text-[12px] font-bold text-gojo-orange">
-                      Смотреть →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {/* ── Progress + trainers ── */}
-        <Card id="trainers" className="mb-6 scroll-mt-20 p-7">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="g-mono text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
-                Прогресс
-              </div>
-              <h2 className="g-display mt-2 text-[24px] font-extrabold text-gojo-ink">
-                {hasAnyProgress ? "Продолжай серию" : "С чего начать"}
-              </h2>
-            </div>
-            <div className="rounded-full bg-gojo-paper px-3 py-1.5 text-[11px] font-bold text-gojo-ink-muted">
-              {streakLabel}
-            </div>
-          </div>
-
-          {hasAnyProgress ? (
-            <>
-              <div className="mb-3 flex items-center justify-between">
-                <span className="g-mono text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
-                  MVP-прогресс
-                </span>
-                <span className="g-mono text-[11px] font-bold text-gojo-ink">
-                  {progressPercent} / 100
-                </span>
-              </div>
-              <Progress value={progressPercent} className="h-3 bg-gojo-paper-2" />
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                {stats.lessonsCompleted > 0 ? (
-                  <ProgressTile value={stats.lessonsCompleted} label="уроков пройдено" />
-                ) : null}
-                {hasMeaningfulTraining ? (
-                  <ProgressTile
-                    value={`${stats.trainingHoursWhole}ч ${stats.trainingMinutes}м`}
-                    label="в тренировках"
-                  />
-                ) : null}
-                {stats.homeworkSubmitted > 0 ? (
-                  <ProgressTile value={stats.homeworkSubmitted} label="домашних заданий" />
-                ) : null}
-              </div>
-            </>
-          ) : (
-            <div className="mt-5 rounded-xl bg-gojo-paper p-5">
-              <div className="g-display text-[22px] font-extrabold text-gojo-ink">
-                Запишись на первый бесплатный урок
-              </div>
-              <p className="g-body mt-2 max-w-2xl text-[13px] text-gojo-ink-muted">
-                Здесь появятся часы практики, уроки и домашние задания после реальной активности.
-                Преподаватель определит уровень на бесплатной консультации.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <a
-                  href="https://t.me/gojoedu"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={buttonVariants()}
-                >
-                  Записаться на консультацию
-                </a>
-                <Link href="/lessons" className={buttonVariants({ variant: "outline" })}>
-                  Посмотреть уроки
-                </Link>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 border-t border-black/10 pt-6">
-            <div className="g-mono mb-4 text-[10px] font-bold uppercase tracking-wider text-gojo-ink-ghost">
-              Тренажёры
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card
-                asChild
-                className="flex-row items-center gap-4 p-5 hover:-translate-y-0.5 hover:shadow-lg"
-              >
-                <Link href="/review">
-                  <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                    単
-                  </div>
-                  <div>
-                    <div className="g-display text-[15px] font-bold text-gojo-ink">Карточки</div>
-                    <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                      Повторение слов
-                    </div>
-                  </div>
-                </Link>
-              </Card>
-
-              <Card
-                asChild
-                className="flex-row items-center gap-4 p-5 hover:-translate-y-0.5 hover:shadow-lg"
-              >
-                <Link href="/kana">
-                  <div className="g-jp flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-paper text-[24px] font-bold text-gojo-orange">
-                    あ
-                  </div>
-                  <div>
-                    <div className="g-display text-[15px] font-bold text-gojo-ink">
-                      Хирагана · Катакана
-                    </div>
-                    <div className="g-body mt-0.5 text-[12px] text-gojo-ink-muted">
-                      Тренажёр символов
-                    </div>
-                  </div>
-                </Link>
-              </Card>
-            </div>
-          </div>
-        </Card>
-
-        {/* ── Main grid ── */}
-        <div className="grid gap-4 lg:grid-cols-3">
-          {/* Calendar — wide */}
-          <CalendarSection />
-
-          {/* Level card */}
-          <Card className="p-7">
-            <div className="g-mono mb-4 text-[11px] font-bold uppercase tracking-[0.16em] text-gojo-orange">
-              Уровень
-            </div>
-            {user.jlptLevel ? (
-              <>
-                <div className="g-display text-[72px] font-extrabold leading-none tracking-[-0.04em] text-gojo-ink">
-                  {user.jlptLevel}
-                </div>
-                <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  Подтверждено преподавателем · {LEVEL_BLURB[user.jlptLevel] ?? "уровень определён"}
-                </p>
-              </>
-            ) : user.quizLevel ? (
-              <>
-                <div className="g-display text-[56px] font-extrabold leading-none tracking-[-0.04em] text-gojo-ink">
-                  {user.quizLevel === "start" ? "с нуля" : `~${user.quizLevel}`}
-                </div>
-                <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  Предварительная оценка по квизу. Преподаватель уточнит её на первом уроке.
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="g-display text-[32px] font-extrabold leading-tight text-gojo-ink">
-                  Пока не определён
-                </div>
-                <p className="g-body mt-3 text-[13px] text-gojo-ink-muted">
-                  {hasLessonHistory
-                    ? "Уровень ещё не выставлен. Уточни его у преподавателя после занятия."
-                    : "Пройди квиз или запишись на бесплатную консультацию, чтобы определить уровень."}
-                </p>
-              </>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-gojo-paper p-4">
-              <div>
-                <div className="g-mono mb-1 text-[10px] font-bold uppercase tracking-wider text-gojo-orange">
-                  Индивидуальный план
-                </div>
-                <div className="g-body text-[12px] text-gojo-ink-muted">
-                  {hasAssessedLevel
-                    ? "Программа подобрана под ваши цели и темп обучения"
-                    : "Сначала определим уровень и подходящий план обучения"}
-                </div>
-              </div>
-              {hasAssessedLevel ? (
-                <Link href="/payments" className={cn(buttonVariants(), "shrink-0")}>
-                  Оплата
-                </Link>
-              ) : (
-                <a
-                  href="https://t.me/gojoedu"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(buttonVariants(), "shrink-0")}
-                >
-                  {hasLessonHistory ? "Уточнить уровень" : "Консультация"}
-                </a>
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* ── Contact ── */}
-        <Card
-          id="contact"
-          className="mt-10 scroll-mt-20 flex-row items-center justify-between px-7 py-5"
-        >
-          <div>
-            <div className="g-display text-[15px] font-bold text-gojo-ink">Связаться с нами</div>
-            <div className="g-body mt-0.5 text-[13px] text-gojo-ink-muted">
-              Вопросы по обучению, материалы, индивидуальный план
-            </div>
-          </div>
-          <a
-            href="https://t.me/gojoedu"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants(), "shrink-0")}
-          >
-            Telegram
-          </a>
-        </Card>
+        {isPaid && paymentAccount ? (
+          <ActiveDashboard
+            stats={stats}
+            lessons={lessons}
+            level={activeLevelLabel(level)}
+            activeUntil={paymentAccount.access.activeUntil}
+            lessonCredits={paymentAccount.access.lessonCredits}
+          />
+        ) : (
+          <UnpaidDashboard level={level} />
+        )}
       </div>
     </main>
   );
 }
 
-function ProgressTile({ value, label }: { value: number | string; label: string }) {
+function DashboardHeader({ subtitle }: { subtitle: string }) {
   return (
-    <div className="rounded-xl bg-gojo-paper px-4 py-3">
-      <div className="g-display text-[24px] font-extrabold text-gojo-ink">{value}</div>
-      <div className="g-body mt-1 text-[12px] text-gojo-ink-muted">{label}</div>
+    <header className="mb-8 sm:mb-10">
+      <div className="g-mono flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em] text-gojo-orange">
+        <span className="h-0.5 w-7 bg-gojo-orange" />
+        {getGreeting()}
+      </div>
+      <h1 className="g-display mt-4 text-[42px] font-extrabold leading-[1.02] tracking-[-0.03em] text-gojo-ink sm:text-[52px]">
+        Личный кабинет
+      </h1>
+      <p className="g-body mt-3 text-[15px] font-medium text-gojo-ink-muted sm:text-[16px]">
+        {subtitle}
+        <span className="g-jp ml-2 text-[14px] text-gojo-ink-ghost">いらっしゃい</span>
+      </p>
+    </header>
+  );
+}
+
+function UnpaidDashboard({ level }: { level: DashboardLevelState }) {
+  const stepLevel = level.value
+    ? `${level.value}${level.level_provisional ? " · предварительно" : ""}`
+    : "уровень уточняется";
+  const stepDescription = level.level_provisional
+    ? level.value
+      ? "По тесту определён предварительный уровень. Преподаватель уточнит его после урока."
+      : "Итоговый уровень ещё уточняется командой после пробного урока."
+    : "Преподаватель определил твой стартовый уровень.";
+  const steps = [
+    {
+      title: "Заявка отправлена",
+      description: "Мы получили запрос и связались с тобой.",
+    },
+    {
+      title: `Пробный урок · ${stepLevel}`,
+      description: stepDescription,
+    },
+    {
+      title: "Оплати доступ",
+      description: "Разовый платёж через ЮKassa открывает регулярные занятия.",
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <Card className="gap-0 p-7 sm:p-8">
+        <Eyebrow>Первые шаги</Eyebrow>
+        <h2 className="g-display mt-3 text-[28px] font-extrabold leading-tight text-gojo-ink sm:text-[32px]">
+          Ты почти на месте
+        </h2>
+        <p className="g-body mt-2 text-[14px] text-gojo-ink-muted">
+          Заявка и пробный урок уже позади. Осталось открыть доступ к занятиям.
+        </p>
+
+        <ol className="mt-6">
+          {steps.map((step, index) => {
+            const done = index < 2;
+            const active = index === 2;
+            return (
+              <li
+                key={step.title}
+                className={cn("flex gap-4 py-5", index > 0 && "border-t border-black/10")}
+              >
+                <span
+                  className={cn(
+                    "g-mono flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold",
+                    done && "bg-gojo-success text-white",
+                    active && "bg-gojo-orange text-white",
+                  )}
+                >
+                  {done ? <Check aria-hidden="true" className="h-4 w-4" strokeWidth={3} /> : 3}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="g-body text-[16px] font-bold text-gojo-ink">{step.title}</h3>
+                  <p className="g-body mt-1 text-[14px] text-gojo-ink-muted">{step.description}</p>
+                  {active ? (
+                    <Link
+                      href="/payments"
+                      className={cn(buttonVariants({ size: "lg" }), "mt-4 rounded-xl")}
+                    >
+                      К оплате
+                      <ArrowRight aria-hidden="true" />
+                    </Link>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
+
+      <ContactStrip />
     </div>
   );
 }
 
+function ActiveDashboard({
+  stats,
+  lessons,
+  level,
+  activeUntil,
+  lessonCredits,
+}: {
+  stats: StudentStatsDto;
+  lessons: LessonDto[];
+  level: string;
+  activeUntil: string | null;
+  lessonCredits: number;
+}) {
+  const nextLesson = lessons[0];
+
+  return (
+    <div className="space-y-5">
+      {nextLesson ? <NextLesson lesson={nextLesson} /> : null}
+
+      <StatusStrip activeUntil={activeUntil} lessonsLeft={lessonCredits} level={level} />
+
+      <CalendarSection />
+
+      <ProgressCard done={stats.completedLessons} streak={stats.currentStreak} />
+
+      <section aria-labelledby="training-title">
+        <div className="mb-3">
+          <Eyebrow muted id="training-title">
+            Тренировка
+          </Eyebrow>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ToolCard
+            href="/review"
+            icon={<Layers3 aria-hidden="true" />}
+            title="Карточки"
+            subtitle="Повторение слов · FSRS"
+          />
+          <ToolCard
+            href="/kana"
+            icon={<Type aria-hidden="true" />}
+            title="Хирагана · Катакана"
+            subtitle="Тренажёр символов"
+          />
+        </div>
+      </section>
+
+      <ContactStrip />
+    </div>
+  );
+}
+
+function NextLesson({ lesson }: { lesson: LessonDto }) {
+  const durationMinutes = Math.max(
+    0,
+    Math.round((new Date(lesson.endsAt).getTime() - new Date(lesson.startsAt).getTime()) / 60_000),
+  );
+  const canJoin = lesson.joinState === "joinable";
+  const actionLabel = canJoin ? "Подключиться" : "Открыть урок";
+  const actionClass =
+    "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-[14px] font-bold text-gojo-orange transition-transform hover:-translate-y-0.5";
+  const actionContent = (
+    <>
+      <Video aria-hidden="true" className="h-[18px] w-[18px]" />
+      {actionLabel}
+    </>
+  );
+
+  return (
+    <Card className="flex-col gap-6 border-0 bg-gojo-orange p-7 text-white shadow-[0_8px_24px_rgb(232_66_10/0.18)] sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="g-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">
+          Ближайшее занятие
+        </div>
+        <h2 className="g-display mt-2 truncate text-[25px] font-extrabold sm:text-[28px]">
+          {lesson.title}
+        </h2>
+        <div className="g-body mt-1 text-[14px] text-white/85 sm:text-[15px]">
+          <LocalTime
+            iso={lesson.startsAt}
+            options={{
+              weekday: "short",
+              day: "numeric",
+              month: "long",
+              hour: "2-digit",
+              minute: "2-digit",
+            }}
+          />
+          {durationMinutes > 0 ? ` · ${durationMinutes} мин` : null}
+        </div>
+      </div>
+
+      {canJoin && lesson.meetingUrl ? (
+        <a
+          href={lesson.meetingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={actionClass}
+        >
+          {actionContent}
+        </a>
+      ) : (
+        <Link href={`/lessons/${lesson.id}`} className={actionClass}>
+          {actionContent}
+        </Link>
+      )}
+    </Card>
+  );
+}
+
+function StatusStrip({
+  activeUntil,
+  lessonsLeft,
+  level,
+}: {
+  activeUntil: string | null;
+  lessonsLeft: number;
+  level: string;
+}) {
+  return (
+    <Card className="grid grid-cols-2 gap-0 p-0 sm:grid-cols-4">
+      <StatusCell
+        label="Доступ"
+        value="Активен"
+        success
+        className="border-b border-black/10 sm:border-b-0"
+      />
+      <StatusCell
+        label="До"
+        value={
+          activeUntil ? (
+            <LocalTime iso={activeUntil} options={{ day: "numeric", month: "short" }} />
+          ) : (
+            "По пакету"
+          )
+        }
+        className="border-b border-l border-black/10 sm:border-b-0"
+      />
+      <StatusCell
+        label="Осталось"
+        value={lessonsLeft > 0 ? lessonsWord(lessonsLeft) : activeUntil ? "По плану" : "0 уроков"}
+        className="sm:border-l sm:border-black/10"
+      />
+      <StatusCell label="Уровень" value={level} className="border-l border-black/10" />
+    </Card>
+  );
+}
+
+function StatusCell({
+  label,
+  value,
+  success = false,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  success?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0 px-5 py-5 sm:px-6", className)}>
+      <div className="g-mono text-[10px] font-bold uppercase tracking-[0.14em] text-gojo-ink-ghost">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "g-display mt-1 truncate text-[19px] font-extrabold text-gojo-ink sm:text-[21px]",
+          success && "text-gojo-success",
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function ProgressCard({ done, streak }: { done: number; streak: number }) {
+  return (
+    <Card className="gap-0 p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Eyebrow>Прогресс</Eyebrow>
+        <div className="g-body inline-flex items-center gap-1.5 rounded-full bg-gojo-orange-soft px-3 py-1.5 text-[12px] font-bold text-gojo-orange">
+          <Flame aria-hidden="true" className="h-4 w-4" />
+          {streak > 0
+            ? `${streak} ${plural(streak, ["день", "дня", "дней"])} подряд`
+            : "Начни серию"}
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <Metric
+          value={done}
+          label={plural(done, ["урок пройден", "урока пройдено", "уроков пройдено"])}
+        />
+        <Metric value={streak} label={plural(streak, ["день серии", "дня серии", "дней серии"])} />
+      </div>
+    </Card>
+  );
+}
+
+function Metric({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="rounded-xl bg-gojo-paper px-5 py-5">
+      <div className="g-display text-[34px] font-extrabold leading-none text-gojo-ink">{value}</div>
+      <div className="g-body mt-2 text-[13px] text-gojo-ink-muted">{label}</div>
+    </div>
+  );
+}
+
+function ToolCard({
+  href,
+  icon,
+  title,
+  subtitle,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <Card
+      asChild
+      className="flex-row items-center gap-4 p-5 hover:-translate-y-0.5 hover:border-gojo-orange hover:shadow-lg"
+    >
+      <Link href={href}>
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gojo-orange-soft text-gojo-orange [&_svg]:h-[22px] [&_svg]:w-[22px]">
+          {icon}
+        </span>
+        <span className="min-w-0">
+          <span className="g-body block text-[15px] font-bold text-gojo-ink">{title}</span>
+          <span className="g-body mt-0.5 block text-[12px] text-gojo-ink-muted">{subtitle}</span>
+        </span>
+      </Link>
+    </Card>
+  );
+}
+
+function ContactStrip() {
+  return (
+    <Card className="flex-col gap-5 border-0 bg-gojo-paper-2 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+      <div>
+        <h2 className="g-display text-[20px] font-extrabold text-gojo-ink">Вопрос по обучению?</h2>
+        <p className="g-body mt-1 text-[13px] text-gojo-ink-muted sm:text-[14px]">
+          Материалы, расписание, индивидуальный план — пиши преподавателю.
+        </p>
+      </div>
+      <a
+        href="https://t.me/gojoedu"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(buttonVariants({ size: "lg" }), "rounded-xl")}
+      >
+        <MessageCircle aria-hidden="true" />
+        Telegram
+      </a>
+    </Card>
+  );
+}
+
+function Eyebrow({
+  children,
+  muted = false,
+  id,
+}: {
+  children: ReactNode;
+  muted?: boolean;
+  id?: string;
+}) {
+  return (
+    <div
+      id={id}
+      className={cn(
+        "g-mono text-[11px] font-bold uppercase tracking-[0.16em]",
+        muted ? "text-gojo-ink-ghost" : "text-gojo-orange",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+type DashboardLevelState = {
+  value: string | null;
+  level_provisional: boolean;
+};
+
+function getLevelState(jlptLevel: string | null, quizLevel: string | null): DashboardLevelState {
+  if (jlptLevel) {
+    return {
+      value: jlptLevel,
+      level_provisional: false,
+    };
+  }
+  if (quizLevel) {
+    return {
+      value: quizLevel === "start" ? "с нуля" : quizLevel,
+      level_provisional: true,
+    };
+  }
+  return {
+    value: null,
+    level_provisional: true,
+  };
+}
+
+function activeLevelLabel(level: DashboardLevelState): string {
+  if (!level.value) return "уровень уточняется";
+  return `${level.value}${level.level_provisional ? " · предварительно" : ""}`;
+}
+
+function unpaidLevelSubtitle(level: DashboardLevelState): string {
+  if (!level.value) return "уровень уточняется";
+  return level.level_provisional
+    ? `предварительный уровень ${level.value}`
+    : `твой уровень ${level.value}`;
+}
+
 function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 5) return "Доброй ночи";
-  if (h < 12) return "Доброе утро";
-  if (h < 17) return "Добрый день";
+  const hour = new Date().getHours();
+  if (hour < 6) return "Доброй ночи";
+  if (hour < 12) return "Доброе утро";
+  if (hour < 18) return "Добрый день";
   return "Добрый вечер";
 }
 
-function pluralizeDays(n: number): string {
+function plural(n: number, forms: [string, string, string]): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "день";
-  if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return "дня";
-  return "дней";
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
+  return forms[2];
+}
+
+function lessonsWord(n: number): string {
+  return `${n} ${plural(n, ["урок", "урока", "уроков"])}`;
 }

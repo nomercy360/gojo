@@ -71,12 +71,24 @@ test("guest is redirected away from protected pages", async ({ page }) => {
 test("student and admin have separate invite-only login screens", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Вход для студента" })).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Основная навигация" }).getByRole("link", {
+      name: "Войти",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
   await expect(page.getByText(/согласие на обработку персональных данных/i)).toHaveCount(0);
 
   await page.getByRole("link", { name: "Войти в панель" }).click();
   await expect(page).toHaveURL(/\/admin\/login$/);
   await expect(page.getByRole("heading", { name: "Вход для администратора" })).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Основная навигация" }).getByRole("link", {
+      name: "Войти",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Войти через Telegram" })).toHaveCount(0);
   await expect(page.getByText("Впервые здесь?")).toHaveCount(0);
 });

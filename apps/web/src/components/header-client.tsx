@@ -2,10 +2,12 @@
 
 import { AdminAccountMenu } from "@/components/admin-account-menu";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { authClient, type Session } from "@/lib/auth-client";
+import { type Session, authClient } from "@/lib/auth-client";
 import { linkPendingBookingLead, migrateGuestTrainerProgress } from "@/lib/post-login-sync";
 import { isTeacherUser } from "@/lib/roles";
+import { cn } from "@/lib/utils";
 import type { UserDto } from "@gojo/shared";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,7 +22,13 @@ import { toast } from "sonner";
  * The overlay mode gives the landing hero a full-bleed cinematic feel without
  * the cream slab cutting it at the top.
  */
-export function HeaderClient({ user: serverUser }: { user: UserDto | null }) {
+export function HeaderClient({
+  user: serverUser,
+  studentAccessActive,
+}: {
+  user: UserDto | null;
+  studentAccessActive: boolean | null;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const clientSession = authClient.useSession();
@@ -77,8 +85,9 @@ export function HeaderClient({ user: serverUser }: { user: UserDto | null }) {
     };
   }, [user]);
 
-  // Landing has its own nav; the admin workspace owns the full viewport.
-  if (pathname === "/" || pathname === "/teacher") return null;
+  // Landing owns its navigation. All authenticated app routes share this
+  // global top bar; the teacher sidebar remains local collection navigation.
+  if (pathname === "/") return null;
 
   const overlay = overlayRoute && !scrolled;
   const frosted = overlayRoute && scrolled;
@@ -93,7 +102,15 @@ export function HeaderClient({ user: serverUser }: { user: UserDto | null }) {
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
   const teacherUser = isTeacherUser(user);
-  const freeToolRoute = pathname === "/onboarding/quiz" || pathname === "/kana";
+  const loginRoute = pathname === "/login" || pathname === "/admin/login";
+  const logoHref = user ? (teacherUser ? "/teacher" : "/dashboard") : "/";
+  const studentAppLink = (active: boolean) =>
+    cn(
+      "rounded-lg px-2 py-1.5 transition-colors sm:px-2.5",
+      active
+        ? "bg-gojo-orange-soft text-gojo-orange"
+        : `${mutedClass} hover:bg-gojo-paper-2 hover:text-gojo-orange`,
+    );
 
   async function handleLogout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -115,8 +132,8 @@ export function HeaderClient({ user: serverUser }: { user: UserDto | null }) {
 
   return (
     <header className={wrapperClass}>
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-3">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <Link href={logoHref} className="flex shrink-0 items-center gap-3">
           <img
             src="/landing/logo.png"
             alt="Gojo"
@@ -124,55 +141,74 @@ export function HeaderClient({ user: serverUser }: { user: UserDto | null }) {
             style={{ mixBlendMode: overlayRoute ? "normal" : "multiply" }}
           />
           <span
-            className="g-mono text-[10px] font-bold uppercase tracking-[0.12em]"
+            className="g-mono hidden text-[10px] font-bold uppercase tracking-[0.12em] lg:inline"
             style={{ color: overlayRoute ? "rgba(255,255,255,0.7)" : "#6b6b6b" }}
           >
             Школа японского
           </span>
         </Link>
 
-        <nav className="g-body flex items-center gap-5 text-[13px] font-semibold">
+        <nav
+          aria-label="Основная навигация"
+          className="g-body flex min-w-0 items-center gap-1 text-[12px] font-semibold sm:gap-2 sm:text-[13px]"
+        >
           {user ? (
             teacherUser ? (
               <>
                 <Link
-                  href="/teacher?collection=lessons"
-                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                  href="/"
+                  className={`rounded-lg px-2.5 py-1.5 transition-colors hover:bg-gojo-paper-2 hover:text-gojo-orange ${mutedClass}`}
                 >
-                  Учитель
+                  На сайт
                 </Link>
                 <Link
-                  href="/teacher?collection=students"
-                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                  href="/teacher"
+                  aria-current={pathname.startsWith("/teacher") ? "page" : undefined}
+                  className={studentAppLink(pathname.startsWith("/teacher"))}
                 >
-                  Студенты
+                  Рабочее пространство
                 </Link>
                 <AdminAccountMenu user={user} />
               </>
             ) : (
               <>
-                <Link href="/" className={`transition-colors hover:text-gojo-orange ${mutedClass}`}>
-                  На сайт
+                <Link
+                  href="/dashboard"
+                  aria-current={pathname === "/dashboard" ? "page" : undefined}
+                  className={studentAppLink(pathname === "/dashboard")}
+                >
+                  Кабинет
+                </Link>
+                <Link href="/" className={studentAppLink(false)}>
+                  <span className="hidden sm:inline">На сайт</span>
+                  <span className="sm:hidden">Сайт</span>
                 </Link>
                 <Link
-                  href={freeToolRoute ? "/dashboard" : "/payments"}
-                  className={`transition-colors hover:text-gojo-orange ${mutedClass}`}
+                  href={studentAccessActive ? "/payments#payment-status" : "/payments"}
+                  aria-current={pathname.startsWith("/payments") ? "page" : undefined}
+                  className={studentAppLink(pathname.startsWith("/payments"))}
                 >
-                  {freeToolRoute ? "В кабинет" : "Оплата"}
+                  {studentAccessActive ? "Платежи" : "Оплата"}
                 </Link>
-                <form onSubmit={handleLogout}>
+                <form
+                  onSubmit={handleLogout}
+                  className="ml-1 border-l border-black/10 pl-2 sm:ml-2 sm:pl-4"
+                >
                   <Button
                     type="submit"
                     disabled={loggingOut}
                     variant="ghost"
-                    className={`h-auto p-0 hover:bg-transparent hover:text-gojo-error disabled:cursor-wait ${mutedClass}`}
+                    aria-label="Выйти"
+                    title="Выйти"
+                    className={`h-8 gap-1.5 px-2 text-[12px] hover:bg-gojo-error-soft hover:text-gojo-error disabled:cursor-wait sm:px-2.5 sm:text-[13px] ${mutedClass}`}
                   >
-                    Выйти
+                    <LogOut aria-hidden="true" className="size-3.5" />
+                    <span className="hidden md:inline">Выйти</span>
                   </Button>
                 </form>
               </>
             )
-          ) : (
+          ) : loginRoute ? null : (
             <Link href="/login" className={buttonVariants({ variant: "outline", size: "sm" })}>
               Войти
             </Link>

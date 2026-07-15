@@ -56,14 +56,16 @@ export default async function PaymentsPage({
     <main className="min-h-screen bg-gojo-paper">
       <div className="mx-auto max-w-4xl px-6 py-16">
         <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-          Оплата
+          {account.access.isActive ? "Платежи" : "Оплата"}
         </div>
-        <h1 className="mt-2 font-serif text-[32px] font-bold">Доступ к занятиям</h1>
+        <h1 className="mt-2 font-serif text-[32px] font-bold">
+          {account.access.isActive ? "Платежи и доступ" : "Доступ к занятиям"}
+        </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gojo-ink-muted">
-          Оплата проходит через ЮKassa. Сейчас это разовый платёж без автоматического продления и
-          повторных списаний. После успешного платежа доступ обновится автоматически; если ты уже
-          вернулся с оплаты, обнови страницу через несколько секунд. Сведения об обработке данных —
-          в{" "}
+          {account.access.isActive
+            ? "Здесь можно проверить текущий доступ, историю операций и при необходимости продлить занятия. "
+            : "Оплата проходит через ЮKassa. Сейчас это разовый платёж без автоматического продления и повторных списаний. После успешного платежа доступ обновится автоматически. "}
+          Сведения об обработке данных — в{" "}
           <Link href="/privacy" className="font-bold text-gojo-orange underline">
             Политике
           </Link>
@@ -78,7 +80,7 @@ export default async function PaymentsPage({
           </Alert>
         ) : null}
 
-        <Card className="mt-8 p-5">
+        <Card id="payment-status" className="mt-8 scroll-mt-24 p-5">
           <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
             Текущий статус
           </div>
@@ -89,34 +91,50 @@ export default async function PaymentsPage({
               value={
                 account.access.activeUntil
                   ? new Date(account.access.activeUntil).toLocaleDateString("ru-RU")
-                  : "—"
+                  : account.access.lessonCredits > 0
+                    ? "По пакету"
+                    : "—"
               }
             />
-            <StatusTile label="Уроки" value={String(account.access.lessonCredits)} />
+            <StatusTile
+              label="Уроки"
+              value={
+                account.access.lessonCredits > 0
+                  ? String(account.access.lessonCredits)
+                  : account.access.activeUntil
+                    ? "По плану"
+                    : "0"
+              }
+            />
           </div>
         </Card>
 
-        <section className="mt-8 grid gap-5 sm:grid-cols-2">
-          {plans.map((plan) => (
-            <Card key={plan.id} className="p-5">
-              <form action={checkoutAction}>
-                <Input type="hidden" name="planId" value={plan.id} />
-                <h2 className="font-serif text-[24px] font-bold">{plan.title}</h2>
-                <p className="mt-2 text-sm text-gojo-ink-muted">{plan.description}</p>
-                <div className="mt-5 font-serif text-[34px] font-bold">
-                  {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
-                </div>
-                <Button type="submit" className="mt-5 w-full">
-                  Оплатить через ЮKassa
-                </Button>
-              </form>
-            </Card>
-          ))}
+        <section className="mt-8">
+          <h2 className="font-serif text-[24px] font-bold">
+            {account.access.isActive ? "Продлить или пополнить" : "Выбери формат занятий"}
+          </h2>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            {plans.map((plan) => (
+              <Card key={plan.id} className="p-5">
+                <form action={checkoutAction}>
+                  <Input type="hidden" name="planId" value={plan.id} />
+                  <h3 className="font-serif text-[24px] font-bold">{plan.title}</h3>
+                  <p className="mt-2 text-sm text-gojo-ink-muted">{plan.description}</p>
+                  <div className="mt-5 font-serif text-[34px] font-bold">
+                    {Number(plan.amountValue).toLocaleString("ru-RU")} ₽
+                  </div>
+                  <Button type="submit" className="mt-5 w-full">
+                    {account.access.isActive ? "Продлить через ЮKassa" : "Оплатить через ЮKassa"}
+                  </Button>
+                </form>
+              </Card>
+            ))}
+          </div>
         </section>
 
         <ContactBlock />
 
-        <section className="mt-10">
+        <section id="payment-history" className="mt-10 scroll-mt-24">
           <h2 className="font-serif text-[24px] font-bold">История платежей</h2>
           {account.payments.length === 0 ? (
             <p className="mt-3 text-sm text-gojo-ink-muted">Платежей пока нет.</p>
