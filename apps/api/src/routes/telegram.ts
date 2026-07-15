@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { leads, user as userTable, verification } from "@gojo/db";
 import { and, eq, gt, inArray, lt } from "drizzle-orm";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { createSessionCookie } from "../auth/session.ts";
 import { db } from "../db.ts";
@@ -47,6 +47,11 @@ type TelegramUpdate = {
   message?: { text?: string; chat?: { id: number }; from?: TelegramFrom };
 };
 
+type TelegramAccount = {
+  id: string;
+  role: "student" | "admin";
+};
+
 telegramRoute.post("/webhook", async (c) => {
   // Telegram echoes the secret from setWebhook on every call. When configured,
   // reject anything without it — the webhook URL is otherwise guessable.
@@ -73,11 +78,20 @@ telegramRoute.post("/webhook", async (c) => {
     const command = parts[0]?.toLowerCase().replace(/@.*$/, "");
     const payload = parts[1];
     try {
-      if (command === "/start" && payload) {
+      if (command === "/start" && payload === "lead") {
+        // Conversion CTA: this payload files a booking lead, never an account.
+        await handleStartCommand(from, chatId);
+      } else if (command === "/start" && payload) {
         // Deep-link account linking: t.me/<bot>?start=<link-token>.
         await handleLinkCommand(from, chatId, payload);
-      } else if (command === "/start" || command === "/login") {
+      } else if (command === "/start") {
+        await handleStartCommand(from, chatId);
+      } else if (command === "/login") {
         await handleLoginCommand(from, chatId);
+      } else if (command === "/lessons") {
+        await handleLessonsCommand(from, chatId);
+      } else if (command === "/help") {
+        await handleHelpCommand(from, chatId);
       }
     } catch (err) {
       console.error("telegram command failed:", err);
@@ -116,7 +130,7 @@ async function handleLinkCommand(
     .limit(1);
 
   // Not a (valid) link token — treat as an ordinary /start.
-  if (!row) return handleLoginCommand(from, chatId);
+  if (!row) return handleStartCommand(from, chatId);
 
   await db.delete(verification).where(eq(verification.id, row.id)); // single-use
   const userId = (JSON.parse(row.value) as { userId: string }).userId;
@@ -166,34 +180,108 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 async function handleLoginCommand(from: TelegramFrom, chatId: number): Promise<void> {
-  const [account] = await db
-    .select({ id: userTable.id })
-    .from(userTable)
-    .where(eq(userTable.telegramId, from.id))
-    .limit(1);
+  const account = await findTelegramAccount(from.id);
 
   if (account) {
-    // login_url (not a plain url button) shows the native "Log in to <domain>?"
-    // prompt instead of the raw-URL "Open this link?" warning, is instant after
-    // the first authorization, AND makes Telegram append a signed identity to
-    // the URL (id, auth_date, hash, …) which GET /login verifies. Requires the
-    // host be registered via BotFather /setdomain (gojolearn.ru in prod; the
-    // ngrok host for local testing) — else BOT_DOMAIN_INVALID on send.
-    const markup: TelegramReplyMarkup = {
-      inline_keyboard: [[{ text: "Открыть Gojo Learn ↗", login_url: { url: loginUrl() } }]],
-    };
-    await sendTelegramMessage(
-      chatId,
-      "Нажмите кнопку, чтобы войти на сайт.",
-      "auth.telegram_login_link",
-      account.id,
-      markup,
-    );
+    await sendLoginButton(chatId, account.id);
     return;
   }
 
   // Unlinked: capture a request (lead), not a student account.
   await createRequestLead(from, chatId);
+}
+
+async function handleStartCommand(from: TelegramFrom, chatId: number): Promise<void> {
+  const account = await findTelegramAccount(from.id);
+  if (!account) {
+    await createRequestLead(from, chatId);
+    return;
+  }
+
+  if (account.role === "student") {
+    await sendTelegramMessage(
+      chatId,
+      "Вы уже зарегистрированы в Gojo Learn. Вот доступные команды 👇\n\n" +
+        "/lessons — посмотреть свои уроки",
+      "navigation.telegram_start_menu",
+      account.id,
+    );
+    return;
+  }
+
+  await sendLoginButton(chatId, account.id);
+}
+
+async function handleLessonsCommand(from: TelegramFrom, chatId: number): Promise<void> {
+  const account = await findTelegramAccount(from.id);
+  if (!account) {
+    await createRequestLead(from, chatId);
+    return;
+  }
+
+  if (account.role !== "student") {
+    await sendLoginButton(chatId, account.id);
+    return;
+  }
+
+  const markup: TelegramReplyMarkup = {
+    inline_keyboard: [[{ text: "Мои уроки ↗", login_url: { url: loginUrl("lessons") } }]],
+  };
+  await sendTelegramMessage(
+    chatId,
+    "🎌 Откройте расписание, материалы и домашние задания по вашим урокам.",
+    "navigation.telegram_lessons_link",
+    account.id,
+    markup,
+  );
+}
+
+async function handleHelpCommand(from: TelegramFrom, chatId: number): Promise<void> {
+  const account = await findTelegramAccount(from.id);
+  if (account?.role === "student") {
+    await sendTelegramMessage(
+      chatId,
+      "Доступные команды:\n\n/lessons — посмотреть свои уроки\n/login — войти на сайт",
+      "navigation.telegram_help",
+      account.id,
+    );
+    return;
+  }
+
+  await sendTelegramMessage(
+    chatId,
+    "Отправьте /start, чтобы начать, или /login, чтобы войти в существующий аккаунт.",
+    "navigation.telegram_help",
+    account?.id,
+  );
+}
+
+async function findTelegramAccount(telegramId: number): Promise<TelegramAccount | undefined> {
+  const [account] = await db
+    .select({ id: userTable.id, role: userTable.role })
+    .from(userTable)
+    .where(eq(userTable.telegramId, telegramId))
+    .limit(1);
+  return account;
+}
+
+async function sendLoginButton(chatId: number, userId: string): Promise<void> {
+  // login_url (not a plain url button) shows the native "Log in to <domain>?"
+  // prompt instead of the raw-URL "Open this link?" warning, is instant after
+  // the first authorization, AND makes Telegram append a signed identity to
+  // the URL (id, auth_date, hash, …) which GET /login verifies. Requires the
+  // host be registered via BotFather /setdomain (gojolearn.ru in prod; the
+  // ngrok host for local testing) — else BOT_DOMAIN_INVALID on send.
+  const markup: TelegramReplyMarkup = {
+    inline_keyboard: [[{ text: "Открыть Gojo Learn ↗", login_url: { url: loginUrl() } }]],
+  };
+  await sendTelegramMessage(
+    chatId,
+    "Нажмите кнопку, чтобы войти на сайт.",
+    "auth.telegram_login_link",
+    userId,
+    markup,
+  );
 }
 
 async function createRequestLead(from: TelegramFrom, chatId: number): Promise<void> {
@@ -245,11 +333,13 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
   );
 }
 
-// GET /telegram/login — Telegram redirects the login_url button here with the
-// signed identity in the query string. We verify the hash (proving Telegram —
-// i.e. our bot token — signed it), check freshness, then log the user in by
-// their telegramId. Stateless: no token to mint or store.
-telegramRoute.get("/login", async (c) => {
+// Telegram redirects login_url buttons here with a signed identity in the query
+// string. We verify it, create the site session, then land on the requested
+// first-party page. The destination is fixed by the route, never user input.
+telegramRoute.get("/login/lessons", async (c) => completeTelegramLogin(c, "/lessons"));
+telegramRoute.get("/login", async (c) => completeTelegramLogin(c, "/dashboard"));
+
+async function completeTelegramLogin(c: Context<AuthContext>, destination: string) {
   const params = c.req.query();
   if (!verifyTelegramLogin(params)) return c.redirect(`${appUrl}/login?tg=invalid`);
 
@@ -261,8 +351,8 @@ telegramRoute.get("/login", async (c) => {
   if (!account) return c.redirect(`${appUrl}/login?tg=notlinked`);
 
   c.header("Set-Cookie", await createSessionCookie(account.id), { append: true });
-  return c.redirect(`${appUrl}/dashboard`);
-});
+  return c.redirect(`${appUrl}${destination}`);
+}
 
 // Verify the Telegram Login Widget signature (the scheme login_url uses):
 // hash = HMAC-SHA256(sorted "k=v\n" data-check-string, key = SHA256(bot_token)).
@@ -290,6 +380,6 @@ function linkKey(token: string) {
   return `tg-link:${token}`;
 }
 
-function loginUrl() {
-  return `${appUrl}/api/telegram/login`;
+function loginUrl(destination?: "lessons") {
+  return `${appUrl}/api/telegram/login${destination ? `/${destination}` : ""}`;
 }

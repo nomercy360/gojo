@@ -27,17 +27,17 @@ import {
 
 // ── Design tokens (landing policy) ───────────────────────────────────────────
 const C = {
-  cream: "#f8f4ec",
-  cream2: "#efe7d8",
+  cream: "#f3ece0",
+  cream2: "#efe7d9",
   white: "#ffffff",
-  orange: "#e8420a",
-  ink: "#252525",
-  ink2: "#4a4a4a",
-  ink3: "#6b6b6b",
-  muted: "#a0a0a0",
-  border: "rgba(0,0,0,0.06)",
-  green: "#4a8f3a",
-  greenBg: "#e5f0de",
+  orange: "#ce4a22",
+  ink: "#201c18",
+  ink2: "#4a443c",
+  ink3: "#6b655c",
+  muted: "#9c9285",
+  border: "#e7decf",
+  green: "#3f7d53",
+  greenBg: "#e4eee4",
   red: "#c8302c",
   redBg: "#fbe5e3",
 };

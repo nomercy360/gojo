@@ -102,32 +102,6 @@ test("booking submission sends a confirmation email", async ({ request }) => {
   }
 });
 
-test("quiz analysis is delivered without requiring a phone", async ({ request }) => {
-  const email = `e2e-quiz-mail-${Date.now()}@gojo.local`;
-  const before = await mailCount(request, email);
-  let leadId: string | undefined;
-  try {
-    const questionsResponse = await request.get(`${apiURL}/onboarding/quiz/questions`);
-    const questions = (await questionsResponse.json()) as Array<{ id: string }>;
-    const response = await request.post(`${apiURL}/onboarding/quiz/lead`, {
-      data: {
-        ...consent,
-        name: "Quiz Mail Test",
-        email,
-        declared: "kana",
-        answers: questions.map((question) => ({ questionId: question.id, choiceIndex: 0 })),
-      },
-    });
-    expect(response.status()).toBe(201);
-    const body = (await response.json()) as { leadId: string; emailSent: boolean };
-    leadId = body.leadId;
-    expect(body.emailSent).toBe(true);
-    await expect.poll(() => mailCount(request, email)).toBeGreaterThan(before);
-  } finally {
-    await deleteLead(leadId);
-  }
-});
-
 async function mailCount(request: import("@playwright/test").APIRequestContext, email: string) {
   const response = await request.get(`${mailpitURL}/api/v1/messages`);
   await expect(response).toBeOK();

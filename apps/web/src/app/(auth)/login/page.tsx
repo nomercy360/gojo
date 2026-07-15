@@ -1,6 +1,8 @@
 "use client";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { telegramBotStartUrl } from "@/lib/telegram";
 import { ArrowLeft, ArrowRight, Send, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -38,22 +40,22 @@ function ChannelsLine({ channels }: { channels: DeliveryChannel[] }) {
   if (email && telegram) {
     return (
       <>
-        на <strong className="font-semibold text-[#201C18]">{email.label}</strong> и в Telegram (
-        <strong className="font-semibold text-[#201C18]">{telegram.label}</strong>)
+        на <strong className="font-semibold text-foreground">{email.label}</strong> и в Telegram (
+        <strong className="font-semibold text-foreground">{telegram.label}</strong>)
       </>
     );
   }
   if (email) {
     return (
       <>
-        на <strong className="font-semibold text-[#201C18]">{email.label}</strong>
+        на <strong className="font-semibold text-foreground">{email.label}</strong>
       </>
     );
   }
   if (telegram) {
     return (
       <>
-        в Telegram (<strong className="font-semibold text-[#201C18]">{telegram.label}</strong>)
+        в Telegram (<strong className="font-semibold text-foreground">{telegram.label}</strong>)
       </>
     );
   }
@@ -113,8 +115,9 @@ function CodeInput({ value, onChange }: { value: string; onChange: (value: strin
               if (event.key === "ArrowLeft" && index > 0) refs.current[index - 1]?.focus();
               if (event.key === "ArrowRight" && index < 5) refs.current[index + 1]?.focus();
             }}
-            className="g-display h-14 w-12 rounded-xl border-[1.5px] bg-white text-center text-2xl font-semibold text-[#201C18] outline-none transition-[border-color,box-shadow] focus:border-[#CE4A22] focus:ring-4 focus:ring-[#FCF1EB]"
-            style={{ borderColor: digits[index] ? "#CE4A22" : undefined }}
+            className={`g-display h-14 w-12 rounded-xl border-[1.5px] bg-card text-center text-2xl font-semibold text-foreground outline-none transition-[border-color,box-shadow] focus:border-ring focus:ring-4 focus:ring-ring/15 ${
+              digits[index] ? "border-primary" : "border-border"
+            }`}
           />
         ))}
       </div>
@@ -219,11 +222,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="g-body min-h-[calc(100svh-53px)] bg-[#F3ECE0] text-[#201C18]">
+    <main className="g-body min-h-[calc(100svh-53px)] bg-background text-foreground">
       <div className="mx-auto w-full max-w-[448px] px-6 py-14">
         <div className="mx-auto w-full max-w-[400px]">
           <header className="mb-[30px] text-center">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#CE4A22]">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
               Gojo Learn
             </div>
             <h1 className="mt-3 text-[38px] leading-[1.15] font-semibold tracking-[-0.01em]">
@@ -233,14 +236,14 @@ export default function LoginPage() {
 
           {step === "identify" ? (
             <>
-              <p className="mb-[26px] text-center text-[15px] leading-6 text-[#6B655C]">
+              <p className="mb-[26px] text-center text-[15px] leading-6 text-muted-foreground">
                 Укажи email или ник в Telegram. Код придёт на все привязанные каналы.
               </p>
               <form onSubmit={requestCode}>
                 <label htmlFor="identifier" className="mb-2 block text-sm font-semibold">
                   Email или Telegram
                 </label>
-                <input
+                <Input
                   id="identifier"
                   name="identifier"
                   type="text"
@@ -249,57 +252,55 @@ export default function LoginPage() {
                   autoComplete="username"
                   placeholder="you@example.com или @username"
                   aria-invalid={error ? true : undefined}
-                  className="h-[51px] w-full rounded-xl border-[1.5px] border-[#E7DECF] bg-white px-[15px] text-[15px] outline-none transition-[border-color,box-shadow] placeholder:text-[#9CA3AF] focus:border-[#CE4A22] focus:ring-4 focus:ring-[#FCF1EB]"
                 />
-                <button
+                <Button
                   type="submit"
+                  size="lg"
                   disabled={!validIdentifier || pending}
-                  className="mt-[14px] inline-flex h-[51px] w-full items-center justify-center gap-2 rounded-xl bg-[#CE4A22] text-[15px] font-semibold text-white transition-colors hover:bg-[#B93E1B] disabled:cursor-default disabled:bg-[#BCB3A3]"
+                  className="mt-[14px] w-full"
                 >
                   {pending ? "Отправляем…" : "Получить код"}
-                  {!pending ? <ArrowRight aria-hidden="true" className="size-[17px]" /> : null}
-                </button>
+                  {!pending ? <ArrowRight aria-hidden="true" /> : null}
+                </Button>
               </form>
 
-              <section className="mt-[30px] border-t border-[#E7DECF] pt-[26px] text-center">
+              <section className="mt-[30px] border-t border-border pt-[26px] text-center">
                 <h2 className="text-[19px] leading-6 font-semibold">Ещё не занимаешься у нас?</h2>
-                <p className="mt-1.5 mb-4 text-[13.5px] leading-5 text-[#6B655C]">
+                <p className="mt-1.5 mb-4 text-[13.5px] leading-5 text-muted-foreground">
                   Оставь заявку в Telegram — договоримся о пробном уроке. Аккаунт заведёт
                   администратор после него.
                 </p>
-                <a
-                  href={REGISTER_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl border border-[#E7DECF] bg-white text-[15px] font-semibold transition-colors hover:bg-[#F6F0E6]"
-                >
-                  <Send aria-hidden="true" className="size-[18px] text-[#2AABEE]" />
-                  Оставить заявку
-                </a>
+                <Button asChild variant="outline" size="lg" className="w-full border-border">
+                  <a href={REGISTER_URL} target="_blank" rel="noopener noreferrer">
+                    <Send aria-hidden="true" className="text-[#2AABEE]" />
+                    Оставить заявку
+                  </a>
+                </Button>
               </section>
             </>
           ) : null}
 
           {step === "code" && challenge ? (
             <form onSubmit={verifyCode}>
-              <p className="mb-2 text-center text-[15px] leading-6 text-[#6B655C]">
+              <p className="mb-2 text-center text-[15px] leading-6 text-muted-foreground">
                 Код отправлен <ChannelsLine channels={challenge.channels} />.
               </p>
-              <p className="mb-6 text-center text-[13px] text-[#9C9285]">
+              <p className="mb-6 text-center text-[13px] text-muted-foreground/80">
                 Введи его из любого канала — код один.
               </p>
               <CodeInput value={code} onChange={setCode} />
-              <button
+              <Button
                 type="submit"
+                size="lg"
                 disabled={pending || code.length !== 6}
-                className="mt-[22px] inline-flex h-[51px] w-full items-center justify-center gap-2 rounded-xl bg-[#CE4A22] text-[15px] font-semibold text-white transition-colors hover:bg-[#B93E1B] disabled:cursor-default disabled:bg-[#BCB3A3]"
+                className="mt-[22px] w-full"
               >
                 {pending ? "Проверяем…" : "Подтвердить"}
-                {!pending ? <ShieldCheck aria-hidden="true" className="size-[17px]" /> : null}
-              </button>
+                {!pending ? <ShieldCheck aria-hidden="true" /> : null}
+              </Button>
               <div className="mt-[18px] text-center text-[13.5px]">
                 {resendIn > 0 ? (
-                  <span className="text-[#9C9285]">
+                  <span className="text-muted-foreground/80">
                     Отправить снова через 0:{String(resendIn).padStart(2, "0")}
                   </span>
                 ) : (
@@ -307,7 +308,7 @@ export default function LoginPage() {
                     type="button"
                     disabled={pending}
                     onClick={() => void requestCode()}
-                    className="font-semibold text-[#CE4A22] hover:underline disabled:opacity-50"
+                    className="font-semibold text-primary hover:underline disabled:opacity-50"
                   >
                     Отправить код повторно
                   </button>
@@ -316,7 +317,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={returnToIdentify}
-                className="mx-auto mt-[26px] flex items-center gap-1.5 text-sm text-[#6B655C] hover:text-[#201C18]"
+                className="mx-auto mt-[26px] flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft aria-hidden="true" className="size-[15px]" />
                 Другой аккаунт
@@ -326,26 +327,28 @@ export default function LoginPage() {
 
           {step === "notfound" ? (
             <>
-              <div className="rounded-2xl border border-[#FBE7DD] bg-[#FCF1EB] p-6 text-center">
+              <div className="rounded-2xl border border-gojo-orange-soft bg-gojo-orange-softer p-6 text-center">
                 <h2 className="text-[22px] leading-7 font-semibold">Аккаунт не найден</h2>
-                <p className="mt-2.5 text-sm leading-[1.55] text-[#6B655C]">
+                <p className="mt-2.5 text-sm leading-[1.55] text-muted-foreground">
                   Мы заводим аккаунты вручную — после заявки и пробного урока. Оставь заявку в
                   Telegram, и мы договоримся.
                 </p>
               </div>
-              <a
-                href={REGISTER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-[18px] inline-flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl border border-[#E7DECF] bg-white text-[15px] font-semibold transition-colors hover:bg-[#F6F0E6]"
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="mt-[18px] w-full border-border"
               >
-                <Send aria-hidden="true" className="size-[18px] text-[#2AABEE]" />
-                Оставить заявку
-              </a>
+                <a href={REGISTER_URL} target="_blank" rel="noopener noreferrer">
+                  <Send aria-hidden="true" className="text-[#2AABEE]" />
+                  Оставить заявку
+                </a>
+              </Button>
               <button
                 type="button"
                 onClick={returnToIdentify}
-                className="mx-auto mt-[22px] flex items-center gap-1.5 text-sm text-[#6B655C] hover:text-[#201C18]"
+                className="mx-auto mt-[22px] flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft aria-hidden="true" className="size-[15px]" />
                 Назад ко входу
@@ -359,9 +362,12 @@ export default function LoginPage() {
             </Alert>
           ) : null}
 
-          <p className="mt-[34px] text-center text-[13px] text-[#BCB3A3]">
+          <p className="mt-[34px] text-center text-[13px] text-muted-foreground/70">
             Администратор?{" "}
-            <Link href="/admin/login" className="font-semibold text-[#9C9285] hover:underline">
+            <Link
+              href="/admin/login"
+              className="font-semibold text-muted-foreground hover:underline"
+            >
               Войти в панель
             </Link>
           </p>

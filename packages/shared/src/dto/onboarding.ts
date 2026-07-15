@@ -37,21 +37,13 @@ export const quizSubmitInput = z.object({
 });
 export type QuizSubmitInput = z.infer<typeof quizSubmitInput>;
 
-export const quizLeadInput = quizSubmitInput.extend({
-  name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(200),
-  personalDataConsent: z.literal(true),
-  consentVersion: z.literal("2026-07-13"),
-});
-export type QuizLeadInput = z.infer<typeof quizLeadInput>;
-
 export const quizResultDto = z.object({
   level: quizPlacementSchema,
   assessment: quizAssessmentSchema,
   correct: z.number().int().min(0),
   total: z.number().int().min(1),
-  // Per-JLPT-level breakdown so the result screen and email can distinguish
-  // demonstrated knowledge from a self-declaration.
+  // Per-JLPT-level breakdown lets the result screen distinguish demonstrated
+  // knowledge from a self-declaration.
   byLevel: z.array(
     z.object({
       level: jlptLevelSchema,
@@ -61,12 +53,6 @@ export const quizResultDto = z.object({
   ),
 });
 export type QuizResultDto = z.infer<typeof quizResultDto>;
-
-export const quizLeadResultDto = quizResultDto.extend({
-  leadId: z.string().uuid().optional(),
-  emailSent: z.boolean(),
-});
-export type QuizLeadResultDto = z.infer<typeof quizLeadResultDto>;
 
 /** Teacher sets the official level for a student after the free consultation lesson. */
 export const setStudentLevelInput = z.object({

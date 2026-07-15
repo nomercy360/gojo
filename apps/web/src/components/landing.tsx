@@ -1,10 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { BookingModal } from "./booking-modal";
 
 type HeroKanaOption = "shi" | "su" | "se" | "chi";
@@ -57,10 +55,16 @@ const REVIEWS = [
 const REVIEW_LOOP = [...REVIEWS, ...REVIEWS];
 const REVIEW_STAR_KEYS = ["star-1", "star-2", "star-3", "star-4", "star-5"];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-
-const readValue = (id: string) =>
-  (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? "";
+// Russian plural for the animated student counter (51 → «ученик уже занимается»)
+function studentsLabel(count: number) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "ученик уже занимается с нами";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return "ученика уже занимаются с нами";
+  }
+  return "учеников уже занимаются с нами";
+}
 
 export function Landing() {
   const [heroKanaOptions, setHeroKanaOptions] = useState<HeroKanaOption[]>([
@@ -69,13 +73,8 @@ export function Landing() {
   const [heroKanaStep, setHeroKanaStep] = useState<0 | 1 | 2>(0);
   const [heroKanaAnswer, setHeroKanaAnswer] = useState<HeroKanaOption | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [guideSubmitted, setGuideSubmitted] = useState(false);
-  const [guidePrivacyAccepted, setGuidePrivacyAccepted] = useState(false);
-  const [guideMarketingAccepted, setGuideMarketingAccepted] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [studentsCount, setStudentsCount] = useState(0);
-  const [yearsCount, setYearsCount] = useState(0);
   const [statsDone, setStatsDone] = useState(false);
   const statsRef = useRef<HTMLElement>(null);
 
@@ -94,7 +93,6 @@ export function Landing() {
         if (!entries[0].isIntersecting) {
           cancelAnimationFrame(raf);
           setStudentsCount(0);
-          setYearsCount(0);
           setStatsDone(false);
           return;
         }
@@ -124,57 +122,6 @@ export function Landing() {
 
   const openModal = () => setBookingOpen(true);
   const closeModal = () => setBookingOpen(false);
-  const openGuideModal = () => setGuideOpen(true);
-  const closeGuideModal = () => setGuideOpen(false);
-
-  const submitGuideForm = async () => {
-    if (!readValue("g-name") || !readValue("g-email")) {
-      toast.error("Пожалуйста, заполни имя и email");
-      return;
-    }
-    if (!guidePrivacyAccepted) {
-      toast.error("Подтверди согласие на обработку персональных данных");
-      return;
-    }
-    try {
-      const res = await fetch(`${API_URL}/leads`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "guide",
-          name: readValue("g-name"),
-          email: readValue("g-email"),
-          telegram: readValue("g-tg") || undefined,
-          personalDataConsent: true,
-          consentVersion: "2026-07-13",
-          marketingConsent: guideMarketingAccepted,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setGuideSubmitted(true);
-    } catch {
-      toast.error("Не удалось отправить. Попробуй ещё раз.");
-    }
-  };
-
-  // lock body scroll while the guide modal is open (BookingModal manages its
-  // own scroll-lock/Escape internally, since it's also mounted standalone on
-  // other pages)
-  useEffect(() => {
-    document.body.style.overflow = guideOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [guideOpen]);
-
-  // close guide modal on Escape
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setGuideOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
 
   return (
     <div className="landing-root">
@@ -273,7 +220,7 @@ export function Landing() {
           </h1>
           <p className="hero-subtitle">
             Учишься в приложении, а живой преподаватель следит за прогрессом и не даёт сойти с
-            дистанции. Первый урок — бесплатно, 25 минут.
+            дистанции.
           </p>
           <div className="hero-btns">
             <Button variant="unstyled" type="button" className="btn-primary" onClick={openModal}>
@@ -283,6 +230,7 @@ export function Landing() {
               Как это работает
             </a>
           </div>
+          <p className="hero-trust-note">25 минут · онлайн · без оплаты и обязательств</p>
         </div>
 
         <div className="hero-product-col">
@@ -500,8 +448,8 @@ export function Landing() {
           <div className="pain-card">
             <div className="pain-title">Хаос без системы</div>
             <div className="pain-body">
-              Начал с Duolingo, перешёл на YouTube, купил учебник. Полгода прошло — ни один диалог
-              не получается. Потому что всё это — не система.
+              Приложение, пара видео на YouTube, учебник с полки. Полгода прошло — а диалог всё ещё
+              не складывается. Кусочки без системы не работают.
             </div>
           </div>
           <div className="pain-card">
@@ -606,19 +554,19 @@ export function Landing() {
             <div className={`stat-num${statsDone ? " stat-num-done" : ""}`}>
               {studentsCount > 0 ? studentsCount : "51"}
             </div>
-            <div className="stat-label">довольных учеников</div>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat-item">
-            <div className="stat-badge">Используем ИИ</div>
             <div className="stat-label">
-              вас тренируют несколько моделей и агентов между уроками
+              {studentsLabel(studentsCount > 0 ? studentsCount : 51)}
             </div>
           </div>
           <div className="stat-divider" />
           <div className="stat-item">
-            <div className="stat-badge">Инновационная подача</div>
-            <div className="stat-label">аниме, манга и живые уроки</div>
+            <div className="stat-badge">2–3 раза в неделю</div>
+            <div className="stat-label">живые уроки с преподавателем, а не только карточки</div>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat-item">
+            <div className="stat-badge">AI-практика 24/7</div>
+            <div className="stat-label">карточки, диалоги и разбор ошибок между уроками</div>
           </div>
         </div>
       </section>
@@ -878,8 +826,8 @@ export function Landing() {
               Знай, за что <em>платишь.</em>
             </h2>
             <p className="faq-aside-text">
-              Школа ещё запускается, и мы стараемся отвечать на всё открыто. Не нашёл ответа —
-              напиши, ответим лично.
+              Мы набираем первую когорту и отвечаем на всё открыто. Не нашёл ответа — напиши,
+              ответим лично.
             </p>
             <a
               href="https://t.me/gojoedu"
@@ -900,8 +848,8 @@ export function Landing() {
                 <span className="faq-q-icon">+</span>
               </summary>
               <div className="faq-a">
-                Для первой когорты действуют <strong>специальные цены</strong>. Финальные тарифы
-                озвучим перед стартом набора. Запишись сейчас и мы закрепим цену за тобой.
+                Тарифы открыты — они выше на странице: от ₽10 000 в месяц. Для первой когорты это{" "}
+                <strong>специальная цена</strong> — запишись сейчас, и мы закрепим её за тобой.
               </div>
             </details>
 
@@ -974,7 +922,7 @@ export function Landing() {
             <details className="faq-item">
               <summary className="faq-q">
                 <span>
-                  <span className="faq-q-num">07</span>Чем вы отличаетесь от Duolingo / приложений?
+                  <span className="faq-q-num">07</span>Чем вы отличаетесь от приложений?
                 </span>
                 <span className="faq-q-icon">+</span>
               </summary>
@@ -1144,159 +1092,6 @@ export function Landing() {
           </a>
         </div>
       </footer>
-
-      <div
-        className={`modal-overlay ${guideOpen ? "open" : ""}`}
-        id="guide-modal"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) closeGuideModal();
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") closeGuideModal();
-        }}
-      >
-        <div className="modal-box">
-          <Button
-            variant="unstyled"
-            type="button"
-            className="modal-close"
-            onClick={closeGuideModal}
-          >
-            ✕
-          </Button>
-
-          <div id="guide-form-view" style={{ display: guideSubmitted ? "none" : "block" }}>
-            <div className="modal-tag">📄 Бесплатный гайд</div>
-            <h2 className="modal-title">
-              Получи гайд
-              <br />
-              <em>на почту</em>
-            </h2>
-            <p className="modal-sub">
-              7 страниц: система N5→N3, программа по неделям, AI-практика, преподаватели. Оставь
-              контакты — пришлём сразу.
-            </p>
-
-            <div className="modal-form">
-              <div className="form-group">
-                <label className="form-label" htmlFor="g-name">
-                  Имя
-                </label>
-                <Input
-                  unstyled
-                  className="form-input"
-                  type="text"
-                  placeholder="Как тебя зовут?"
-                  id="g-name"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="g-email">
-                  Email
-                </label>
-                <Input
-                  unstyled
-                  className="form-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  id="g-email"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="g-tg">
-                  Telegram (необязательно)
-                </label>
-                <Input
-                  unstyled
-                  className="form-input"
-                  type="text"
-                  placeholder="@username"
-                  id="g-tg"
-                />
-              </div>
-              <label
-                htmlFor="guide-privacy-consent"
-                className="form-note"
-                style={{ display: "flex", gap: "9px", alignItems: "flex-start", textAlign: "left" }}
-              >
-                <Input
-                  unstyled
-                  id="guide-privacy-consent"
-                  type="checkbox"
-                  checked={guidePrivacyAccepted}
-                  onChange={(event) => setGuidePrivacyAccepted(event.target.checked)}
-                  style={{ marginTop: "3px", flex: "0 0 auto" }}
-                />
-                <span>
-                  Я даю отдельное{" "}
-                  <a href="/personal-data-consent" target="_blank" rel="noopener noreferrer">
-                    согласие на обработку данных
-                  </a>{" "}
-                  и ознакомился(-ась) с{" "}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer">
-                    Политикой
-                  </a>
-                  .
-                </span>
-              </label>
-              <label
-                htmlFor="guide-marketing-consent"
-                className="form-note"
-                style={{ display: "flex", gap: "9px", alignItems: "flex-start", textAlign: "left" }}
-              >
-                <Input
-                  unstyled
-                  id="guide-marketing-consent"
-                  type="checkbox"
-                  checked={guideMarketingAccepted}
-                  onChange={(event) => setGuideMarketingAccepted(event.target.checked)}
-                  style={{ marginTop: "3px", flex: "0 0 auto" }}
-                />
-                <span>
-                  Хочу получать новости школы и предложения по email или в Telegram (необязательно;
-                  можно отказаться в любой момент).
-                </span>
-              </label>
-              <Button
-                variant="unstyled"
-                type="button"
-                className="form-submit"
-                onClick={submitGuideForm}
-              >
-                Получить гайд
-              </Button>
-              <p className="form-note">Без второй отметки отправим только запрошенный гайд.</p>
-            </div>
-          </div>
-
-          <div
-            className="form-success"
-            id="guide-success-view"
-            style={{ display: guideSubmitted ? "block" : "none" }}
-          >
-            <div className="form-success-icon">📄</div>
-            <div className="form-success-title">Готово!</div>
-            <p className="form-success-text">
-              Гайд уже скачивается. Если не открылся — нажми ещё раз.
-            </p>
-            <a
-              href="Gojo_Guide_Free.pdf"
-              download
-              className="form-submit"
-              style={{
-                display: "inline-block",
-                textAlign: "center",
-                textDecoration: "none",
-                marginTop: "16px",
-                borderRadius: "8px",
-                padding: "14px 28px",
-              }}
-            >
-              ⬇ Скачать PDF
-            </a>
-          </div>
-        </div>
-      </div>
 
       <BookingModal open={bookingOpen} onClose={closeModal} />
     </div>

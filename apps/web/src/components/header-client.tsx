@@ -98,7 +98,7 @@ export function HeaderClient({
           : "border-b border-transparent bg-transparent"
       }`
     : loginRoute
-      ? "border-b border-[#E7DECF] bg-[#F3ECE0]"
+      ? "border-b border-border bg-background"
       : "border-b border-black/10 bg-gojo-paper";
 
   const mutedClass = overlayRoute ? "text-white/70" : "text-gojo-ink-muted";
@@ -142,7 +142,9 @@ export function HeaderClient({
           />
           <span
             className="g-mono hidden text-[10px] font-bold uppercase tracking-[0.12em] lg:inline"
-            style={{ color: overlayRoute ? "rgba(255,255,255,0.7)" : "#6b6b6b" }}
+            style={{
+              color: overlayRoute ? "rgba(255,255,255,0.7)" : "var(--color-gojo-ink-muted)",
+            }}
           >
             Школа японского
           </span>

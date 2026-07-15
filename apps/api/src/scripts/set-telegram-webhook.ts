@@ -9,7 +9,8 @@
  * Base URL resolution order: explicit arg → PUBLIC_APP_URL → running ngrok
  * tunnel (queried from ngrok's local API at http://127.0.0.1:4040). The webhook
  * is registered at `${base}/api/telegram/webhook`, matching the Caddy (prod) and
- * Next.js dev-rewrite routing.
+ * Next.js dev-rewrite routing. A successful registration also refreshes the
+ * native Telegram command menu.
  */
 import { env } from "../env.ts";
 
@@ -74,6 +75,20 @@ const res = await api("setWebhook", {
 
 if (res.ok) {
   console.log(`✓ webhook set → ${url}`);
+  const commands = await api("setMyCommands", {
+    commands: [
+      { command: "start", description: "Открыть меню" },
+      { command: "lessons", description: "Посмотреть свои уроки" },
+      { command: "login", description: "Войти на сайт" },
+      { command: "help", description: "Помощь" },
+    ],
+    scope: { type: "all_private_chats" },
+  });
+  if (!commands.ok) {
+    console.error(`✗ setMyCommands failed: ${commands.description}`);
+    process.exit(1);
+  }
+  console.log("✓ private-chat commands updated");
   if (!env.TELEGRAM_WEBHOOK_SECRET) {
     console.warn("  ⚠ TELEGRAM_WEBHOOK_SECRET is unset — the endpoint is unauthenticated.");
   }

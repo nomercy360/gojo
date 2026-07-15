@@ -2,27 +2,24 @@
 
 import { BookingModal } from "@/components/booking-modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { track } from "@/lib/analytics";
 import type { JlptLevel, QuizQuestionDto, QuizResultDto, QuizSubmitInput } from "@gojo/shared";
-import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { submitQuizAction, submitQuizLeadAction } from "./actions";
+import { submitQuizAction } from "./actions";
 
 // ── Design tokens (landing policy, same as the kana trainer) ─────────────────
 const C = {
-  cream: "#f8f4ec",
-  cream2: "#efe7d8",
+  cream: "#f3ece0",
+  cream2: "#efe7d9",
   white: "#ffffff",
-  orange: "#e8420a",
-  ink: "#252525",
-  ink2: "#4a4a4a",
-  ink3: "#6b6b6b",
-  muted: "#a0a0a0",
-  border: "rgba(0,0,0,0.06)",
-  green: "#4a8f3a",
-  greenBg: "#e5f0de",
+  orange: "#ce4a22",
+  ink: "#201c18",
+  ink2: "#4a443c",
+  ink3: "#6b655c",
+  muted: "#9c9285",
+  border: "#e7decf",
+  green: "#3f7d53",
 };
 
 const MONO = "var(--font-jetbrains-mono), monospace";
@@ -43,7 +40,6 @@ const btnBase: React.CSSProperties = {
   transition: "opacity 0.15s",
 };
 const btnPrimary: React.CSSProperties = { ...btnBase, background: C.orange, color: C.white };
-const btnInk: React.CSSProperties = { ...btnBase, background: C.ink, color: C.white };
 const btnGhost: React.CSSProperties = {
   ...btnBase,
   background: "transparent",
@@ -67,18 +63,6 @@ const quietLink: React.CSSProperties = {
   textDecoration: "underline",
   textUnderlineOffset: 3,
 };
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 10,
-  border: "1px solid rgba(0,0,0,0.12)",
-  background: C.white,
-  fontFamily: MANROPE,
-  fontSize: 14,
-  color: C.ink,
-  outline: "none",
-};
-
 function QuizStyles() {
   return (
     <style>{`
@@ -594,20 +578,15 @@ function rowTag(row: MapRow, i: number, placementIdx: number): { text: string; c
 function ResultScreen({
   result,
   declared,
-  submittedAnswers,
   isLoggedIn,
   onRetake,
 }: {
   result: QuizResultDto;
   declared: StartChoice | null;
-  submittedAnswers: QuizSubmitInput["answers"];
   isLoggedIn: boolean;
   onRetake: () => void;
 }) {
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [leadSent, setLeadSent] = useState(false);
-  const [leadEmailSent, setLeadEmailSent] = useState(true);
-  const [leadPending, startLeadTransition] = useTransition();
 
   const blurb = LEVEL_BLURB[result.level];
   const isStart = result.level === "start";
@@ -632,33 +611,6 @@ function ResultScreen({
   // start N5 grammar before you can read it.
   const placementKey = isStart || !knowsKana ? "kana" : result.level;
   const placementIdx = rows.findIndex((r) => r.key === placementKey);
-
-  function submitLead(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const name = String(form.get("name") ?? "").trim();
-    const email = String(form.get("email") ?? "").trim();
-
-    startLeadTransition(async () => {
-      try {
-        const r = await submitQuizLeadAction({
-          answers: submittedAnswers,
-          declared: declared ?? undefined,
-          name,
-          email,
-          personalDataConsent: true,
-          consentVersion: "2026-07-13",
-        });
-        localStorage.setItem("gojo:pending-lead-email", email);
-        setLeadSent(true);
-        setLeadEmailSent(r.emailSent);
-        track("quiz_lead_submitted", { level: result.level });
-        toast.success(r.emailSent ? "Подробный результат отправлен на email" : "Заявка сохранена");
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Не удалось отправить результат");
-      }
-    });
-  }
 
   return (
     <Shell>
@@ -852,106 +804,6 @@ function ResultScreen({
           </a>
         )}
 
-        {/* lower-commitment ask: detailed result by email */}
-        <div
-          style={{
-            marginTop: 12,
-            padding: "18px 20px",
-            borderRadius: 14,
-            border: "1px dashed rgba(0,0,0,0.16)",
-            background: C.cream2,
-          }}
-        >
-          <p
-            style={{ fontFamily: MANROPE, fontSize: 14, fontWeight: 700, color: C.ink, margin: 0 }}
-          >
-            Не готов к уроку? Получи подробный разбор на email
-          </p>
-          <p
-            style={{
-              fontFamily: MANROPE,
-              fontSize: 12.5,
-              color: C.ink3,
-              margin: "5px 0 0",
-              lineHeight: 1.5,
-            }}
-          >
-            Пришлём результат по темам и что подтянуть дальше.
-          </p>
-          {leadSent ? (
-            <div
-              style={{
-                marginTop: 12,
-                borderRadius: 10,
-                background: C.greenBg,
-                padding: "12px 14px",
-                fontFamily: MANROPE,
-                fontSize: 13,
-                fontWeight: 700,
-                color: C.green,
-              }}
-            >
-              {leadEmailSent
-                ? "Готово. Проверь почту — а если хочешь быстрее, напиши нам в Telegram."
-                : "Готово. Заявка сохранена, преподаватель увидит твой результат и свяжется."}
-            </div>
-          ) : (
-            <form onSubmit={submitLead} style={{ display: "grid", gap: 10, marginTop: 14 }}>
-              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
-                <Input name="name" required maxLength={200} placeholder="Имя" style={inputStyle} />
-                <Input
-                  name="email"
-                  type="email"
-                  required
-                  maxLength={200}
-                  placeholder="Email"
-                  style={inputStyle}
-                />
-              </div>
-              <label
-                htmlFor="quiz-privacy-consent"
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                  fontFamily: MANROPE,
-                  fontSize: 11,
-                  lineHeight: 1.45,
-                  color: C.muted,
-                }}
-              >
-                <Input
-                  unstyled
-                  id="quiz-privacy-consent"
-                  type="checkbox"
-                  name="privacyConsent"
-                  required
-                  style={{ marginTop: 2 }}
-                />
-                <span>
-                  Даю отдельное{" "}
-                  <a href="/personal-data-consent" target="_blank" rel="noreferrer">
-                    согласие на обработку данных
-                  </a>{" "}
-                  и ознакомился(-ась) с{" "}
-                  <a href="/privacy" target="_blank" rel="noreferrer">
-                    Политикой
-                  </a>
-                  .
-                </span>
-              </label>
-              <Button
-                variant="unstyled"
-                type="submit"
-                disabled={leadPending}
-                style={{ ...btnInk, padding: "13px", fontSize: 14 }}
-              >
-                {leadPending ? "Отправляем…" : "Получить разбор на email"}
-              </Button>
-            </form>
-          )}
-        </div>
-
         {isLoggedIn ? (
           <a href="/lessons" style={quietLink}>
             ← Мои уроки
@@ -983,7 +835,7 @@ type Stage =
   | { kind: "declare" }
   | { kind: "beginner" }
   | { kind: "quiz" }
-  | { kind: "result"; result: QuizResultDto; answers: QuizSubmitInput["answers"] };
+  | { kind: "result"; result: QuizResultDto };
 
 export function QuizClient({
   questions,
@@ -1010,7 +862,7 @@ export function QuizClient({
         try {
           const result = await submitQuizAction({ answers, declared: declared ?? undefined });
           track("quiz_completed", { level: result.level, correct: result.correct });
-          setStage({ kind: "result", result, answers });
+          setStage({ kind: "result", result });
         } catch (err) {
           toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");
         }
@@ -1046,7 +898,6 @@ export function QuizClient({
         <ResultScreen
           result={stage.result}
           declared={declared}
-          submittedAnswers={stage.answers}
           isLoggedIn={isLoggedIn}
           onRetake={() => setStage({ kind: "declare" })}
         />

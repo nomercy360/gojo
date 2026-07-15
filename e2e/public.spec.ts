@@ -6,6 +6,50 @@ test("landing page is available", async ({ page }) => {
   await expect(page.locator("h1")).toBeVisible();
 });
 
+test("free-lesson modal is Telegram-first with an email fallback", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("nav").getByRole("button", { name: "Бесплатный первый урок" }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("heading", { name: "Попробуй японский без обязательств" }),
+  ).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Написать боту в Telegram" })).toHaveAttribute(
+    "href",
+    "https://t.me/gojolearn_bot?start=lead",
+  );
+  await expect(dialog.getByText("Телефон", { exact: true })).toHaveCount(0);
+
+  await dialog.getByRole("button", { name: "Нет Telegram? Оставить email" }).click();
+  await expect(dialog.getByLabel("Как тебя зовут")).toBeVisible();
+  await expect(dialog.getByLabel("Email", { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel("Текущий уровень или цель")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Оставить заявку" })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "Лучше через Telegram" })).toBeVisible();
+
+  await page.route("**/leads", async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      kind: "booking",
+      name: "Аня",
+      email: "anya@example.com",
+      goal: "Хочу подготовиться к N4",
+      personalDataConsent: true,
+    });
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ alreadyExists: false }),
+    });
+  });
+  await dialog.getByLabel("Как тебя зовут").fill("Аня");
+  await dialog.getByLabel("Email", { exact: true }).fill("anya@example.com");
+  await dialog.getByLabel("Текущий уровень или цель").fill("Хочу подготовиться к N4");
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "Оставить заявку" }).click();
+  await expect(dialog.getByRole("heading", { name: "Заявка принята" })).toBeVisible();
+  await expect(dialog.getByText(/anya@example\.com/)).toBeVisible();
+});
+
 test("landing kana preview teaches both signs before revealing the word", async ({ page }) => {
   await page.goto("/");
 

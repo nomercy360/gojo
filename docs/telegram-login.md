@@ -1,25 +1,34 @@
 # Telegram bot-initiated login
 
-One-tap web login started from the bot (getmatch-style). User sends `/start` or
-`/login` to the bot → bot replies with a Telegram `login_url` button → tapping it
-opens the site already signed in. No password, no OTP typing.
+One-tap web login and student navigation started from the bot. A returning
+student sends `/start` and gets the available feature commands; `/lessons`
+opens the web lesson list already signed in. `/login` remains the direct route
+to the dashboard. No password or OTP typing.
 
 ## How it works
 
 1. Telegram delivers the command to `POST /telegram/webhook` (registered via
    `setWebhook`, authenticated with `TELEGRAM_WEBHOOK_SECRET`).
 2. The handler looks the user up by `telegramId`:
-   - **Linked account** → reply with a `login_url` button pointing at
+   - **Linked student + `/start`** → show a concise command menu.
+   - **Linked student + `/lessons`** → reply with a `login_url` button pointing
+     at `${PUBLIC_APP_URL}/api/telegram/login/lessons`, which signs in and
+     redirects to `/lessons`.
+   - **Linked account + `/login`** → reply with a `login_url` button pointing at
      `${PUBLIC_APP_URL}/api/telegram/login`. `login_url` (not a plain `url`
      button) gives the native "Log in to <domain>?" prompt and makes Telegram
      append a **signed identity** to the URL (`id`, `auth_date`, `hash`, …).
    - **Unlinked** → create a lead ("request", not a student) and notify the
      team. Repeat `/start` taps are throttled so they don't spawn duplicates.
-3. `GET /telegram/login` verifies the `hash`
+3. `GET /telegram/login` and `GET /telegram/login/lessons` verify the `hash`
    (`HMAC-SHA256(sorted data-check-string, key = SHA256(bot_token))` — the Login
    Widget scheme), checks `auth_date` freshness (5-min replay window), then logs
-   the user in by `telegramId` and 302-redirects to `/dashboard`. Stateless — no
-   token minted or stored.
+   the user in by `telegramId`. The first redirects to `/dashboard`; the second
+   redirects to `/lessons`. Both are stateless — no token minted or stored.
+
+`bun run tg:webhook` also calls `setMyCommands` for private chats so Telegram's
+native Menu shows `/start`, `/lessons`, `/login`, and `/help`. Run it again after
+changing the command list.
 
 > `login_url` requires the button host be registered in BotFather via
 > `/setdomain` (the ngrok host locally, `gojolearn.ru` in prod); an unregistered
