@@ -247,6 +247,22 @@ async function findTelegramAccount(telegramId: number): Promise<TelegramAccount 
   return account;
 }
 
+// Post-conversion welcome for students who came through the bot: a lead who
+// pressed Start can always be DMed, and for telegram-only accounts (no email)
+// this is the ONLY proactive notification that their account exists.
+export async function sendAccountWelcome(telegramId: number, userId: string): Promise<boolean> {
+  const markup: TelegramReplyMarkup = {
+    inline_keyboard: [[{ text: "Открыть Gojo Learn ↗", login_url: { url: loginUrl() } }]],
+  };
+  return sendTelegramMessage(
+    telegramId,
+    "Ваш аккаунт в Gojo Learn готов! Нажмите кнопку, чтобы войти — там расписание уроков и домашние задания.",
+    "auth.telegram_account_welcome",
+    userId,
+    markup,
+  );
+}
+
 async function sendLoginButton(chatId: number, userId: string): Promise<void> {
   // login_url (not a plain url button) shows the native "Log in to <domain>?"
   // prompt instead of the raw-URL "Open this link?" warning, is instant after

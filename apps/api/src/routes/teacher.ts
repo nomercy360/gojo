@@ -36,6 +36,7 @@ import { putObject } from "../s3.ts";
 import { sendLessonConfirmation } from "./lessons.ts";
 import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
 import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
+import { sendAccountWelcome } from "./telegram.ts";
 
 export const teacherRoute = new Hono<AuthContext>();
 
@@ -405,6 +406,14 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
         callbackURL: `${env.WEB_ORIGIN}/dashboard`,
       },
       headers: c.req.raw.headers,
+    });
+  }
+  if (conversion.ok && conversion.created && body.telegramId) {
+    // For telegram-only converts this is the only channel that tells the
+    // client their account exists; a send failure (blocked bot, missing
+    // /setdomain) must not fail the already-committed conversion.
+    await sendAccountWelcome(body.telegramId, conversion.userId).catch((err) => {
+      console.error("telegram account welcome failed:", err);
     });
   }
 
