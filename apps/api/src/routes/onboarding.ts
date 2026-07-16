@@ -62,12 +62,14 @@ function scoreQuiz(input: QuizSubmitInput): QuizResultDto {
 
   return {
     level: placementFor(input.declared, byLevel),
+    // "insufficient" means too few answers to judge — nothing else. A fully
+    // answered all-wrong run is sufficient evidence: it demonstrates "start".
     assessment:
       answered === 0
         ? input.declared && input.declared !== "new"
           ? "declared_only"
           : "insufficient"
-        : answered < Math.ceil(served.length / 2) || correct === 0
+        : answered < Math.ceil(served.length / 2)
           ? "insufficient"
           : "demonstrated",
     correct,
@@ -77,10 +79,13 @@ function scoreQuiz(input: QuizSubmitInput): QuizResultDto {
 }
 
 async function persistQuizLevel(userId: string, result: QuizResultDto): Promise<void> {
+  // Only demonstrated runs write: a retake that was skipped or abandoned must
+  // not erase a level the user actually earned earlier.
+  if (result.assessment !== "demonstrated") return;
   const [row] = await db
     .update(userTable)
     .set({
-      quizLevel: result.assessment === "demonstrated" ? result.level : null,
+      quizLevel: result.level,
       updatedAt: new Date(),
     })
     .where(eq(userTable.id, userId))

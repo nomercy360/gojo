@@ -133,6 +133,14 @@ const START_OPTIONS: { key: StartChoice; jp: string; title: string; sub: string 
 /** Where the belief band starts on the N5→N1 scale, by self-declared level. */
 const BAND_BASE: Record<StartChoice, number> = { new: 12, kana: 18, n5: 34, n4: 52 };
 
+/** Human label for a self-declared level — enum keys must not leak into copy. */
+const DECLARED_LABEL: Record<StartChoice, string> = {
+  new: "с нуля",
+  kana: "кана",
+  n5: "N5",
+  n4: "N4+",
+};
+
 function servedQuestions(questions: QuizQuestionDto[], declared: StartChoice | null) {
   void declared;
   return questions;
@@ -658,7 +666,7 @@ function ResultScreen({
         </h1>
         <p style={{ fontFamily: MANROPE, fontSize: 13, color: C.ink3, marginBottom: 20 }}>
           {result.assessment === "declared_only"
-            ? `Ориентир со слов: ${declared?.toUpperCase() ?? "уровень не указан"}. Подтвердим его на первом уроке.`
+            ? `Ориентир со слов: ${declared ? DECLARED_LABEL[declared] : "уровень не указан"}. Подтвердим его на первом уроке.`
             : result.assessment === "insufficient"
               ? `${result.correct} из ${result.total} правильных · уровень пока не определён`
               : `${result.correct} из ${result.total} правильных · ${blurb.headline.toLowerCase()}`}

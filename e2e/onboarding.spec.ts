@@ -1,8 +1,17 @@
 import { expect, test } from "@playwright/test";
+import { QUIZ_QUESTIONS } from "../apps/api/src/data/quiz-questions";
 import { e2eAccounts, mutableStudentAuthFile } from "./support/auth";
 import { findUserId, resetMutableStudent } from "./support/data";
 
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
+
+/** Answer key derived from the served bank so tests track bank edits. */
+function answersWhere(pickCorrect: (q: (typeof QUIZ_QUESTIONS)[number]) => boolean) {
+  return QUIZ_QUESTIONS.map((q) => ({
+    questionId: q.id,
+    choiceIndex: pickCorrect(q) ? q.correctIndex : (q.correctIndex + 1) % q.choices.length,
+  }));
+}
 
 test("quiz questions are public and do not expose answers", async ({ request }) => {
   const response = await request.get(`${apiURL}/onboarding/quiz/questions`);
@@ -28,20 +37,43 @@ test("guest can complete the level quiz", async ({ request }) => {
   });
 });
 
-test("one correct answer out of eight does not claim N5", async ({ request }) => {
-  const questionsResponse = await request.get(`${apiURL}/onboarding/quiz/questions`);
-  const questions = (await questionsResponse.json()) as Array<{ id: string }>;
+test("a single correct N5 answer does not claim N5", async ({ request }) => {
+  const [firstN5] = QUIZ_QUESTIONS.filter((q) => q.level === "N5");
   const response = await request.post(`${apiURL}/onboarding/quiz`, {
-    data: {
-      declared: "n5",
-      answers: questions.map((question) => ({ questionId: question.id, choiceIndex: 0 })),
-    },
+    data: { declared: "n5", answers: answersWhere((q) => q.id === firstN5.id) },
   });
   await expect(response).toBeOK();
   await expect(response.json()).resolves.toMatchObject({
     level: "start",
     correct: 1,
-    total: 8,
+    total: QUIZ_QUESTIONS.length,
+  });
+});
+
+test("one slip on an N5 question does not zero an otherwise perfect run", async ({ request }) => {
+  const [firstN5] = QUIZ_QUESTIONS.filter((q) => q.level === "N5");
+  const response = await request.post(`${apiURL}/onboarding/quiz`, {
+    data: { answers: answersWhere((q) => q.id !== firstN5.id) },
+  });
+  await expect(response).toBeOK();
+  await expect(response.json()).resolves.toMatchObject({
+    level: "N2",
+    assessment: "demonstrated",
+    correct: QUIZ_QUESTIONS.length - 1,
+  });
+});
+
+test("fully answered all-wrong run is a demonstrated start, not insufficient", async ({
+  request,
+}) => {
+  const response = await request.post(`${apiURL}/onboarding/quiz`, {
+    data: { answers: answersWhere(() => false) },
+  });
+  await expect(response).toBeOK();
+  await expect(response.json()).resolves.toMatchObject({
+    level: "start",
+    assessment: "demonstrated",
+    correct: 0,
   });
 });
 
@@ -66,22 +98,32 @@ test("all-skipped N4 declaration is marked declared-only, not assigned N4", asyn
 test.describe("authenticated quiz", () => {
   test.use({ storageState: mutableStudentAuthFile });
 
-  test("persists the indicative level", async ({ request }) => {
+  test("persists the indicative level, and a skipped retake does not erase it", async ({
+    request,
+  }) => {
     const studentId = await findUserId(e2eAccounts.mutableStudent.email);
     await resetMutableStudent(studentId);
     try {
-      const questionsResponse = await request.get(`${apiURL}/onboarding/quiz/questions`);
-      const questions = (await questionsResponse.json()) as Array<{ id: string }>;
       const quizResponse = await request.post(`${apiURL}/onboarding/quiz`, {
-        data: {
-          answers: questions.map((question) => ({ questionId: question.id, choiceIndex: 0 })),
-        },
+        data: { answers: answersWhere(() => true) },
       });
       await expect(quizResponse).toBeOK();
       const result = (await quizResponse.json()) as { level: string };
+      expect(result.level).toBe("N2");
 
       const me = await request.get(`${apiURL}/dev-auth/me`);
       await expect(me.json()).resolves.toMatchObject({ quizLevel: result.level });
+
+      // Retake with everything skipped: declared-only, must not null the level.
+      const retake = await request.post(`${apiURL}/onboarding/quiz`, {
+        data: {
+          declared: "n4",
+          answers: QUIZ_QUESTIONS.map((q) => ({ questionId: q.id, choiceIndex: -1 })),
+        },
+      });
+      await expect(retake).toBeOK();
+      const meAfter = await request.get(`${apiURL}/dev-auth/me`);
+      await expect(meAfter.json()).resolves.toMatchObject({ quizLevel: result.level });
     } finally {
       await resetMutableStudent(studentId);
     }
