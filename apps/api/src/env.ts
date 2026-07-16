@@ -39,9 +39,12 @@ const schema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default("Gojo Learn <no-reply@gojolearn.ru>"),
-  // Error monitoring. Unset = Sentry.init() no-ops (documented behavior),
-  // so this is safe to ship before a Sentry project/DSN exists.
-  SENTRY_DSN: z.string().optional(),
+  // API error monitoring uses a different Sentry project from the web app.
+  // Empty/unset = disabled, which keeps local development noise out of Sentry.
+  SENTRY_DSN_API: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
   YOOKASSA_SHOP_ID: z.string().optional(),
   YOOKASSA_SECRET_KEY: z.string().optional(),
   // Claude first-pass homework review. Unset = submissions stay in

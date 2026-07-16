@@ -102,7 +102,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-Gojo Learn <no-reply@gojolearn.ru>}
       # Error monitoring — its own Sentry project, separate from web's, so
       # backend vs frontend errors triage separately. Unset = no-ops.
-      SENTRY_DSN: ${SENTRY_DSN_API:-}
+      SENTRY_DSN_API: ${SENTRY_DSN_API:-}
       # Claude first-pass homework review. Lives in .env.prod. Unset = AI
       # pass skipped; submissions wait for the teacher as raw text.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

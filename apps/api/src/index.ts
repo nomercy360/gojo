@@ -48,9 +48,23 @@ app.use(
 );
 
 app.onError((err, c) => {
+  const status = err instanceof HTTPException ? err.status : 500;
+
+  // Expected client errors (400/401/403/404, etc.) are not actionable, but
+  // HTTPException is also used for real server failures throughout the API.
+  if (status >= 500) {
+    console.error(err);
+    Sentry.captureException(err, {
+      tags: { service: "gojo-api" },
+      extra: {
+        method: c.req.method,
+        path: c.req.path,
+        status,
+      },
+    });
+  }
+
   if (err instanceof HTTPException) return err.getResponse();
-  console.error(err);
-  Sentry.captureException(err);
   return c.json({ error: "internal_error" }, 500);
 });
 
