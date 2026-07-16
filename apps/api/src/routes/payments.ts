@@ -1,7 +1,7 @@
 import { payments, studentAccess } from "@gojo/db";
 import { type PaymentPlanDto, type PaymentsMeDto, createCheckoutInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
@@ -161,17 +161,21 @@ paymentsRoute.post("/yookassa/webhook", async (c) => {
       .limit(1);
     if (!local) return c.json({ ok: true });
 
+    // `succeeded` is terminal: the conditional update freezes the row after
+    // the first success, so YooKassa's redelivery of `payment.succeeded`
+    // (retried on any non-2xx) can't re-grant credits or extend the plan.
     const status = toLocalStatus(current.status);
-    await db
+    const [transitioned] = await db
       .update(payments)
       .set({
         status,
         paidAt: status === "succeeded" ? new Date() : local.paidAt,
         updatedAt: new Date(),
       })
-      .where(eq(payments.id, local.id));
+      .where(and(eq(payments.id, local.id), ne(payments.status, "succeeded")))
+      .returning({ id: payments.id });
 
-    if (status === "succeeded") {
+    if (status === "succeeded" && transitioned) {
       await grantPlanAccess(local.userId, local.planId);
     }
   } catch (err) {
