@@ -59,6 +59,7 @@ import {
   updateStudentAction,
 } from "./actions";
 import { CreateLessonForm } from "./create-form";
+import { HomeDashboard } from "./home-dashboard";
 import { createTrialLessonAction, updateLeadAction } from "./leads/actions";
 import { CreateStudentForm } from "./students/new/create-form";
 
@@ -71,9 +72,9 @@ export type DashboardStudent = StudentDirectoryEntry & {
   isActive: boolean;
 };
 
-type Collection = "students" | "lessons" | "leads" | "admins";
+type Collection = "home" | "students" | "lessons" | "leads" | "admins";
 type Panel =
-  | { kind: "new-student" }
+  | { kind: "new-student"; sourceLead?: TeacherLeadDto }
   | { kind: "new-lesson" }
   | { kind: "student"; record: DashboardStudent }
   | { kind: "lesson"; record: TeacherLessonDto }
@@ -93,8 +94,8 @@ const LEAD_STATUS: Record<string, string> = {
   contacted: "Связались",
   trial_booked: "Пробный назначен",
   trial_done: "Пробный проведён",
-  converted: "Оплатил",
-  lost: "Потерян",
+  converted: "Конвертирована",
+  lost: "Отклонена",
 };
 
 const LEAD_STATUSES = Object.keys(LEAD_STATUS);
@@ -108,7 +109,7 @@ export function AdminWorkspace({
   plans,
   error,
   currentUser,
-  initialCollection = "students",
+  initialCollection = "home",
   initialPanel,
 }: {
   students: DashboardStudent[];
@@ -139,7 +140,9 @@ export function AdminWorkspace({
     setCollection(next);
     setQuery("");
     setPanel(null);
-    router.replace(`/teacher?collection=${next}`, { scroll: false });
+    router.replace(next === "home" ? "/teacher" : `/teacher?collection=${next}`, {
+      scroll: false,
+    });
   };
   const closePanel = useCallback(() => setPanel(null), []);
 
@@ -183,6 +186,7 @@ export function AdminWorkspace({
     );
   }, [admins, query]);
 
+  const isHome = collection === "home";
   const isStudents = collection === "students";
   const isLessons = collection === "lessons";
   const isLeads = collection === "leads";
@@ -211,7 +215,7 @@ export function AdminWorkspace({
 
   return (
     <main className="min-h-screen bg-gojo-surface">
-      <div className="flex min-h-screen w-full flex-col bg-gojo-surface lg:flex-row">
+      <div className="flex min-h-screen w-full flex-col bg-gojo-surface lg:h-screen lg:flex-row lg:overflow-hidden">
         <aside className="flex shrink-0 flex-col border-b border-gojo-ink/10 bg-gojo-ink text-white lg:w-64 lg:border-b-0 lg:border-r">
           <div className="hidden border-b border-white/10 px-5 py-6 lg:block">
             <div className="flex items-center gap-3">
@@ -227,8 +231,15 @@ export function AdminWorkspace({
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto p-3 lg:block lg:flex-1 lg:space-y-1 lg:p-4">
-            <div className="hidden px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35 lg:block">
+          <div className="flex gap-2 overflow-x-auto p-3 lg:block lg:min-h-0 lg:flex-1 lg:space-y-1 lg:overflow-y-auto lg:p-4">
+            <CollectionButton
+              active={collection === "home"}
+              icon={LayoutDashboard}
+              onClick={() => selectCollection("home")}
+            >
+              Сегодня
+            </CollectionButton>
+            <div className="hidden px-3 pb-2 pt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35 lg:block">
               Коллекции
             </div>
             <CollectionButton
@@ -275,77 +286,106 @@ export function AdminWorkspace({
           </div>
         </aside>
 
-        <section className="flex min-w-0 flex-1 flex-col">
-          <header className="flex flex-col gap-4 border-b border-gojo-ink/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-gojo-ink-muted">
-                {isAdmins ? "Система" : "Коллекции"} <ChevronRight className="size-3.5" />
-                <span className="text-gojo-ink">{collectionLabel}</span>
-              </div>
-              <h1 className="mt-1 font-serif text-3xl font-bold">{collectionLabel}</h1>
-            </div>
-            {isStudents || isLessons ? (
-              <Button onClick={() => setPanel({ kind: isStudents ? "new-student" : "new-lesson" })}>
-                <Plus />
-                {isStudents ? "Новый студент" : "Новый урок"}
-              </Button>
-            ) : null}
-          </header>
-
-          <div className="border-b border-gojo-ink/10 px-5 py-4 sm:px-7">
-            <div className="relative max-w-2xl">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-gojo-ink-muted" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={
-                  isStudents
-                    ? "Поиск по имени, email или уровню..."
-                    : isLessons
-                      ? "Поиск по урокам..."
-                      : isLeads
-                        ? "Поиск по имени, контакту или цели..."
-                        : "Поиск по имени, email или ID..."
-                }
-                className="bg-gojo-paper/60 pl-10"
+        <section className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
+          {isHome ? (
+            <>
+              {error ? (
+                <div className="m-5 rounded-lg border border-gojo-error/20 bg-gojo-error-soft p-4 text-sm font-bold text-gojo-error sm:m-7">
+                  {error}
+                </div>
+              ) : null}
+              <HomeDashboard
+                lessons={lessons}
+                students={students}
+                leads={leads}
+                onNewLesson={() => setPanel({ kind: "new-lesson" })}
+                onOpenLead={(record) => setPanel({ kind: "lead", record })}
+                onOpenStudent={(record) => setPanel({ kind: "student", record })}
+                onBrowse={selectCollection}
               />
-            </div>
-          </div>
-
-          {error ? (
-            <div className="m-5 rounded-lg border border-gojo-error/20 bg-gojo-error-soft p-4 text-sm font-bold text-gojo-error sm:m-7">
-              {error}
-            </div>
-          ) : isStudents ? (
-            <StudentsTable
-              students={filteredStudents}
-              onSelect={(record) => setPanel({ kind: "student", record })}
-            />
-          ) : isLessons ? (
-            <LessonsTable
-              lessons={filteredLessons}
-              onSelect={(record) => setPanel({ kind: "lesson", record })}
-            />
-          ) : isLeads ? (
-            <LeadsTable
-              leads={filteredLeads}
-              onSelect={(record) => setPanel({ kind: "lead", record })}
-            />
+            </>
           ) : (
-            <AdminsTable
-              admins={filteredAdmins}
-              onSelect={(record) => setPanel({ kind: "admin", record })}
-            />
-          )}
+            <>
+              <header className="flex flex-col gap-4 border-b border-gojo-ink/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-gojo-ink-muted">
+                    {isAdmins ? "Система" : "Коллекции"} <ChevronRight className="size-3.5" />
+                    <span className="text-gojo-ink">{collectionLabel}</span>
+                  </div>
+                  <h1 className="mt-1 font-serif text-3xl font-bold">{collectionLabel}</h1>
+                </div>
+                {isStudents || isLessons ? (
+                  <Button
+                    onClick={() => setPanel({ kind: isStudents ? "new-student" : "new-lesson" })}
+                  >
+                    <Plus />
+                    {isStudents ? "Новый студент" : "Новый урок"}
+                  </Button>
+                ) : null}
+              </header>
 
-          <footer className="mt-auto flex items-center justify-between border-t border-gojo-ink/10 px-5 py-3 text-xs text-gojo-ink-muted sm:px-7">
-            <span>Показано: {visibleCount}</span>
-            <span>Всего: {totalCount}</span>
-          </footer>
+              <div className="border-b border-gojo-ink/10 px-5 py-4 sm:px-7">
+                <div className="relative max-w-2xl">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-gojo-ink-muted" />
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={
+                      isStudents
+                        ? "Поиск по имени, email или уровню..."
+                        : isLessons
+                          ? "Поиск по урокам..."
+                          : isLeads
+                            ? "Поиск по имени, контакту или цели..."
+                            : "Поиск по имени, email или ID..."
+                    }
+                    className="bg-gojo-paper/60 pl-10"
+                  />
+                </div>
+              </div>
+
+              {error ? (
+                <div className="m-5 rounded-lg border border-gojo-error/20 bg-gojo-error-soft p-4 text-sm font-bold text-gojo-error sm:m-7">
+                  {error}
+                </div>
+              ) : isStudents ? (
+                <StudentsTable
+                  students={filteredStudents}
+                  onSelect={(record) => setPanel({ kind: "student", record })}
+                />
+              ) : isLessons ? (
+                <LessonsTable
+                  lessons={filteredLessons}
+                  onSelect={(record) => setPanel({ kind: "lesson", record })}
+                />
+              ) : isLeads ? (
+                <LeadsTable
+                  leads={filteredLeads}
+                  onSelect={(record) => setPanel({ kind: "lead", record })}
+                />
+              ) : (
+                <AdminsTable
+                  admins={filteredAdmins}
+                  onSelect={(record) => setPanel({ kind: "admin", record })}
+                />
+              )}
+
+              <footer className="mt-auto flex items-center justify-between border-t border-gojo-ink/10 px-5 py-3 text-xs text-gojo-ink-muted sm:px-7">
+                <span>Показано: {visibleCount}</span>
+                <span>Всего: {totalCount}</span>
+              </footer>
+            </>
+          )}
         </section>
       </div>
 
-      <RecordSheet panel={panel} plans={plans} directory={directory} onClose={closePanel} />
+      <RecordSheet
+        panel={panel}
+        plans={plans}
+        directory={directory}
+        onClose={closePanel}
+        onConvertLead={(lead) => setPanel({ kind: "new-student", sourceLead: lead })}
+      />
     </main>
   );
 }
@@ -359,7 +399,7 @@ function CollectionButton({
 }: {
   active: boolean;
   icon: typeof UsersRound;
-  count: number;
+  count?: number;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -374,9 +414,13 @@ function CollectionButton({
     >
       <Icon className={cn("size-4", active && "text-gojo-orange")} />
       <span>{children}</span>
-      <span className={cn("ml-auto text-[10px]", active ? "text-gojo-ink-muted" : "text-white/35")}>
-        {count}
-      </span>
+      {count !== undefined ? (
+        <span
+          className={cn("ml-auto text-[10px]", active ? "text-gojo-ink-muted" : "text-white/35")}
+        >
+          {count}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -727,15 +771,19 @@ function RecordSheet({
   plans,
   directory,
   onClose,
+  onConvertLead,
 }: {
   panel: Panel;
   plans: PaymentPlanDto[];
   directory: StudentDirectoryEntry[];
   onClose: () => void;
+  onConvertLead: (lead: TeacherLeadDto) => void;
 }) {
   const title =
     panel?.kind === "new-student"
-      ? "Новый студент"
+      ? panel.sourceLead
+        ? "Конвертация заявки"
+        : "Новый студент"
       : panel?.kind === "new-lesson"
         ? "Новый урок"
         : panel?.kind === "student"
@@ -758,7 +806,9 @@ function RecordSheet({
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
             {panel?.kind === "new-student"
-              ? "Создаст аккаунт и отправит приглашение на email."
+              ? panel.sourceLead
+                ? "Создаст аккаунт без оплаты, свяжет его с заявкой и перенесёт пробный урок."
+                : "Создаст аккаунт и отправит приглашение на email."
               : panel?.kind === "new-lesson"
                 ? "Урок сразу появится у выбранных студентов."
                 : panel?.kind === "admin"
@@ -768,7 +818,12 @@ function RecordSheet({
         </SheetHeader>
         <SheetBody>
           {panel?.kind === "new-student" ? (
-            <CreateStudentForm plans={plans} presentation="plain" onSuccess={onClose} />
+            <CreateStudentForm
+              plans={plans}
+              presentation="plain"
+              onSuccess={onClose}
+              sourceLead={panel.sourceLead}
+            />
           ) : panel?.kind === "new-lesson" ? (
             <CreateLessonForm students={directory} presentation="plain" onSuccess={onClose} />
           ) : panel?.kind === "student" ? (
@@ -776,7 +831,11 @@ function RecordSheet({
           ) : panel?.kind === "lesson" ? (
             <LessonPanel lesson={panel.record} onSuccess={onClose} />
           ) : panel?.kind === "lead" ? (
-            <LeadPanel lead={panel.record} onSuccess={onClose} />
+            <LeadPanel
+              lead={panel.record}
+              onSuccess={onClose}
+              onConvert={() => onConvertLead(panel.record)}
+            />
           ) : panel?.kind === "admin" ? (
             <AdminPanel admin={panel.record} onSuccess={onClose} />
           ) : null}
@@ -1369,27 +1428,29 @@ function LessonPanel({ lesson, onSuccess }: { lesson: TeacherLessonDto; onSucces
         </Button>
       </form>
 
-      <div className="grid grid-cols-2 gap-3 border-t border-gojo-ink/10 pt-6">
-        <Link
-          href={`/teacher/lessons/${lesson.id}`}
-          className={buttonVariants({ variant: "secondary" })}
-        >
-          Управлять <ArrowUpRight />
-        </Link>
-        {lesson.status === "scheduled" ? (
+      {lesson.status === "scheduled" ? (
+        <div className="border-t border-gojo-ink/10 pt-6">
           <form action={cancelLessonAction}>
             <Input type="hidden" name="lessonId" value={lesson.id} />
             <Button type="submit" variant="destructive" className="w-full">
               Отменить
             </Button>
           </form>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function LeadPanel({ lead, onSuccess }: { lead: TeacherLeadDto; onSuccess: () => void }) {
+function LeadPanel({
+  lead,
+  onSuccess,
+  onConvert,
+}: {
+  lead: TeacherLeadDto;
+  onSuccess: () => void;
+  onConvert: () => void;
+}) {
   const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
     updateLeadAction,
     {},
@@ -1438,6 +1499,12 @@ function LeadPanel({ lead, onSuccess }: { lead: TeacherLeadDto; onSuccess: () =>
           </p>
         ) : null}
       </div>
+
+      {!lead.studentId && !["converted", "lost"].includes(lead.status) ? (
+        <Button type="button" className="w-full" onClick={onConvert}>
+          Конвертировать в студента
+        </Button>
+      ) : null}
 
       <form action={formAction} className="space-y-5">
         <Input type="hidden" name="leadId" value={lead.id} />

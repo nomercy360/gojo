@@ -86,6 +86,7 @@ export async function updateMeetingUrlAction(
     return { error: "Не удалось сохранить ссылку" };
   }
 
+  revalidatePath("/teacher");
   revalidatePath(`/teacher/lessons/${lessonId}`);
   return { ok: true };
 }

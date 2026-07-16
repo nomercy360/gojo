@@ -934,9 +934,25 @@ teacherRoute.get("/lessons", async (c) => {
   const rows = await db
     .select({
       lesson: lessons,
+      // NB: aliased raw subqueries — drizzle strips table qualifiers from
+      // sql`` column refs in single-table selects, which makes bare column
+      // names resolve against the subquery's own table.
       studentCount:
-        sql<number>`(SELECT COUNT(*) FROM ${bookings} WHERE ${bookings.lessonId} = ${lessons.id})`.as(
+        sql<number>`(SELECT COUNT(*) FROM bookings b WHERE b.lesson_id = lessons.id)`.as(
           "student_count",
+        ),
+      studentNames: sql<
+        string | null
+      >`(SELECT string_agg(COALESCE(u.nickname, u.name), ', ' ORDER BY COALESCE(u.nickname, u.name)) FROM bookings b INNER JOIN "user" u ON u.id = b.student_id WHERE b.lesson_id = lessons.id)`.as(
+        "student_names",
+      ),
+      pendingAttendance:
+        sql<number>`(SELECT COUNT(*) FROM bookings b WHERE b.lesson_id = lessons.id AND b.attendance_status = 'scheduled')`.as(
+          "pending_attendance",
+        ),
+      pendingHomework:
+        sql<number>`(SELECT COUNT(*) FROM bookings b WHERE b.lesson_id = lessons.id AND b.attendance_status = 'attended' AND NOT EXISTS (SELECT 1 FROM homework h WHERE h.lesson_id = b.lesson_id AND h.student_id = b.student_id AND h.status <> 'pending'))`.as(
+          "pending_homework",
         ),
     })
     .from(lessons)
@@ -947,12 +963,17 @@ teacherRoute.get("/lessons", async (c) => {
   return c.json(
     rows.map((r) => {
       const studentCount = Number(r.studentCount);
-      return toLessonDto(r.lesson, null, {
-        studentCount,
-        isParticipant: true,
-        now,
-        includeMeetingUrl: true,
-      });
+      return {
+        ...toLessonDto(r.lesson, null, {
+          studentCount,
+          isParticipant: true,
+          now,
+          includeMeetingUrl: true,
+        }),
+        studentNames: r.studentNames ?? null,
+        pendingAttendance: Number(r.pendingAttendance),
+        pendingHomework: Number(r.pendingHomework),
+      };
     }),
   );
 });

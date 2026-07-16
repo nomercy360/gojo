@@ -76,13 +76,15 @@ export default async function TeacherPage({
 
   const params = await searchParams;
   const initialCollection =
-    params.collection === "lessons"
-      ? "lessons"
-      : params.collection === "leads"
-        ? "leads"
-        : params.collection === "admins"
-          ? "admins"
-          : "students";
+    params.collection === "students"
+      ? "students"
+      : params.collection === "lessons"
+        ? "lessons"
+        : params.collection === "leads"
+          ? "leads"
+          : params.collection === "admins"
+            ? "admins"
+            : "home";
   const initialPanel =
     params.panel === "new-student" || params.panel === "new-lesson" ? params.panel : undefined;
 

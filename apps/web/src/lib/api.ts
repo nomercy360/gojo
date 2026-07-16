@@ -129,7 +129,15 @@ export async function uploadAvatar(file: File): Promise<UserDto> {
   return (await res.json()) as UserDto;
 }
 
-export type TeacherLessonDto = LessonDto & { studentCount: number };
+export type TeacherLessonDto = LessonDto & {
+  studentCount: number;
+  /** Display names of invited students, comma-joined ("Аня, Макс"). */
+  studentNames: string | null;
+  /** Bookings still marked attendance_status = scheduled. */
+  pendingAttendance: number;
+  /** Attended bookings whose homework is still unmarked. */
+  pendingHomework: number;
+};
 
 export function fetchTeacherLessons() {
   return apiFetch<TeacherLessonDto[]>("/teacher/lessons");
