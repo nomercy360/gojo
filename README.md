@@ -86,7 +86,9 @@ issues have separate alerts and ownership:
 
 - web project: set its DSN as the GitHub Actions variable
   `NEXT_PUBLIC_SENTRY_DSN` and as `SENTRY_DSN_WEB` in `infra/.env.prod`;
-- API project (Bun): set its DSN as `SENTRY_DSN_API` in `infra/.env.prod`.
+- API project (Bun): set its DSN as the GitHub Actions variable
+  `SENTRY_DSN_API`. A VM-local `SENTRY_DSN_API` in `infra/.env.prod` remains
+  supported as a fallback.
 
 All three variables may be left empty to disable reporting. After changing a
 browser-facing `NEXT_PUBLIC_*` value, trigger a new web image build; the two

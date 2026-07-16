@@ -86,13 +86,21 @@ jobs:
 
       - name: Pull & restart on VM
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_SENTRY_DSN_API: ${{ vars.SENTRY_DSN_API }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DEPLOY_SENTRY_DSN_API
           script: |
             cd /root/gojo
             set -a && source infra/.env.prod && set +a
+            # Prefer the repository variable when configured, while retaining
+            # compatibility with existing VM-local .env.prod deployments.
+            if [ -n "$DEPLOY_SENTRY_DSN_API" ]; then
+              export SENTRY_DSN_API="$DEPLOY_SENTRY_DSN_API"
+            fi
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export GOJO_IMAGE_API=ghcr.io/${{ github.repository_owner }}/gojo-api:latest
             export GOJO_IMAGE_WEB=ghcr.io/${{ github.repository_owner }}/gojo-web:latest
