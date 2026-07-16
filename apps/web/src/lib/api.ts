@@ -327,6 +327,7 @@ export type AttendanceStatus =
 export type TeacherLeadDto = {
   id: string;
   userId: string | null;
+  studentId: string | null;
   assigneeId: string | null;
   assigneeName: string | null;
   trialLessonId: string | null;
@@ -334,6 +335,7 @@ export type TeacherLeadDto = {
   status: string;
   name: string;
   telegram: string | null;
+  telegramId: number | null;
   email: string | null;
   phone: string | null;
   level: string | null;
@@ -517,6 +519,42 @@ export function createTrialLessonForLead(
   body: { title: string; startsAt: string; endsAt: string },
 ) {
   return apiFetch<LessonDto>(`/teacher/leads/${leadId}/trial-lesson`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export type LeadConversionMatch = {
+  id: string;
+  name: string;
+  email: string;
+  telegramId: number | null;
+  telegramUsername: string | null;
+};
+
+export type LeadConversionResult =
+  | {
+      ok: true;
+      userId: string;
+      created: boolean;
+      alreadyConverted: boolean;
+    }
+  | { ok: false; requiresLink: true; matches: LeadConversionMatch[] };
+
+export function convertTeacherLead(
+  leadId: string,
+  body: {
+    name: string;
+    email: string | null;
+    nickname?: string;
+    telegramUsername: string | null;
+    telegramId: number | null;
+    jlptLevel: "N5" | "N4" | "N3" | "N2";
+    planId: string | null;
+    existingStudentId?: string;
+  },
+) {
+  return apiFetch<LeadConversionResult>(`/teacher/leads/${leadId}/convert`, {
     method: "POST",
     body: JSON.stringify(body),
   });

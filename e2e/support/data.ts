@@ -1,4 +1,5 @@
 import {
+  bookings,
   createDb,
   leads,
   lessons,
@@ -36,6 +37,68 @@ export async function findLead(id: string) {
   return row;
 }
 
+export async function createLeadConversionFixture(input: {
+  teacherId: string;
+  email: string;
+  name: string;
+  goal?: string;
+  level?: string;
+}) {
+  const startsAt = new Date(Date.now() - 60 * 60_000);
+  const [lesson] = await db
+    .insert(lessons)
+    .values({
+      teacherId: input.teacherId,
+      title: `Пробный урок · ${input.name}`,
+      status: "completed",
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 50 * 60_000),
+      maxStudents: 1,
+    })
+    .returning({ id: lessons.id });
+  if (!lesson) throw new Error("Failed to create conversion lesson fixture");
+
+  const [lead] = await db
+    .insert(leads)
+    .values({
+      kind: "quiz",
+      status: "trial_done",
+      name: input.name,
+      email: input.email,
+      goal: input.goal,
+      level: input.level,
+      trialLessonId: lesson.id,
+    })
+    .returning({ id: leads.id });
+  if (!lead) throw new Error("Failed to create conversion lead fixture");
+  return { leadId: lead.id, lessonId: lesson.id };
+}
+
+export async function getLeadConversion(leadId: string) {
+  const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+  if (!lead?.studentId) return { lead, student: undefined, booking: undefined, access: undefined };
+  const [student] = await db.select().from(user).where(eq(user.id, lead.studentId)).limit(1);
+  const [booking] = lead.trialLessonId
+    ? await db.select().from(bookings).where(eq(bookings.lessonId, lead.trialLessonId)).limit(1)
+    : [];
+  const [access] = await db
+    .select()
+    .from(studentAccess)
+    .where(eq(studentAccess.userId, lead.studentId))
+    .limit(1);
+  return { lead, student, booking, access };
+}
+
+export async function cleanLeadConversionFixture(input: {
+  leadId?: string;
+  lessonId?: string;
+  studentId?: string;
+}) {
+  if (input.leadId) await db.delete(leads).where(eq(leads.id, input.leadId));
+  if (input.lessonId) await db.delete(lessons).where(eq(lessons.id, input.lessonId));
+  if (input.studentId) await db.delete(user).where(eq(user.id, input.studentId));
+}
+
 export async function deletePersonalEvent(id: string | undefined) {
   if (id) await db.delete(personalEvents).where(eq(personalEvents.id, id));
 }
@@ -53,6 +116,8 @@ export async function resetMutableStudent(userId: string) {
       image: null,
       telegramId: null,
       quizLevel: null,
+      sourceLeadId: null,
+      notes: null,
       updatedAt: new Date(),
     })
     .where(eq(user.id, userId));

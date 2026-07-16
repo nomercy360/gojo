@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   bookings,
   homework,
@@ -11,6 +12,7 @@ import {
 } from "@gojo/db";
 import {
   addLessonCardInput,
+  convertLeadInput,
   createStudentInput,
   reviewSubmissionInput,
   setHomeworkStatusInput,
@@ -18,7 +20,7 @@ import {
   setStudentPlanInput,
 } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -153,6 +155,7 @@ teacherRoute.get("/leads", async (c) => {
     rows.map((r) => ({
       id: r.lead.id,
       userId: r.lead.userId,
+      studentId: r.lead.studentId,
       assigneeId: r.lead.assigneeId,
       assigneeName: r.assigneeNickname ?? r.assigneeEmail ?? null,
       trialLessonId: r.lead.trialLessonId,
@@ -160,6 +163,7 @@ teacherRoute.get("/leads", async (c) => {
       status: r.lead.status,
       name: r.lead.name,
       telegram: r.lead.telegram,
+      telegramId: r.lead.telegramId,
       email: r.lead.email,
       phone: r.lead.phone,
       level: r.lead.level,
@@ -255,6 +259,166 @@ teacherRoute.post(
     return c.json(toLessonDto(lesson, null), 201);
   },
 );
+
+teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), async (c) => {
+  const leadId = c.req.param("id");
+  const body = c.req.valid("json");
+  const normalizedEmail = body.email?.toLowerCase() ?? null;
+
+  if (body.planId && !paymentPlans.some((plan) => plan.id === body.planId)) {
+    throw new HTTPException(400, { message: "unknown_plan" });
+  }
+
+  const conversion = await db.transaction(async (tx) => {
+    const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId)).for("update").limit(1);
+    if (!lead) throw new HTTPException(404, { message: "lead_not_found" });
+
+    // Idempotency: a repeated submit returns the same student and never
+    // creates another account or booking.
+    if (lead.studentId) {
+      return {
+        ok: true as const,
+        userId: lead.studentId,
+        created: false,
+        alreadyConverted: true,
+      };
+    }
+    if (lead.status === "lost" || lead.status === "converted") {
+      throw new HTTPException(409, { message: "lead_is_terminal" });
+    }
+
+    const lockKey = normalizedEmail
+      ? `student-email:${normalizedEmail}`
+      : `student-telegram:${body.telegramId!}`;
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
+
+    const identityMatches = or(
+      ...(normalizedEmail ? [eq(userTable.email, normalizedEmail)] : []),
+      ...(body.telegramId ? [eq(userTable.telegramId, body.telegramId)] : []),
+    );
+    const matches = await tx
+      .select({
+        id: userTable.id,
+        name: userTable.name,
+        email: userTable.email,
+        telegramId: userTable.telegramId,
+        telegramUsername: userTable.telegramUsername,
+      })
+      .from(userTable)
+      .where(and(eq(userTable.role, "student"), identityMatches));
+
+    if (matches.length > 0 && !body.existingStudentId) {
+      return { ok: false as const, requiresLink: true as const, matches };
+    }
+
+    const existing = body.existingStudentId
+      ? matches.find((match) => match.id === body.existingStudentId)
+      : undefined;
+    if (body.existingStudentId && !existing) {
+      throw new HTTPException(400, { message: "student_does_not_match_lead" });
+    }
+
+    const now = new Date();
+    const quizLevel = quizLevelFromLead(lead);
+    const goalNote = lead.goal ? `Цель: ${lead.goal}` : null;
+    const studentId = existing?.id ?? randomUUID();
+
+    if (existing) {
+      await tx
+        .update(userTable)
+        .set({
+          jlptLevel: body.jlptLevel,
+          quizLevel: quizLevel ? sql`coalesce(${userTable.quizLevel}, ${quizLevel})` : undefined,
+          sourceLeadId: sql`coalesce(${userTable.sourceLeadId}, ${lead.id})`,
+          notes: goalNote ? sql`coalesce(${userTable.notes}, ${goalNote})` : undefined,
+          updatedAt: now,
+        })
+        .where(eq(userTable.id, studentId));
+    } else {
+      await tx.insert(userTable).values({
+        id: studentId,
+        email: normalizedEmail ?? telegramAccountEmail(body.telegramId!),
+        name: body.name,
+        nickname: body.nickname,
+        role: "student",
+        jlptLevel: body.jlptLevel,
+        quizLevel,
+        telegramId: body.telegramId,
+        telegramUsername: body.telegramUsername,
+        sourceLeadId: lead.id,
+        notes: goalNote,
+        personalDataConsentAt: lead.personalDataConsentAt,
+        personalDataConsentVersion: lead.personalDataConsentVersion,
+        updatedAt: now,
+      });
+    }
+
+    const accessPatch: Partial<typeof studentAccess.$inferInsert> = { updatedAt: now };
+    if (lead.trialLessonId) accessPatch.trialUsed = true;
+    if (body.planId) accessPatch.assignedPlanId = body.planId;
+    await tx
+      .insert(studentAccess)
+      .values({
+        userId: studentId,
+        assignedPlanId: body.planId,
+        trialUsed: Boolean(lead.trialLessonId),
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: studentAccess.userId,
+        set: accessPatch,
+      });
+
+    if (lead.trialLessonId) {
+      await tx
+        .insert(bookings)
+        .values({ lessonId: lead.trialLessonId, studentId })
+        .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] });
+    }
+
+    await tx
+      .update(leads)
+      .set({
+        userId: studentId,
+        studentId,
+        status: "converted",
+        nextFollowUpAt: null,
+        updatedAt: now,
+      })
+      .where(eq(leads.id, lead.id));
+
+    return {
+      ok: true as const,
+      userId: studentId,
+      created: !existing,
+      alreadyConverted: false,
+    };
+  });
+
+  if (conversion.ok && conversion.created && normalizedEmail) {
+    // Account/lead/lesson state is already committed atomically; invitation
+    // delivery is intentionally best-effort and outside the transaction.
+    await auth.api.signInMagicLink({
+      body: {
+        email: normalizedEmail,
+        name: body.name,
+        callbackURL: `${env.WEB_ORIGIN}/dashboard`,
+      },
+      headers: c.req.raw.headers,
+    });
+  }
+
+  return c.json(conversion);
+});
+
+function quizLevelFromLead(lead: typeof leads.$inferSelect) {
+  if (lead.kind !== "quiz") return null;
+  return ["start", "N5", "N4", "N3", "N2"].includes(lead.level ?? "") ? lead.level : null;
+}
+
+function telegramAccountEmail(telegramId: number) {
+  return `telegram-${telegramId}@telegram.gojo.local`;
+}
 
 // Flat list of every student account, for the "assign a lesson" picker. Unlike
 // GET /students (which is derived from bookings), this includes students who

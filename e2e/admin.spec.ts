@@ -35,6 +35,11 @@ test.describe("admin", () => {
     await page.getByRole("button", { name: "Уроки" }).click();
     await expectPageHeading(page, "Уроки");
     await expect(page.getByRole("button", { name: "Новый урок" })).toBeVisible();
+    await page.locator("tbody tr").first().getByRole("button").first().click();
+    const lessonDialog = page.getByRole("dialog");
+    await expect(lessonDialog.getByRole("button", { name: "Сохранить изменения" })).toBeVisible();
+    await expect(lessonDialog.getByRole("link", { name: "Управлять" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Заявки" }).click();
     await expectPageHeading(page, "Заявки");

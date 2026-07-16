@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
 import { lessons } from "./lessons.ts";
 
@@ -7,7 +7,10 @@ import { lessons } from "./lessons.ts";
 // These are prospects, not accounts — kept separate from `user`.
 export const leads = pgTable("leads", {
   id: uuid().default(sql`uuidv7()`).primaryKey(),
+  // `userId` is the legacy/pre-auth link used when an existing account files
+  // a lead. `studentId` is set only by the explicit conversion workflow.
   userId: text().references(() => user.id, { onDelete: "set null" }),
+  studentId: text().references(() => user.id, { onDelete: "set null" }),
   assigneeId: text().references(() => user.id, { onDelete: "set null" }),
   trialLessonId: uuid().references(() => lessons.id, { onDelete: "set null" }),
   kind: text().notNull(), // 'booking' | 'guide'
@@ -18,6 +21,9 @@ export const leads = pgTable("leads", {
   // opt-in "call me" rescue. At least one is present; a lead can carry several.
   // `telegram` is stored as a bare lowercase @-handle (no leading @).
   telegram: text(),
+  // Deliverable Telegram identity captured by the bot. A username alone
+  // cannot receive OTPs; private bot chat_id equals the Telegram user id.
+  telegramId: bigint({ mode: "number" }),
   // Email is optional and normalized to lowercase. Still the dedup/link key
   // whenever it's present, and the channel the quiz result email uses.
   email: text(),

@@ -280,20 +280,18 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
     [from.first_name, from.last_name].filter(Boolean).join(" ") || username || `id${from.id}`;
 
   if (!throttled) {
-    // Dedup by handle when we have one; otherwise the throttle above guards
-    // against repeat /start spam (leads carry no telegramId column).
-    const existing = username
-      ? await db
-          .select({ id: leads.id })
-          .from(leads)
-          .where(
-            and(
-              eq(leads.telegram, username),
-              inArray(leads.status, ["new", "contacted", "trial_booked"]),
-            ),
-          )
-          .limit(1)
-      : [];
+    // chat_id is stable and deliverable; usernames can change and are only a
+    // display/login alias. Prefer the id for deduplication.
+    const existing = await db
+      .select({ id: leads.id })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.telegramId, from.id),
+          inArray(leads.status, ["new", "contacted", "trial_booked"]),
+        ),
+      )
+      .limit(1);
 
     if (existing.length === 0) {
       await db.insert(leads).values({
@@ -301,6 +299,7 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
         status: "new",
         name,
         telegram: username ?? null,
+        telegramId: from.id,
         notes: `Заявка из Telegram-бота (id ${from.id}${username ? `, @${username}` : ""})`,
       });
       void notifyLead({ kind: "bot", name, telegram: username });

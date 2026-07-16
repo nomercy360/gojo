@@ -91,20 +91,22 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
   });
 
   const channels: DeliveryChannel[] = [];
-  try {
-    await sendEmail(
-      account.email,
-      "Код для входа в Gojo Learn",
-      `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
+  if (!isTelegramPlaceholderEmail(account.email)) {
+    try {
+      await sendEmail(
+        account.email,
+        "Код для входа в Gojo Learn",
+        `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
             <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
             <h1 style="margin-bottom:8px">Код для входа</h1>
             <p style="font-size:28px;letter-spacing:6px;font-weight:700;margin:16px 0">${code}</p>
             <p>Код действует 10 минут. Если это были не вы, просто проигнорируйте письмо.</p>
           </div>`,
-    );
-    channels.push({ type: "email", label: maskEmail(account.email) });
-  } catch (error) {
-    console.error("login email OTP delivery failed:", error);
+      );
+      channels.push({ type: "email", label: maskEmail(account.email) });
+    } catch (error) {
+      console.error("login email OTP delivery failed:", error);
+    }
   }
 
   // A username alone is not deliverable. Telegram messages always use the
@@ -206,6 +208,10 @@ function maskEmail(email: string) {
 function maskTelegram(username: string) {
   const normalized = username.replace(/^@/, "");
   return `@${normalized}`;
+}
+
+function isTelegramPlaceholderEmail(email: string) {
+  return email.endsWith("@telegram.gojo.local");
 }
 
 function challengeKey(challengeId: string) {
