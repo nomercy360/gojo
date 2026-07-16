@@ -17,7 +17,7 @@ const ALLOWED_AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "
 usersRoute.post("/me/personal-data-consent", requireAuth, async (c) => {
   const u = c.get("user")!;
   const body = (await c.req.json().catch(() => null)) as { version?: string } | null;
-  if (body?.version !== "2026-07-13") {
+  if (body?.version !== "2026-07-16") {
     throw new HTTPException(400, { message: "unknown consent version" });
   }
   await db

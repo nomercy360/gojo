@@ -83,7 +83,7 @@ export function BookingModal({
           email: email.trim(),
           goal: note.trim() || undefined,
           personalDataConsent: true,
-          consentVersion: "2026-07-13",
+          consentVersion: "2026-07-16",
         }),
       });
       if (!response.ok) throw new Error("lead_submission_failed");

@@ -1,3 +1,4 @@
+import { legalOperator as operator } from "@/lib/legal-operator";
 import Link from "next/link";
 
 export const metadata = {
@@ -9,24 +10,24 @@ export default function PersonalDataConsentPage() {
     <main className="min-h-screen bg-gojo-paper px-6 py-16 text-gojo-ink">
       <article className="mx-auto max-w-4xl rounded-xl border border-black/10 bg-gojo-surface p-6 shadow-sm sm:p-10">
         <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-          Gojo Learn · редакция от 13 июля 2026 года
+          Gojo Learn · редакция от 16 июля 2026 года
         </p>
         <h1 className="mt-3 font-serif text-3xl font-bold sm:text-4xl">
           Согласие на обработку персональных данных
         </h1>
 
         <div className="mt-6 rounded-lg border border-amber-400/60 bg-amber-50 p-4 text-sm leading-relaxed">
-          <strong>Проект:</strong> до публикации замените реквизиты Оператора в квадратных скобках
-          одновременно на этой странице и в Политике.
+          <strong>Осталось заполнить:</strong> укажите адрес Оператора вместо текста в квадратных
+          скобках. До этого документ остаётся проектом.
         </div>
 
         <div className="mt-8 space-y-5 text-sm leading-7 text-gojo-ink-muted [&_li]:ml-5 [&_li]:list-disc">
           <p>
             Проставляя отдельную отметку в форме сайта, я свободно, своей волей и в своём интересе
-            даю <strong>[ПОЛНОЕ НАИМЕНОВАНИЕ ИП / ООО]</strong>, ИНН [ИНН], ОГРНИП / ОГРН [ОГРНИП /
-            ОГРН], адрес: [АДРЕС ОПЕРАТОРА] (далее — «Оператор»), конкретное, предметное,
-            информированное, сознательное и однозначное согласие на обработку моих персональных
-            данных на следующих условиях.
+            даю <strong>{operator.name}</strong>, ИНН {operator.inn}, ОГРНИП {operator.ogrnip}, дата
+            регистрации: {operator.registrationDate}, адрес: {operator.address} (далее —
+            «Оператор»), конкретное, предметное, информированное, сознательное и однозначное
+            согласие на обработку моих персональных данных на следующих условиях.
           </p>
 
           <h2 className="font-serif text-xl font-bold text-gojo-ink">1. Данные</h2>
@@ -66,10 +67,10 @@ export default function PersonalDataConsentPage() {
 
           <h2 className="font-serif text-xl font-bold text-gojo-ink">5. Отзыв</h2>
           <p>
-            Я могу отозвать согласие, направив сообщение на [EMAIL ДЛЯ ОБРАЩЕНИЙ ПО ПЕРСОНАЛЬНЫМ
-            ДАННЫМ] с темой «Отзыв согласия». В сообщении нужно указать имя и контакт,
-            использованный в форме. Оператор прекращает обработку и уничтожает данные в сроки,
-            установленные законом, если отсутствует иное основание для обработки.
+            Я могу отозвать согласие, направив сообщение на {operator.email} с темой «Отзыв
+            согласия». В сообщении нужно указать имя и контакт, использованный в форме. Оператор
+            прекращает обработку и уничтожает данные в сроки, установленные законом, если
+            отсутствует иное основание для обработки.
           </p>
 
           <p>

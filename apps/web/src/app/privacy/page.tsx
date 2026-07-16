@@ -1,13 +1,6 @@
 import { PrivacySettingsButton } from "@/components/privacy-choices";
+import { legalOperator as operator } from "@/lib/legal-operator";
 import Link from "next/link";
-
-const operator = {
-  name: "[ПОЛНОЕ НАИМЕНОВАНИЕ ИП / ООО]",
-  inn: "[ИНН]",
-  ogrn: "[ОГРНИП / ОГРН]",
-  address: "[АДРЕС ОПЕРАТОРА]",
-  email: "[EMAIL ДЛЯ ОБРАЩЕНИЙ ПО ПЕРСОНАЛЬНЫМ ДАННЫМ]",
-};
 
 export const metadata = {
   title: "Политика обработки персональных данных — Gojo Learn",
@@ -18,16 +11,16 @@ export default function PrivacyPage() {
     <main className="min-h-screen bg-gojo-paper px-6 py-16 text-gojo-ink">
       <article className="mx-auto max-w-4xl rounded-xl border border-black/10 bg-gojo-surface p-6 shadow-sm sm:p-10">
         <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-          Gojo Learn · редакция от 13 июля 2026 года
+          Gojo Learn · редакция от 16 июля 2026 года
         </p>
         <h1 className="mt-3 font-serif text-3xl font-bold sm:text-4xl">
           Политика в отношении обработки персональных данных
         </h1>
 
         <div className="mt-6 rounded-lg border border-amber-400/60 bg-amber-50 p-4 text-sm leading-relaxed">
-          <strong>Перед публикацией:</strong> замените реквизиты в квадратных скобках и проверьте
-          фактическое место размещения базы данных и перечень подключённых сервисов. Без этих данных
-          документ является проектом.
+          <strong>Осталось заполнить:</strong> укажите адрес Оператора вместо текста в квадратных
+          скобках и проверьте фактическое место размещения базы данных и перечень подключённых
+          сервисов. До этого документ остаётся проектом.
         </div>
 
         <Section title="1. Общие положения">
@@ -38,8 +31,9 @@ export default function PrivacyPage() {
             данных».
           </p>
           <p>
-            Оператор: {operator.name}, ИНН {operator.inn}, {operator.ogrn}, адрес:{" "}
-            {operator.address}, email: {operator.email}.
+            Оператор: {operator.name}, ИНН {operator.inn}, ОГРНИП {operator.ogrnip}, дата
+            регистрации: {operator.registrationDate}, адрес: {operator.address}, email:{" "}
+            {operator.email}.
           </p>
           <p>
             Политика применяется к данным, полученным через сайт, личный кабинет, формы записи и

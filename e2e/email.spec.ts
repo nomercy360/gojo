@@ -5,7 +5,7 @@ import { deleteLead } from "./support/data";
 const mailpitURL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
 const webURL = process.env.E2E_WEB_URL ?? "http://localhost:3000";
-const consent = { personalDataConsent: true as const, consentVersion: "2026-07-13" as const };
+const consent = { personalDataConsent: true as const, consentVersion: "2026-07-16" as const };
 
 type MailpitMessages = {
   messages: Array<{

@@ -3,7 +3,7 @@ import { e2eAccounts, mutableStudentAuthFile } from "./support/auth";
 import { deleteLead, findLead, findUserId, setTrialUsed } from "./support/data";
 
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
-const consent = { personalDataConsent: true as const, consentVersion: "2026-07-13" as const };
+const consent = { personalDataConsent: true as const, consentVersion: "2026-07-16" as const };
 
 test("guest creates a booking lead", async ({ request }) => {
   let leadId: string | undefined;

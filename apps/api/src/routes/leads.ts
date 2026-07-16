@@ -50,7 +50,7 @@ const emailField = z.preprocess(
   z.string().trim().toLowerCase().email().max(200).optional(),
 );
 
-const CONSENT_VERSION = "2026-07-13";
+const CONSENT_VERSION = "2026-07-16";
 
 const leadInput = z
   .object({
