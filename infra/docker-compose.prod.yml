@@ -88,10 +88,8 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-gojolearn_bot}
       TELEGRAM_LEAD_CHAT_ID: ${TELEGRAM_LEAD_CHAT_ID:-}
-      # Bot-initiated one-tap login: secret Telegram echoes on webhook calls.
-      # PUBLIC_APP_URL defaults to WEB_ORIGIN (correct behind Caddy); override
-      # only if the browser-facing origin differs.
-      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      # Bot-initiated one-tap login. PUBLIC_APP_URL defaults to WEB_ORIGIN
+      # (correct behind Caddy); override only if the browser-facing origin differs.
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:-}
       # Transactional email (verification, password reset) — SMTP, provider-
       # agnostic. Values live in .env.prod (never committed). Unset SMTP_HOST

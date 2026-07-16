@@ -18,14 +18,10 @@ const schema = z.object({
   // Optional: chat id to ping on new landing leads. If unset, leads are still
   // saved to the DB — the Telegram notification is just skipped.
   TELEGRAM_LEAD_CHAT_ID: z.string().optional(),
-  // Shared secret echoed by Telegram in the X-Telegram-Bot-Api-Secret-Token
-  // header on every webhook call (set via setWebhook). Unset = webhook auth is
-  // skipped (dev only) — always set this in production.
-  TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
   // Browser-facing origin of the whole app (what a user's browser hits), used
-  // to build Telegram deep links + the webhook URL. Behind Caddy the API lives
-  // under `${PUBLIC_APP_URL}/api/*`. Defaults to WEB_ORIGIN; override for a
-  // tunnel (ngrok/cloudflared) during local webhook testing.
+  // to build Telegram login links. Behind Caddy the API lives under
+  // `${PUBLIC_APP_URL}/api/*`. Defaults to WEB_ORIGIN; override for a tunnel
+  // when testing login_url buttons locally.
   // Empty string (docker-compose passes `${PUBLIC_APP_URL:-}` when unset) is
   // coerced to undefined so `.url()` doesn't reject it and crash boot.
   PUBLIC_APP_URL: z.preprocess((v) => (v === "" ? undefined : v), z.string().url().optional()),

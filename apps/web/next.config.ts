@@ -14,9 +14,9 @@ const config: NextConfig = {
     ],
   },
   // Dev-only single-origin proxy so localhost:3000 fronts the API exactly like
-  // Caddy does in prod (/api/* stripped, /auth/* kept). This lets an ngrok
-  // tunnel of :3000 exercise the Telegram webhook + one-tap login end-to-end
-  // with shared cookies. Inert in prod (Caddy handles /api and /auth at the edge).
+  // Caddy does in prod (/api/* stripped, /auth/* kept). This lets a tunnel of
+  // :3000 exercise one-tap Telegram login with shared cookies. Inert in prod
+  // (Caddy handles /api and /auth at the edge).
   async rewrites() {
     if (process.env.NODE_ENV === "production") return [];
     const api = process.env.API_PROXY_TARGET ?? "http://localhost:3001";

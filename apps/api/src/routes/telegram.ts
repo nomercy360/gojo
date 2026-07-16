@@ -10,7 +10,7 @@ import { notifyLead } from "../lead-notifications.ts";
 import { type TelegramReplyMarkup, sendTelegramMessage } from "../reminders.ts";
 
 // Bot-initiated one-tap web login (getmatch-style). The bot receives a /start
-// or /login command via webhook and replies with a Telegram `login_url` button.
+// or /login command via long polling and replies with a Telegram `login_url` button.
 // Tapping it opens GET /telegram/login with Telegram's signed identity appended
 // (id, auth_date, hash, …); we verify the hash — no password, no OTP, no token.
 //
@@ -26,8 +26,8 @@ const REQUEST_THROTTLE_MS = 60_000;
 const LOGIN_MAX_AGE_SEC = 5 * 60;
 
 // Browser-facing origin of the app. Behind Caddy the API is reachable at
-// `${appUrl}/api/*`; the same holds for the dev Next.js rewrite and an ngrok
-// tunnel, so login links and the webhook URL are always `${appUrl}/api/...`.
+// `${appUrl}/api/*`; the same holds for the dev Next.js rewrite, so bot login
+// links are always `${appUrl}/api/...`.
 const appUrl = (env.PUBLIC_APP_URL ?? env.WEB_ORIGIN).replace(/\/$/, "");
 
 // Per-telegramId throttle so repeated /start taps from an unlinked user don't
@@ -36,14 +36,15 @@ const recentRequests = new Map<number, number>();
 
 export const telegramRoute = new Hono<AuthContext>();
 
-type TelegramFrom = {
+export type TelegramFrom = {
   id: number;
   is_bot?: boolean;
   first_name?: string;
   last_name?: string;
   username?: string;
 };
-type TelegramUpdate = {
+export type TelegramUpdate = {
+  update_id: number;
   message?: { text?: string; chat?: { id: number }; from?: TelegramFrom };
 };
 
@@ -52,53 +53,34 @@ type TelegramAccount = {
   role: "student" | "admin";
 };
 
-telegramRoute.post("/webhook", async (c) => {
-  // Telegram echoes the secret from setWebhook on every call. When configured,
-  // reject anything without it — the webhook URL is otherwise guessable.
-  if (
-    env.TELEGRAM_WEBHOOK_SECRET &&
-    c.req.header("X-Telegram-Bot-Api-Secret-Token") !== env.TELEGRAM_WEBHOOK_SECRET
-  ) {
-    return c.json({ error: "forbidden" }, 403);
-  }
-
-  let update: TelegramUpdate;
-  try {
-    update = (await c.req.json()) as TelegramUpdate;
-  } catch {
-    return c.json({ ok: true }); // ack malformed bodies; nothing to retry
-  }
-
+/**
+ * Process one update received by the long-polling worker.
+ */
+export async function processTelegramUpdate(update: TelegramUpdate): Promise<void> {
   const msg = update.message;
   const from = msg?.from;
   const chatId = msg?.chat?.id;
-  // Always 200 so Telegram doesn't retry; do the work best-effort.
   if (from && !from.is_bot && chatId != null && msg?.text) {
     const parts = msg.text.trim().split(/\s+/);
     const command = parts[0]?.toLowerCase().replace(/@.*$/, "");
     const payload = parts[1];
-    try {
-      if (command === "/start" && payload === "lead") {
-        // Conversion CTA: this payload files a booking lead, never an account.
-        await handleStartCommand(from, chatId);
-      } else if (command === "/start" && payload) {
-        // Deep-link account linking: t.me/<bot>?start=<link-token>.
-        await handleLinkCommand(from, chatId, payload);
-      } else if (command === "/start") {
-        await handleStartCommand(from, chatId);
-      } else if (command === "/login") {
-        await handleLoginCommand(from, chatId);
-      } else if (command === "/lessons") {
-        await handleLessonsCommand(from, chatId);
-      } else if (command === "/help") {
-        await handleHelpCommand(from, chatId);
-      }
-    } catch (err) {
-      console.error("telegram command failed:", err);
+    if (command === "/start" && payload === "lead") {
+      // Conversion CTA: this payload files a booking lead, never an account.
+      await handleStartCommand(from, chatId);
+    } else if (command === "/start" && payload) {
+      // Deep-link account linking: t.me/<bot>?start=<link-token>.
+      await handleLinkCommand(from, chatId, payload);
+    } else if (command === "/start") {
+      await handleStartCommand(from, chatId);
+    } else if (command === "/login") {
+      await handleLoginCommand(from, chatId);
+    } else if (command === "/lessons") {
+      await handleLessonsCommand(from, chatId);
+    } else if (command === "/help") {
+      await handleHelpCommand(from, chatId);
     }
   }
-  return c.json({ ok: true });
-});
+}
 
 // POST /telegram/link-token — a signed-in user requests a deep link that, once
 // opened, ties their Telegram account to this user (see handleLinkCommand).
@@ -271,7 +253,7 @@ async function sendLoginButton(chatId: number, userId: string): Promise<void> {
   // the first authorization, AND makes Telegram append a signed identity to
   // the URL (id, auth_date, hash, …) which GET /login verifies. Requires the
   // host be registered via BotFather /setdomain (gojolearn.ru in prod; the
-  // ngrok host for local testing) — else BOT_DOMAIN_INVALID on send.
+  // tunnel host for local testing) — else BOT_DOMAIN_INVALID on send.
   const markup: TelegramReplyMarkup = {
     inline_keyboard: [[{ text: "Открыть Gojo Learn ↗", login_url: { url: loginUrl() } }]],
   };

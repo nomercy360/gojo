@@ -5,84 +5,60 @@ student sends `/start` and gets the available feature commands; `/lessons`
 opens the web lesson list already signed in. `/login` remains the direct route
 to the dashboard. No password or OTP typing.
 
-## How it works
+## How updates arrive
 
-1. Telegram delivers the command to `POST /telegram/webhook` (registered via
-   `setWebhook`, authenticated with `TELEGRAM_WEBHOOK_SECRET`).
-2. The handler looks the user up by `telegramId`:
-   - **Linked student + `/start`** → show a concise command menu.
-   - **Linked student + `/lessons`** → reply with a `login_url` button pointing
-     at `${PUBLIC_APP_URL}/api/telegram/login/lessons`, which signs in and
-     redirects to `/lessons`.
-   - **Linked account + `/login`** → reply with a `login_url` button pointing at
-     `${PUBLIC_APP_URL}/api/telegram/login`. `login_url` (not a plain `url`
-     button) gives the native "Log in to <domain>?" prompt and makes Telegram
-     append a **signed identity** to the URL (`id`, `auth_date`, `hash`, …).
-   - **Unlinked** → create a lead ("request", not a student) and notify the
-     team. Repeat `/start` taps are throttled so they don't spawn duplicates.
-3. `GET /telegram/login` and `GET /telegram/login/lessons` verify the `hash`
-   (`HMAC-SHA256(sorted data-check-string, key = SHA256(bot_token))` — the Login
-   Widget scheme), checks `auth_date` freshness (5-min replay window), then logs
-   the user in by `telegramId`. The first redirects to `/dashboard`; the second
-   redirects to `/lessons`. Both are stateless — no token minted or stored.
+The API is the bot's only consumer and receives updates with Telegram's
+`getUpdates` long polling. On startup it removes any old webhook without
+dropping queued updates, refreshes the private-chat command menu, and starts a
+50-second long-poll loop. Failed calls retry with bounded exponential backoff.
 
-`bun run tg:webhook` also calls `setMyCommands` for private chats so Telegram's
-native Menu shows `/start`, `/lessons`, `/login`, and `/help`. Run it again after
-changing the command list.
+Only one API process may use a bot token. Production currently runs one
+`gojo-api` container; local development must use a separate test bot token.
 
-> `login_url` requires the button host be registered in BotFather via
-> `/setdomain` (the ngrok host locally, `gojolearn.ru` in prod); an unregistered
-> host is rejected on send with `BOT_DOMAIN_INVALID`. A plain `url` button would
-> avoid `/setdomain` but does **not** append the signed fields, so login would
-> have nothing to verify.
+For each command, the handler looks the user up by `telegramId`:
 
-Account **linking** (Connect Telegram in `/profile`) is separate: it mints a
-single-use token in the `verification` table (`tg-link:<token>`), opens
-`t.me/<bot>?start=<token>`, and the `/start <token>` webhook ties `telegramId` to
-the account.
+- **Linked student + `/start`** → show a concise command menu.
+- **Linked student + `/lessons`** → reply with a `login_url` button pointing at
+  `${PUBLIC_APP_URL}/api/telegram/login/lessons`, which signs in and redirects
+  to `/lessons`.
+- **Linked account + `/login`** → reply with a `login_url` button pointing at
+  `${PUBLIC_APP_URL}/api/telegram/login`. Telegram appends a signed identity to
+  the URL (`id`, `auth_date`, `hash`, …).
+- **Unlinked account** → create a lead and notify the team. Repeat `/start`
+  taps are throttled so they do not create duplicate leads.
 
-## Local testing with ngrok
+`GET /telegram/login` and `GET /telegram/login/lessons` verify the Telegram
+signature and a five-minute `auth_date` freshness window, create the site
+session, and redirect to `/dashboard` or `/lessons`.
 
-The webhook needs a public HTTPS URL Telegram can reach. A dev-only Next.js
-rewrite (`apps/web/next.config.ts`) makes `localhost:3000` front the API under
-one origin (exactly like Caddy in prod: `/api/*` stripped, `/auth/*` kept), so
-cookies work end-to-end when you tunnel just `:3000`.
+Account linking from `/profile` is separate: it creates a single-use token in
+the `verification` table, opens `t.me/<bot>?start=<token>`, and the polling
+handler ties the Telegram ID to the signed-in account.
+
+## Local testing
+
+Set a dedicated test bot in the root `.env`, then run the normal development
+stack. No tunnel is required for receiving bot commands.
+
+```env
+TELEGRAM_BOT_TOKEN=<test-bot-token>
+TELEGRAM_BOT_USERNAME=<test-bot-username-without-@>
+```
 
 ```bash
-# 0. one-time: install ngrok + set an authtoken (a reserved domain keeps the
-#    URL stable across restarts so you don't reconfigure each run)
-brew install ngrok && ngrok config add-authtoken <token>
-
-# 1. run the app
 bun run dev
-
-# 2. tunnel the web origin (single-origin proxy handles /api + /auth)
-ngrok http 3000            # or: ngrok http --domain=<your>.ngrok-free.app 3000
-
-# 3. point the bot's webhook at the tunnel (auto-detects the ngrok URL)
-bun run tg:webhook
 ```
 
-Set these in the root `.env` for the run:
+`login_url` buttons still require their destination host to be registered in
+BotFather with `/setdomain`. To test those buttons locally, expose port 3000
+through an HTTPS tunnel, register the tunnel host, and set:
 
-```
-TELEGRAM_WEBHOOK_SECRET=<any-random-string>
-PUBLIC_APP_URL=https://<subdomain>.ngrok-free.app   # optional; else auto-detected
-```
-
-Then message the bot `/login`. Useful webhook commands:
-
-```bash
-bun run tg:webhook -- info      # show current webhook status
-bun run tg:webhook -- delete    # remove the webhook (back to send-only)
-bun run tg:webhook -- <url>     # register an explicit base URL
+```env
+PUBLIC_APP_URL=https://<your-tunnel-host>
 ```
 
 ## Production
 
-Set `TELEGRAM_WEBHOOK_SECRET` in `.env.prod`. `PUBLIC_APP_URL` defaults to
-`WEB_ORIGIN` (correct behind Caddy). After deploy, register once:
-
-```bash
-PUBLIC_APP_URL=https://gojolearn.ru bun run tg:webhook
-```
+Production starts polling automatically when `TELEGRAM_BOT_TOKEN` is present.
+There is no webhook endpoint or webhook registration step. Keep exactly one API
+container for the production bot token.

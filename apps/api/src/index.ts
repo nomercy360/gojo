@@ -25,6 +25,7 @@ import { teacherRoute } from "./routes/teacher.ts";
 import { telegramRoute } from "./routes/telegram.ts";
 import { trainingRoute } from "./routes/training.ts";
 import { usersRoute } from "./routes/users.ts";
+import { startTelegramPolling } from "./telegram-polling.ts";
 
 const app = new Hono<AuthContext>();
 const corsOrigins = [
@@ -68,7 +69,7 @@ app.route("/leads", leadsRoute);
 app.route("/events", eventsRoute);
 app.route("/login", loginRoute);
 
-// Telegram bot webhook + one-tap login link — no session cookie required.
+// Telegram account linking + one-tap login callbacks — no session cookie required.
 app.route("/telegram", telegramRoute);
 
 // Custom dev-login lives under /dev-auth to avoid conflicting with better-auth
@@ -86,6 +87,7 @@ app.route("/homework", homeworkRoute);
 app.route("/levels", levelsRoute);
 
 startReminderLoop();
+startTelegramPolling();
 
 if (env.NODE_ENV === "production" && env.ALLOW_DEV_LOGIN) {
   console.warn(

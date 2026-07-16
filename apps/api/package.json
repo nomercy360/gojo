@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --env-file=../../.env run --hot src/index.ts",
+    "dev": "bun --env-file=../../.env run --watch src/index.ts",
     "start": "bun --env-file=../../.env run src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "bun --env-file=../../.env test",
     "typecheck": "tsc --noEmit",
-    "seed:local-users": "bun --env-file=../../.env run src/scripts/seed-test-user.ts",
-    "tg:webhook": "bun --env-file=../../.env run src/scripts/set-telegram-webhook.ts"
+    "seed:local-users": "bun --env-file=../../.env run src/scripts/seed-test-user.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
