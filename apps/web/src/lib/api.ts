@@ -168,6 +168,8 @@ export type StudentDirectoryEntry = {
   jlptLevel: string | null;
   quizLevel: string | null;
   currentLevel: number;
+  inviteLastSentAt: string | null;
+  lastLoginAt: string | null;
   assignedPlanId: string | null;
   activeUntil: string | null;
   lessonCredits: number;

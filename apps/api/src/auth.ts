@@ -50,6 +50,22 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
   },
+  databaseHooks: {
+    session: {
+      create: {
+        // Runs for every login path — better-auth magic link AND our custom
+        // OTP/Telegram logins (createSessionCookie goes through the same
+        // internal adapter). "Has the client ever entered?" = lastLoginAt.
+        after: async (session) => {
+          await db
+            .update(user)
+            .set({ lastLoginAt: new Date(), updatedAt: new Date() })
+            .where(eq(user.id, session.userId))
+            .catch((err) => console.error("lastLoginAt update failed:", err));
+        },
+      },
+    },
+  },
   user: {
     additionalFields: {
       role: { type: "string", defaultValue: "student", input: true },

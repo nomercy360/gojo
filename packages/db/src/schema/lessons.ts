@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
+import { units } from "./curriculum.ts";
 
 export const lessonStatus = pgEnum("lesson_status", [
   "scheduled",
@@ -29,6 +30,8 @@ export const lessons = pgTable("lessons", {
   endsAt: timestamp({ withTimezone: true }).notNull(),
   maxStudents: integer().notNull().default(8),
   jlptLevel: text(),
+  /** Curriculum unit this lesson teaches. Null for trials and free-form lessons. Many lessons may share one unit. */
+  unitId: uuid().references(() => units.id, { onDelete: "set null" }),
   recordingUrl: text(),
   // External meeting link (Zoom/Meet) the teacher pastes; MVP replaces the
   // in-app LiveKit room.

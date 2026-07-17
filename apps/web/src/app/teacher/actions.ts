@@ -164,6 +164,9 @@ export async function resendStudentInviteAction(
           error: "У студента нет ни настоящего email, ни Telegram — приглашение отправить некуда",
         };
       }
+      if (e.status === 429) {
+        return { error: "Приглашение уже отправлено — подожди минуту перед повтором" };
+      }
       return { error: `API ${e.status}: ${e.message}` };
     }
     return { error: "Не удалось отправить приглашение" };

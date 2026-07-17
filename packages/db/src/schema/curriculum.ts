@@ -26,6 +26,30 @@ export const levels = pgTable("levels", {
   description: text(),
 });
 
+/**
+ * Lesson-sized slice of a level, ordered within it. The atomic curriculum
+ * entity: lessons point at a unit (many lessons may share one — slow students
+ * take two sessions), and marking such a lesson attended materializes the
+ * unit's vocab into the student's SRS deck and unlocks the unit's level.
+ * sourceBook/sourceChapter are a reference pointer (students buy the book;
+ * we never host publisher PDFs) — promote to a books table when reuse needs it.
+ */
+export const units = pgTable(
+  "units",
+  {
+    id: uuid().default(sql`uuidv7()`).primaryKey(),
+    levelId: integer()
+      .notNull()
+      .references(() => levels.id, { onDelete: "cascade" }),
+    position: integer().notNull().default(0),
+    title: text().notNull(),
+    sourceBook: text(),
+    sourceChapter: text(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
 /** Kanji assigned to a level, ordered by frequency. References the Kanji Alive reference table. */
 export const levelKanji = pgTable(
   "level_kanji",
@@ -58,6 +82,8 @@ export const levelVocab = pgTable(
     meaningRu: text(),
     meaningEn: text().notNull(),
     position: integer().notNull().default(0),
+    /** Unit this word belongs to (deck membership as a tag, not a copy). Null = not yet assigned to a unit. */
+    unitId: uuid().references(() => units.id, { onDelete: "set null" }),
   },
   (t) => [uniqueIndex("level_vocab_level_word_uniq").on(t.levelId, t.word)],
 );
@@ -82,6 +108,7 @@ export const levelGrammar = pgTable(
 );
 
 export type Level = typeof levels.$inferSelect;
+export type Unit = typeof units.$inferSelect;
 export type LevelKanji = typeof levelKanji.$inferSelect;
 export type LevelVocab = typeof levelVocab.$inferSelect;
 export type LevelGrammar = typeof levelGrammar.$inferSelect;

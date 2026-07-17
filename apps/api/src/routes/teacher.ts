@@ -32,6 +32,7 @@ import {
   materializeCardsForAttendance,
   materializeNewCardForAttendedBookings,
 } from "../lib/materialize.ts";
+import { logNotification } from "../reminders.ts";
 import { putObject } from "../s3.ts";
 import { sendLessonConfirmation } from "./lessons.ts";
 import { isTelegramPlaceholderEmail } from "./login.ts";
@@ -419,6 +420,7 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
       },
       headers: c.req.raw.headers,
     });
+    await logNotification("auth.invite", "email", normalizedEmail, "sent", conversion.userId);
   }
   if (conversion.ok && conversion.created && body.telegramId) {
     // For telegram-only converts this is the only channel that tells the
@@ -462,6 +464,13 @@ teacherRoute.get("/student-directory", async (c) => {
       assignedPlanId: studentAccess.assignedPlanId,
       activeUntil: studentAccess.activeUntil,
       lessonCredits: studentAccess.lessonCredits,
+      inviteLastSentAt: sql<Date | null>`(
+        select max(nl.created_at) from notification_logs nl
+        where nl.user_id = ${userTable.id}
+          and nl.event in ('auth.invite', 'auth.telegram_account_welcome')
+          and nl.status = 'sent'
+      )`.as("invite_last_sent_at"),
+      lastLoginAt: userTable.lastLoginAt,
       createdAt: userTable.createdAt,
       updatedAt: userTable.updatedAt,
     })
@@ -489,6 +498,8 @@ teacherRoute.get("/student-directory", async (c) => {
       isActive: Boolean(
         (r.activeUntil && r.activeUntil.getTime() > now) || (r.lessonCredits ?? 0) > 0,
       ),
+      inviteLastSentAt: r.inviteLastSentAt ? new Date(r.inviteLastSentAt).toISOString() : null,
+      lastLoginAt: r.lastLoginAt ? r.lastLoginAt.toISOString() : null,
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     })),
@@ -958,6 +969,7 @@ teacherRoute.post("/students", zValidator("json", createStudentInput), async (c)
     body: { email: normalizedEmail, name, callbackURL: `${env.WEB_ORIGIN}/dashboard` },
     headers: c.req.raw.headers,
   });
+  await logNotification("auth.invite", "email", normalizedEmail, "sent", created.id);
 
   return c.json({ ok: true, userId: created.id }, 201);
 });
@@ -965,8 +977,22 @@ teacherRoute.post("/students", zValidator("json", createStudentInput), async (c)
 // Re-deliver access for a student who lost or never received the original
 // invite: magic-link email (real addresses only) and/or the Telegram login
 // button, whichever channels the account has.
+const recentInviteResends = new Map<string, number>();
+const INVITE_RESEND_MS = 60_000;
+
 teacherRoute.post("/students/:studentId/resend-invite", async (c) => {
   const studentId = c.req.param("studentId");
+
+  const now = Date.now();
+  const lastResend = recentInviteResends.get(studentId) ?? 0;
+  if (now - lastResend < INVITE_RESEND_MS) {
+    throw new HTTPException(429, { message: "invite_cooldown" });
+  }
+  recentInviteResends.set(studentId, now);
+  for (const [key, at] of recentInviteResends) {
+    if (now - at > INVITE_RESEND_MS) recentInviteResends.delete(key);
+  }
+
   const [student] = await db
     .select({
       id: userTable.id,
@@ -991,6 +1017,7 @@ teacherRoute.post("/students/:studentId/resend-invite", async (c) => {
       headers: c.req.raw.headers,
     });
     sentEmail = true;
+    await logNotification("auth.invite", "email", student.email, "sent", student.id);
   }
   if (student.telegramId) {
     sentTelegram = await sendAccountWelcome(student.telegramId, student.id).catch(() => false);

@@ -1008,11 +1008,27 @@ function AdminPanel({ admin, onSuccess }: { admin: AdminDirectoryEntry; onSucces
   );
 }
 
-function ResendInviteButton({ studentId }: { studentId: string }) {
+function ResendInviteButton({
+  studentId,
+  lastSentAt,
+  lastLoginAt,
+}: {
+  studentId: string;
+  lastSentAt: string | null;
+  lastLoginAt: string | null;
+}) {
   const [state, formAction, pending] = useActionState<ResendInviteState, FormData>(
     resendStudentInviteAction,
     {},
   );
+  const [cooldown, setCooldown] = useState(0);
+  const [sentNow, setSentNow] = useState(false);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setTimeout(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
 
   useEffect(() => {
     if (!state.ok) return;
@@ -1020,14 +1036,52 @@ function ResendInviteButton({ studentId }: { studentId: string }) {
       .filter(Boolean)
       .join(" и ");
     toast.success(`Приглашение отправлено: ${channels}`);
+    setSentNow(true);
+    setCooldown(60);
   }, [state]);
+
+  const alreadySent = sentNow || Boolean(lastSentAt);
 
   return (
     <form action={formAction} className="mt-4">
       <input type="hidden" name="studentId" value={studentId} />
-      <Button type="submit" variant="outline" disabled={pending} className="w-full rounded-xl">
-        {pending ? "Отправляем..." : "Отправить приглашение для входа"}
+      <Button
+        type="submit"
+        variant="outline"
+        disabled={pending || cooldown > 0}
+        className="w-full rounded-xl"
+      >
+        {pending
+          ? "Отправляем..."
+          : cooldown > 0
+            ? `Отправлено · повторно через 0:${String(cooldown).padStart(2, "0")}`
+            : alreadySent
+              ? "Отправить приглашение ещё раз"
+              : "Отправить приглашение для входа"}
       </Button>
+      <p className="mt-1.5 text-center text-[12px] text-gojo-ink-muted">
+        {sentNow ? (
+          "Приглашение отправлено только что"
+        ) : lastSentAt ? (
+          <>
+            Последнее приглашение:{" "}
+            <LocalTime
+              iso={lastSentAt}
+              options={{ day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }}
+            />
+          </>
+        ) : (
+          "Приглашение ещё не отправлялось"
+        )}
+        {" · "}
+        {lastLoginAt ? (
+          <>
+            входил <LocalTime iso={lastLoginAt} options={{ day: "numeric", month: "long" }} />
+          </>
+        ) : (
+          <span className="font-semibold text-gojo-orange">на платформу ещё не входил</span>
+        )}
+      </p>
       {state.error ? <p className="mt-2 text-sm font-bold text-gojo-error">{state.error}</p> : null}
     </form>
   );
@@ -1164,7 +1218,11 @@ function StudentPanel({
           className="border-l border-gojo-ink/10 pl-4"
         />
       </div>
-      <ResendInviteButton studentId={student.id} />
+      <ResendInviteButton
+        studentId={student.id}
+        lastSentAt={student.inviteLastSentAt}
+        lastLoginAt={student.lastLoginAt}
+      />
 
       <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-gojo-ink-ghost">
         <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />

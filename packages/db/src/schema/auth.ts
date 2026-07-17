@@ -36,6 +36,8 @@ export const user = pgTable(
     currentLevel: integer().notNull().default(1),
     telegramId: bigint({ mode: "number" }).unique(),
     telegramUsername: text().unique(),
+    /** Stamped by the session-create hook on every login (magic link, code, Telegram). Null = never entered the platform. */
+    lastLoginAt: timestamp({ withTimezone: true }),
     /** Canonical lead this account was created from. Kept as UUID without a schema FK to avoid a circular table declaration. */
     sourceLeadId: uuid(),
     /** Internal teacher note copied from the source lead's learning goal. */

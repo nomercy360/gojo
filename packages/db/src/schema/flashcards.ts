@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
+import { levelVocab } from "./curriculum.ts";
 import { lessons } from "./lessons.ts";
 
 /**
@@ -49,6 +50,8 @@ export const flashcards = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     lessonCardId: uuid().references(() => lessonCards.id, { onDelete: "cascade" }),
+    /** Curriculum vocab row this card was materialized from (unit decks). Enables propagate-on-edit. */
+    levelVocabId: uuid().references(() => levelVocab.id, { onDelete: "set null" }),
     word: text().notNull(),
     reading: text().notNull(),
     meaning: text().notNull(),
@@ -61,7 +64,13 @@ export const flashcards = pgTable(
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("flashcards_user_lesson_card_uniq").on(t.userId, t.lessonCardId)],
+  (t) => [
+    uniqueIndex("flashcards_user_lesson_card_uniq").on(t.userId, t.lessonCardId),
+    uniqueIndex("flashcards_user_level_vocab_uniq").on(t.userId, t.levelVocabId),
+    // Global per-user dedup by word: a word is learned ONCE across all units
+    // and lesson supplements (見る in unit 2 and unit 7 is one card).
+    uniqueIndex("flashcards_user_word_uniq").on(t.userId, t.word),
+  ],
 );
 
 export type LessonCard = typeof lessonCards.$inferSelect;
