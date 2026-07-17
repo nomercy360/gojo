@@ -6,6 +6,7 @@ import {
   cancelLesson,
   createAdmin,
   createLesson,
+  deleteLessonMaterial,
   removeLessonStudent,
   resendStudentInvite,
   updateAdmin,
@@ -400,6 +401,20 @@ export async function cancelLessonAction(formData: FormData) {
     if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
   }
   revalidatePath("/teacher");
+  revalidatePath(`/teacher/lessons/${lessonId}`);
+}
+
+export async function deleteLessonMaterialAction(formData: FormData) {
+  const lessonId = String(formData.get("lessonId") ?? "");
+  const materialId = String(formData.get("materialId") ?? "");
+  if (!lessonId || !materialId) return;
+
+  try {
+    await deleteLessonMaterial(lessonId, materialId);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
+  }
+  revalidatePath(`/teacher/lessons/${lessonId}`);
 }
 
 function parseBrowserInstant(value: FormDataEntryValue | null): Date | null {

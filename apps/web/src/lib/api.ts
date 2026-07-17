@@ -288,6 +288,12 @@ export function createAdmin(body: {
   });
 }
 
+export function deleteLessonMaterial(lessonId: string, materialId: string) {
+  return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}/materials/${materialId}`, {
+    method: "DELETE",
+  });
+}
+
 export function addLessonStudent(lessonId: string, studentId: string) {
   return apiFetch<{ ok: boolean; added: boolean }>(`/teacher/lessons/${lessonId}/students`, {
     method: "POST",

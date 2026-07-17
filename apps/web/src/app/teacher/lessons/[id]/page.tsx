@@ -1,7 +1,7 @@
 import { LessonCardsManager } from "@/app/lessons/[id]/cards-manager";
 import { HomeworkManager } from "@/app/lessons/[id]/homework-manager";
 import { LocalTime } from "@/components/local-time";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   ApiError,
@@ -24,6 +24,7 @@ import type {
 } from "@gojo/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cancelLessonAction, deleteLessonMaterialAction } from "../../actions";
 import { MaterialUploadForm } from "./material-upload-form";
 import { MeetingLinkForm } from "./meeting-link-form";
 import { RosterManager } from "./roster-manager";
@@ -106,6 +107,18 @@ export default async function TeacherLessonPage({ params }: Props) {
             </p>
           </div>
           <MeetingLinkForm lessonId={id} meetingUrl={lesson.meetingUrl} />
+          {lesson.status === "scheduled" ? (
+            <form action={cancelLessonAction} className="mt-4 border-t border-black/10 pt-4">
+              <input type="hidden" name="lessonId" value={id} />
+              <Button type="submit" variant="destructive" size="sm">
+                Отменить урок
+              </Button>
+            </form>
+          ) : lesson.status === "cancelled" ? (
+            <p className="mt-4 border-t border-black/10 pt-4 text-sm font-bold text-gojo-error">
+              Урок отменён
+            </p>
+          ) : null}
         </Card>
 
         <section className="mt-10">
@@ -152,14 +165,23 @@ export default async function TeacherLessonPage({ params }: Props) {
                         {m.fileType || "file"} · {new Date(m.createdAt).toLocaleDateString("ru-RU")}
                       </p>
                     </div>
-                    <a
-                      href={m.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={buttonVariants({ variant: "outline", size: "sm" })}
-                    >
-                      Открыть
-                    </a>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <a
+                        href={m.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                      >
+                        Открыть
+                      </a>
+                      <form action={deleteLessonMaterialAction}>
+                        <input type="hidden" name="lessonId" value={id} />
+                        <input type="hidden" name="materialId" value={m.id} />
+                        <Button type="submit" variant="ghost" size="sm" className="text-gojo-error">
+                          Удалить
+                        </Button>
+                      </form>
+                    </div>
                   </li>
                 </Card>
               ))}

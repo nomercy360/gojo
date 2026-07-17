@@ -65,6 +65,39 @@ export function AiReviewCard({ review }: { review: HomeworkAiReview }) {
   );
 }
 
+function SubmissionCard({ submission }: { submission: HomeworkSubmissionDto }) {
+  return (
+    <Card className="mt-4 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span
+          className={`rounded-md border px-3 py-1.5 text-[11px] font-bold ${STATUS_CLASS[submission.status]}`}
+        >
+          {STATUS_LABEL[submission.status]}
+        </span>
+        <span className="text-[11px] text-gojo-ink-muted">
+          Отправлено{" "}
+          {new Date(submission.createdAt).toLocaleString("ru-RU", {
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      </div>
+      <p className="mt-3 whitespace-pre-wrap text-sm">{submission.content}</p>
+      {submission.aiReview ? <AiReviewCard review={submission.aiReview} /> : null}
+      {submission.teacherComment ? (
+        <div className="mt-3 rounded-md border border-black/10 bg-gojo-paper-2 p-4">
+          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
+            Комментарий преподавателя
+          </div>
+          <p className="mt-2 text-sm">{submission.teacherComment}</p>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 export function HomeworkSubmission({
   lessonId,
   initialSubmissions,
@@ -102,40 +135,26 @@ export function HomeworkSubmission({
       <h2 className="font-serif text-[22px] font-bold">Домашнее задание</h2>
 
       {latest ? (
-        <Card className="mt-4 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span
-              className={`rounded-md border px-3 py-1.5 text-[11px] font-bold ${STATUS_CLASS[latest.status]}`}
-            >
-              {STATUS_LABEL[latest.status]}
-            </span>
-            <span className="text-[11px] text-gojo-ink-muted">
-              Отправлено{" "}
-              {new Date(latest.createdAt).toLocaleString("ru-RU", {
-                day: "numeric",
-                month: "long",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm">{latest.content}</p>
-          {latest.aiReview ? <AiReviewCard review={latest.aiReview} /> : null}
-          {latest.teacherComment ? (
-            <div className="mt-3 rounded-md border border-black/10 bg-gojo-paper-2 p-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-gojo-orange">
-                Комментарий преподавателя
-              </div>
-              <p className="mt-2 text-sm">{latest.teacherComment}</p>
-            </div>
-          ) : null}
-        </Card>
+        <SubmissionCard submission={latest} />
       ) : (
         <p className="mt-1 text-[13px] text-gojo-ink-muted">
           Напиши задание по теме урока — ассистент разберёт текст, а преподаватель подтвердит
           результат.
         </p>
       )}
+
+      {submissions.length > 1 ? (
+        <details className="mt-4">
+          <summary className="cursor-pointer text-sm font-bold text-gojo-ink-muted hover:text-gojo-ink">
+            Прошлые попытки ({submissions.length - 1})
+          </summary>
+          <div className="opacity-85">
+            {submissions.slice(1).map((submission) => (
+              <SubmissionCard key={submission.id} submission={submission} />
+            ))}
+          </div>
+        </details>
+      ) : null}
 
       {canSubmit ? (
         <div className="mt-4">

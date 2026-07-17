@@ -1562,6 +1562,26 @@ teacherRoute.post("/lessons/:id/materials", async (c) => {
   );
 });
 
+teacherRoute.delete("/lessons/:id/materials/:materialId", async (c) => {
+  const u = c.get("user")!;
+  const lessonId = c.req.param("id");
+  const materialId = c.req.param("materialId");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
+
+  // The S3 object is left in place: it's cheap, and a dangling fileUrl in a
+  // student's open tab keeps working until the page refreshes.
+  const [removed] = await db
+    .delete(lessonMaterials)
+    .where(and(eq(lessonMaterials.id, materialId), eq(lessonMaterials.lessonId, lessonId)))
+    .returning({ id: lessonMaterials.id });
+  if (!removed) throw new HTTPException(404, { message: "material not found" });
+
+  return c.json({ ok: true });
+});
+
 teacherRoute.get("/lessons/:id/cards", async (c) => {
   const u = c.get("user")!;
   const lessonId = c.req.param("id");
