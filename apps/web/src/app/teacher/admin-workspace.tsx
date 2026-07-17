@@ -54,6 +54,7 @@ import { toast } from "sonner";
 import {
   type TeacherActionState,
   cancelLessonAction,
+  createAdminAction,
   updateAdminAction,
   updateLessonAction,
   updateStudentAction,
@@ -76,6 +77,7 @@ type Collection = "home" | "students" | "lessons" | "leads" | "admins";
 type Panel =
   | { kind: "new-student"; sourceLead?: TeacherLeadDto }
   | { kind: "new-lesson" }
+  | { kind: "new-admin" }
   | { kind: "student"; record: DashboardStudent }
   | { kind: "lesson"; record: TeacherLessonDto }
   | { kind: "lead"; record: TeacherLeadDto }
@@ -314,12 +316,20 @@ export function AdminWorkspace({
                   </div>
                   <h1 className="mt-1 font-serif text-3xl font-bold">{collectionLabel}</h1>
                 </div>
-                {isStudents || isLessons ? (
+                {isStudents || isLessons || isAdmins ? (
                   <Button
-                    onClick={() => setPanel({ kind: isStudents ? "new-student" : "new-lesson" })}
+                    onClick={() =>
+                      setPanel({
+                        kind: isStudents ? "new-student" : isLessons ? "new-lesson" : "new-admin",
+                      })
+                    }
                   >
                     <Plus />
-                    {isStudents ? "Новый студент" : "Новый урок"}
+                    {isStudents
+                      ? "Новый студент"
+                      : isLessons
+                        ? "Новый урок"
+                        : "Новый администратор"}
                   </Button>
                 ) : null}
               </header>
@@ -786,15 +796,17 @@ function RecordSheet({
         : "Новый студент"
       : panel?.kind === "new-lesson"
         ? "Новый урок"
-        : panel?.kind === "student"
-          ? (panel.record.nickname ?? panel.record.name)
-          : panel?.kind === "lesson"
-            ? panel.record.title
-            : panel?.kind === "lead"
-              ? panel.record.name
-              : panel?.kind === "admin"
-                ? (panel.record.nickname ?? panel.record.name)
-                : "Запись";
+        : panel?.kind === "new-admin"
+          ? "Новый администратор"
+          : panel?.kind === "student"
+            ? (panel.record.nickname ?? panel.record.name)
+            : panel?.kind === "lesson"
+              ? panel.record.title
+              : panel?.kind === "lead"
+                ? panel.record.name
+                : panel?.kind === "admin"
+                  ? (panel.record.nickname ?? panel.record.name)
+                  : "Запись";
 
   return (
     <Sheet open={panel !== null} onOpenChange={(open) => !open && onClose()}>
@@ -811,9 +823,11 @@ function RecordSheet({
                 : "Создаст аккаунт и отправит приглашение на email."
               : panel?.kind === "new-lesson"
                 ? "Урок сразу появится у выбранных студентов."
-                : panel?.kind === "admin"
-                  ? "Единая роль администратора и преподавателя. Любой администратор может редактировать запись."
-                  : "Изменения сохраняются в текущей коллекции."}
+                : panel?.kind === "new-admin"
+                  ? "Создаст аккаунт с ролью администратора и отправит приглашение на email."
+                  : panel?.kind === "admin"
+                    ? "Единая роль администратора и преподавателя. Любой администратор может редактировать запись."
+                    : "Изменения сохраняются в текущей коллекции."}
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
@@ -826,6 +840,8 @@ function RecordSheet({
             />
           ) : panel?.kind === "new-lesson" ? (
             <CreateLessonForm students={directory} presentation="plain" onSuccess={onClose} />
+          ) : panel?.kind === "new-admin" ? (
+            <NewAdminPanel onSuccess={onClose} />
           ) : panel?.kind === "student" ? (
             <StudentPanel student={panel.record} plans={plans} onSuccess={onClose} />
           ) : panel?.kind === "lesson" ? (
@@ -987,6 +1003,59 @@ function AdminPanel({ admin, onSuccess }: { admin: AdminDirectoryEntry; onSucces
         </div>
       </div>
     </div>
+  );
+}
+
+function NewAdminPanel({ onSuccess }: { onSuccess: () => void }) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    createAdminAction,
+    {},
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Администратор создан, приглашение отправлено");
+    router.refresh();
+    onSuccess();
+  }, [onSuccess, router, state.ok]);
+
+  return (
+    <form action={formAction} className="space-y-5">
+      <Field>
+        <FieldLabel htmlFor="new-admin-name">Имя</FieldLabel>
+        <Input id="new-admin-name" name="name" required placeholder="Имя Фамилия" />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="new-admin-nickname">Отображаемое имя</FieldLabel>
+        <Input id="new-admin-nickname" name="nickname" placeholder="Как показывать в интерфейсе" />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="new-admin-email">Email</FieldLabel>
+        <Input
+          id="new-admin-email"
+          name="email"
+          type="email"
+          required
+          placeholder="teacher@gojolearn.ru"
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="new-admin-telegram">Telegram ID (необязательно)</FieldLabel>
+        <Input
+          id="new-admin-telegram"
+          name="telegramId"
+          type="number"
+          min="1"
+          step="1"
+          placeholder="Числовой ID"
+        />
+      </Field>
+      {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+      <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
+        {pending ? "Создаём..." : "Создать администратора"}
+      </Button>
+    </form>
   );
 }
 

@@ -4,6 +4,7 @@ import {
   ApiError,
   addLessonStudent,
   cancelLesson,
+  createAdmin,
   createLesson,
   removeLessonStudent,
   updateAdmin,
@@ -131,6 +132,42 @@ export async function updateAdminAction(
       return { error: `API ${e.status}: ${e.message}` };
     }
     return { error: "Не удалось сохранить администратора" };
+  }
+
+  revalidatePath("/teacher");
+  return { ok: true };
+}
+
+export async function createAdminAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const nickname = String(formData.get("nickname") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const telegramRaw = String(formData.get("telegramId") ?? "").trim();
+  const telegramId = telegramRaw ? Number(telegramRaw) : null;
+  if (!name || !email) return { error: "Заполни имя и email" };
+  if (telegramId !== null && (!Number.isSafeInteger(telegramId) || telegramId <= 0)) {
+    return { error: "Telegram ID должен быть положительным числом" };
+  }
+
+  try {
+    await createAdmin({ name, nickname: nickname || null, email, telegramId });
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 403) return { error: "Нет прав администратора" };
+      if (e.status === 400 && e.message.includes("email_already_in_use")) {
+        return { error: "Этот email уже используется" };
+      }
+      if (e.status === 400 && e.message.includes("telegram_already_in_use")) {
+        return { error: "Этот Telegram ID уже используется" };
+      }
+      if (e.status === 400) return { error: "Проверь имя и email" };
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось создать администратора" };
   }
 
   revalidatePath("/teacher");

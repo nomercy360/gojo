@@ -578,6 +578,49 @@ teacherRoute.patch("/admins/:adminId", zValidator("json", updateAdminInput), asy
   });
 });
 
+const createAdminInput = z.object({
+  name: z.string().trim().min(1).max(200),
+  nickname: z.string().trim().max(200).nullable().optional(),
+  email: z.string().trim().email().max(320),
+  telegramId: z.number().int().positive().nullable().optional(),
+});
+
+teacherRoute.post("/admins", zValidator("json", createAdminInput), async (c) => {
+  const body = c.req.valid("json");
+  const normalizedEmail = body.email.toLowerCase();
+
+  const ctx = await auth.$context;
+  if (await ctx.internalAdapter.findUserByEmail(normalizedEmail)) {
+    throw new HTTPException(400, { message: "email_already_in_use" });
+  }
+  if (body.telegramId) {
+    const [telegramOwner] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(eq(userTable.telegramId, body.telegramId))
+      .limit(1);
+    if (telegramOwner) throw new HTTPException(400, { message: "telegram_already_in_use" });
+  }
+
+  const created = await ctx.internalAdapter.createUser({
+    email: normalizedEmail,
+    name: body.name,
+    emailVerified: false,
+    role: "admin",
+    ...(body.nickname ? { nickname: body.nickname } : {}),
+    ...(body.telegramId ? { telegramId: body.telegramId } : {}),
+  });
+
+  // Passwordless activation, same as students — the invite signs them
+  // straight into the teacher dashboard.
+  await auth.api.signInMagicLink({
+    body: { email: normalizedEmail, name: body.name, callbackURL: `${env.WEB_ORIGIN}/teacher` },
+    headers: c.req.raw.headers,
+  });
+
+  return c.json({ ok: true, userId: created.id }, 201);
+});
+
 teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput), async (c) => {
   const studentId = c.req.param("studentId");
   const body = c.req.valid("json");

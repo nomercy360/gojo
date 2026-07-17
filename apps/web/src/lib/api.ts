@@ -258,6 +258,18 @@ export function cancelLesson(lessonId: string) {
   return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}`, { method: "DELETE" });
 }
 
+export function createAdmin(body: {
+  name: string;
+  nickname: string | null;
+  email: string;
+  telegramId: number | null;
+}) {
+  return apiFetch<{ ok: boolean; userId: string }>("/teacher/admins", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export function addLessonStudent(lessonId: string, studentId: string) {
   return apiFetch<{ ok: boolean; added: boolean }>(`/teacher/lessons/${lessonId}/students`, {
     method: "POST",
