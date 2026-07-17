@@ -2,8 +2,10 @@
 
 import {
   ApiError,
+  addLessonStudent,
   cancelLesson,
   createLesson,
+  removeLessonStudent,
   updateAdmin,
   updateLesson,
   updateStudent,
@@ -256,6 +258,63 @@ export async function updateLessonAction(
       return { error: `API ${e.status}: ${e.message}` };
     }
     return { error: "Не удалось сохранить урок" };
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath(`/teacher/lessons/${lessonId}`);
+  return { ok: true };
+}
+
+export async function addLessonStudentAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
+  const lessonId = String(formData.get("lessonId") ?? "");
+  const studentId = String(formData.get("studentId") ?? "");
+  if (!lessonId || !studentId) return { error: "Выбери студента" };
+
+  try {
+    await addLessonStudent(lessonId, studentId);
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 403) return { error: "Нет прав учителя" };
+      if (e.status === 400 && e.message.includes("too_many_students")) {
+        return { error: "На уроке уже 8 студентов" };
+      }
+      if (e.status === 400 && e.message.includes("lesson_cancelled")) {
+        return { error: "Урок отменён — добавить студента нельзя" };
+      }
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось добавить студента" };
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath(`/teacher/lessons/${lessonId}`);
+  return { ok: true };
+}
+
+export async function removeLessonStudentAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
+  const lessonId = String(formData.get("lessonId") ?? "");
+  const studentId = String(formData.get("studentId") ?? "");
+  if (!lessonId || !studentId) return { error: "Нет студента" };
+
+  try {
+    await removeLessonStudent(lessonId, studentId);
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 403) return { error: "Нет прав учителя" };
+      if (e.status === 400 && e.message.includes("student_already_attended")) {
+        return { error: "Студент уже отмечен на уроке — убрать нельзя" };
+      }
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось убрать студента" };
   }
 
   revalidatePath("/teacher");

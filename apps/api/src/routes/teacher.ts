@@ -1142,6 +1142,87 @@ teacherRoute.get("/lessons/:id/students", async (c) => {
   );
 });
 
+const addLessonStudentInput = z.object({ studentId: z.string().min(1) });
+
+teacherRoute.post("/lessons/:id/students", zValidator("json", addLessonStudentInput), async (c) => {
+  const u = c.get("user")!;
+  const id = c.req.param("id");
+  const { studentId } = c.req.valid("json");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
+  if (lesson.status === "cancelled" || lesson.deletedAt) {
+    throw new HTTPException(400, { message: "lesson_cancelled" });
+  }
+
+  const [student] = await db
+    .select({ id: userTable.id })
+    .from(userTable)
+    .where(and(eq(userTable.id, studentId), eq(userTable.role, "student")))
+    .limit(1);
+  if (!student) throw new HTTPException(400, { message: "unknown_student" });
+
+  const added = await db.transaction(async (tx) => {
+    const [countRow] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bookings)
+      .where(eq(bookings.lessonId, id));
+    const current = Number(countRow?.count ?? 0);
+    if (current >= 8) throw new HTTPException(400, { message: "too_many_students" });
+
+    const inserted = await tx
+      .insert(bookings)
+      .values({ lessonId: id, studentId })
+      .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] })
+      .returning({ id: bookings.id });
+
+    // maxStudents was frozen at the creation-time roster size; grow it so
+    // the stored capacity never contradicts the actual roster.
+    if (inserted.length > 0 && current + 1 > lesson.maxStudents) {
+      await tx
+        .update(lessons)
+        .set({ maxStudents: current + 1, updatedAt: new Date() })
+        .where(eq(lessons.id, id));
+    }
+    return inserted[0];
+  });
+
+  if (added) {
+    await sendLessonConfirmation(
+      { bookingId: added.id, userId: studentId },
+      lesson.title,
+      lesson.startsAt,
+    );
+  }
+  return c.json({ ok: true, added: Boolean(added) }, added ? 201 : 200);
+});
+
+teacherRoute.delete("/lessons/:id/students/:studentId", async (c) => {
+  const u = c.get("user")!;
+  const id = c.req.param("id");
+  const studentId = c.req.param("studentId");
+
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1);
+  if (!lesson) throw new HTTPException(404, { message: "lesson not found" });
+  if (!canManageLesson(u, lesson)) throw new HTTPException(403, { message: "not your lesson" });
+
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(and(eq(bookings.lessonId, id), eq(bookings.studentId, studentId)))
+    .limit(1);
+  if (!booking) throw new HTTPException(404, { message: "booking not found" });
+  // An attended booking already carries notes/homework/SRS state — removing it
+  // would silently orphan that record, so it stays.
+  if (booking.attendanceStatus === "attended") {
+    throw new HTTPException(400, { message: "student_already_attended" });
+  }
+
+  await db.delete(bookings).where(eq(bookings.id, booking.id));
+  return c.json({ ok: true });
+});
+
 teacherRoute.patch(
   "/lessons/:id/students/:studentId/level",
   zValidator("json", setStudentLevelInput),

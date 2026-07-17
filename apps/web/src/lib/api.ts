@@ -258,6 +258,19 @@ export function cancelLesson(lessonId: string) {
   return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}`, { method: "DELETE" });
 }
 
+export function addLessonStudent(lessonId: string, studentId: string) {
+  return apiFetch<{ ok: boolean; added: boolean }>(`/teacher/lessons/${lessonId}/students`, {
+    method: "POST",
+    body: JSON.stringify({ studentId }),
+  });
+}
+
+export function removeLessonStudent(lessonId: string, studentId: string) {
+  return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}/students/${studentId}`, {
+    method: "DELETE",
+  });
+}
+
 export function fetchReviewQueue() {
   return apiFetch<ReviewQueueDto>("/review/queue");
 }

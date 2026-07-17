@@ -6,11 +6,13 @@ import { Card } from "@/components/ui/card";
 import {
   ApiError,
   type LessonStudentDto,
+  type StudentDirectoryEntry,
   fetchLesson,
   fetchLessonCards,
   fetchLessonMaterials,
   fetchLessonStudents,
   fetchLessonSubmissions,
+  fetchStudentDirectory,
 } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -24,6 +26,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MaterialUploadForm } from "./material-upload-form";
 import { MeetingLinkForm } from "./meeting-link-form";
+import { RosterManager } from "./roster-manager";
 import { SubmissionsReview } from "./submissions-review";
 
 export const dynamic = "force-dynamic";
@@ -41,13 +44,15 @@ export default async function TeacherLessonPage({ params }: Props) {
   let cards: LessonCardDto[] = [];
   let materials: LessonMaterialDto[] = [];
   let submissions: TeacherSubmissionDto[] = [];
+  let directory: StudentDirectoryEntry[] = [];
   try {
     lesson = await fetchLesson(id);
-    [students, cards, materials, submissions] = await Promise.all([
+    [students, cards, materials, submissions, directory] = await Promise.all([
       fetchLessonStudents(id),
       fetchLessonCards(id),
       fetchLessonMaterials(id),
       fetchLessonSubmissions(id),
+      fetchStudentDirectory(),
     ]);
   } catch (e) {
     return (
@@ -105,13 +110,21 @@ export default async function TeacherLessonPage({ params }: Props) {
 
         <section className="mt-10">
           <h2 className="font-serif text-[22px] font-bold">Студенты</h2>
-          {students.length === 0 ? (
-            <p className="mt-3 rounded-md border border-black/10 bg-gojo-surface px-4 py-5 text-sm text-gojo-ink-muted">
-              На урок пока никто не записался.
-            </p>
-          ) : (
+          {lesson.status !== "cancelled" ? (
+            <RosterManager
+              lessonId={id}
+              students={students}
+              candidates={directory.map((s) => ({
+                id: s.id,
+                name: s.name,
+                nickname: s.nickname,
+                email: s.email,
+              }))}
+            />
+          ) : null}
+          {students.length > 0 ? (
             <HomeworkManager lessonId={id} initialStudents={students} />
-          )}
+          ) : null}
         </section>
 
         <SubmissionsReview initialSubmissions={submissions} />
