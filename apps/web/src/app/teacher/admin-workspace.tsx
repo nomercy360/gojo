@@ -80,7 +80,14 @@ import {
   updateVocabAction,
 } from "./curriculum/actions";
 import { HomeDashboard } from "./home-dashboard";
-import { createTrialLessonAction, updateLeadAction } from "./leads/actions";
+import {
+  type SendLeadLinkState,
+  createTrialLessonAction,
+  markTrialDoneAction,
+  rejectLeadAction,
+  sendLeadLinkAction,
+  updateLeadAction,
+} from "./leads/actions";
 import { CreateStudentForm } from "./students/new/create-form";
 
 export type DashboardStudent = StudentDirectoryEntry & {
@@ -100,7 +107,7 @@ export type CurriculumData = {
 
 type Collection = "home" | "students" | "lessons" | "leads" | "curriculum" | "admins";
 type Panel =
-  | { kind: "new-student"; sourceLead?: TeacherLeadDto }
+  | { kind: "new-student" }
   | { kind: "new-lesson" }
   | { kind: "new-admin" }
   | { kind: "new-unit"; levelId: number }
@@ -123,12 +130,11 @@ const LEAD_STATUS: Record<string, string> = {
   new: "Новая",
   contacted: "Связались",
   trial_booked: "Пробный назначен",
-  trial_done: "Пробный проведён",
+  trial_done: "Пробный пройден",
+  link_sent: "Ссылка отправлена",
   converted: "Конвертирована",
   lost: "Отклонена",
 };
-
-const LEAD_STATUSES = Object.keys(LEAD_STATUS);
 
 export function AdminWorkspace({
   students,
@@ -483,12 +489,18 @@ export function AdminWorkspace({
       </div>
 
       <RecordSheet
-        panel={panel}
+        panel={
+          // The lead panel stays open across state transitions (trial created,
+          // trial done, link sent) — re-resolve the record so router.refresh()
+          // shows the fresh state instead of the snapshot taken on open.
+          panel?.kind === "lead"
+            ? { ...panel, record: leads.find((l) => l.id === panel.record.id) ?? panel.record }
+            : panel
+        }
         plans={plans}
         directory={directory}
         units={units}
         onClose={closePanel}
-        onConvertLead={(lead) => setPanel({ kind: "new-student", sourceLead: lead })}
       />
     </main>
   );
@@ -876,20 +888,16 @@ function RecordSheet({
   directory,
   units,
   onClose,
-  onConvertLead,
 }: {
   panel: Panel;
   plans: PaymentPlanDto[];
   directory: StudentDirectoryEntry[];
   units: TeacherUnit[];
   onClose: () => void;
-  onConvertLead: (lead: TeacherLeadDto) => void;
 }) {
   const title =
     panel?.kind === "new-student"
-      ? panel.sourceLead
-        ? "Конвертация заявки"
-        : "Новый студент"
+      ? "Новый студент"
       : panel?.kind === "new-lesson"
         ? "Новый урок"
         : panel?.kind === "new-admin"
@@ -920,9 +928,7 @@ function RecordSheet({
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
             {panel?.kind === "new-student"
-              ? panel.sourceLead
-                ? "Создаст аккаунт без оплаты, свяжет его с заявкой и перенесёт пробный урок."
-                : "Создаст аккаунт и отправит приглашение на email."
+              ? "Создаст аккаунт и отправит приглашение на email."
               : panel?.kind === "new-lesson"
                 ? "Урок сразу появится у выбранных студентов."
                 : panel?.kind === "new-admin"
@@ -938,12 +944,7 @@ function RecordSheet({
         </SheetHeader>
         <SheetBody>
           {panel?.kind === "new-student" ? (
-            <CreateStudentForm
-              plans={plans}
-              presentation="plain"
-              onSuccess={onClose}
-              sourceLead={panel.sourceLead}
-            />
+            <CreateStudentForm plans={plans} presentation="plain" onSuccess={onClose} />
           ) : panel?.kind === "new-lesson" ? (
             <CreateLessonForm
               students={directory}
@@ -966,7 +967,6 @@ function RecordSheet({
                   : null
               }
               onSuccess={onClose}
-              onConvert={() => onConvertLead(panel.record)}
             />
           ) : panel?.kind === "admin" ? (
             <AdminPanel admin={panel.record} onSuccess={onClose} />
@@ -2177,27 +2177,27 @@ function LessonPanel({
   );
 }
 
+// The lead drawer is state-driven: one primary action per lifecycle state,
+// expanding inline (progressive disclosure) instead of opening another layer.
+// Status is machine-driven; the only manual override is reject. The CRM
+// overlay (contacts, follow-up, notes) is always editable underneath.
+type LeadSubAction = "trial" | "trialDone" | "sendLink" | "reject";
+
 function LeadPanel({
   lead,
   linkedStudent,
   onSuccess,
-  onConvert,
 }: {
   lead: TeacherLeadDto;
   linkedStudent: StudentDirectoryEntry | null;
   onSuccess: () => void;
-  onConvert: () => void;
 }) {
   const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
     updateLeadAction,
     {},
   );
   const router = useRouter();
-  const [trialTitle, setTrialTitle] = useState(`Пробный урок · ${lead.name}`);
-  const [trialDate, setTrialDate] = useState("");
-  const [trialTime, setTrialTime] = useState("19:00");
-  const [trialDuration, setTrialDuration] = useState("50");
-  const [today, setToday] = useState("");
+  const [action, setAction] = useState<LeadSubAction | null>(null);
 
   useEffect(() => {
     if (!state.ok) return;
@@ -2206,14 +2206,9 @@ function LeadPanel({
     onSuccess();
   }, [onSuccess, router, state.ok]);
 
-  useEffect(() => {
-    const now = new Date();
-    setToday(formatDateInput(now));
-    setTrialDate(formatDateInput(new Date(now.getTime() + 86_400_000)));
-    setTrialTitle(`Пробный урок · ${lead.name}`);
-  }, [lead.name]);
-
-  const trialStartsAt = localDateTimeIso(trialDate, trialTime);
+  // No reset-on-transition effect needed: each state only reads its own
+  // sub-action value, so a stale `action` from the previous state is inert.
+  const rejectable = ["new", "contacted", "trial_booked", "trial_done"].includes(lead.status);
 
   return (
     <div className="space-y-6">
@@ -2228,7 +2223,10 @@ function LeadPanel({
               {lead.phone ? <div>{lead.phone}</div> : null}
             </div>
           </div>
-          <Badge variant="outline">{lead.kind}</Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant="outline">{lead.kind}</Badge>
+            {lead.assessedLevel ? <Badge variant="outline">{lead.assessedLevel}</Badge> : null}
+          </div>
         </div>
         {lead.goal || lead.level ? (
           <p className="mt-4 border-t border-gojo-ink/10 pt-3 text-sm text-gojo-ink-muted">
@@ -2237,21 +2235,37 @@ function LeadPanel({
         ) : null}
       </div>
 
-      {!lead.studentId && !["converted", "lost"].includes(lead.status) ? (
-        <Button type="button" className="w-full" onClick={onConvert}>
-          Конвертировать в студента
-        </Button>
+      {lead.trialLessonId ? (
+        <Link
+          href={`/teacher/lessons/${lead.trialLessonId}`}
+          className={buttonVariants({ variant: "secondary", className: "w-full" })}
+        >
+          Пробный урок{lead.assessedLevel ? " · пройден" : ""} <ArrowUpRight />
+        </Link>
       ) : null}
 
-      {lead.studentId && linkedStudent ? (
-        <ResendInviteButton
-          studentId={lead.studentId}
-          lastSentAt={linkedStudent.inviteLastSentAt}
-          lastLoginAt={linkedStudent.lastLoginAt}
-        />
+      <LeadStateAction
+        lead={lead}
+        action={action}
+        setAction={setAction}
+        linkedStudent={linkedStudent}
+      />
+
+      {rejectable ? (
+        action === "reject" ? (
+          <LeadRejectConfirm lead={lead} onCancel={() => setAction(null)} />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAction("reject")}
+            className="w-full text-center text-sm font-bold text-gojo-error hover:underline"
+          >
+            Отклонить лид
+          </button>
+        )
       ) : null}
 
-      <form action={formAction} className="space-y-5">
+      <form action={formAction} className="space-y-5 border-t border-gojo-ink/10 pt-6">
         <Input type="hidden" name="leadId" value={lead.id} />
         <Field>
           <FieldLabel htmlFor={`lead-name-${lead.id}`}>Имя</FieldLabel>
@@ -2288,16 +2302,6 @@ function LeadPanel({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor={`lead-status-${lead.id}`}>Статус</FieldLabel>
-          <NativeSelect id={`lead-status-${lead.id}`} name="status" defaultValue={lead.status}>
-            {LEAD_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {LEAD_STATUS[status]}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field>
           <FieldLabel htmlFor={`follow-up-${lead.id}`}>Следующий контакт</FieldLabel>
           <Input
             id={`follow-up-${lead.id}`}
@@ -2321,65 +2325,327 @@ function LeadPanel({
           {pending ? "Сохраняем..." : "Сохранить изменения"}
         </Button>
       </form>
-
-      {lead.trialLessonId ? (
-        <Link
-          href={`/teacher/lessons/${lead.trialLessonId}`}
-          className={buttonVariants({ variant: "secondary", className: "w-full" })}
-        >
-          Открыть пробный урок <ArrowUpRight />
-        </Link>
-      ) : (
-        <form
-          action={createTrialLessonAction}
-          className="space-y-4 border-t border-gojo-ink/10 pt-6"
-        >
-          <Input type="hidden" name="leadId" value={lead.id} />
-          <Input type="hidden" name="startsAt" value={trialStartsAt} />
-          <div>
-            <h3 className="font-bold">Назначить пробный урок</h3>
-            <p className="mt-1 text-sm text-gojo-ink-muted">
-              Создаст урок и свяжет его с этой заявкой.
-            </p>
-          </div>
-          <Input
-            name="title"
-            value={trialTitle}
-            onChange={(event) => setTrialTitle(event.target.value)}
-          />
-          <TimeZoneNote />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              name="date"
-              type="date"
-              min={today}
-              value={trialDate}
-              onChange={(event) => setTrialDate(event.target.value)}
-              required
-            />
-            <Input
-              name="time"
-              type="time"
-              value={trialTime}
-              onChange={(event) => setTrialTime(event.target.value)}
-              required
-            />
-          </div>
-          <NativeSelect
-            name="duration"
-            value={trialDuration}
-            onChange={(event) => setTrialDuration(event.target.value)}
-          >
-            <option value="30">30 минут</option>
-            <option value="50">50 минут</option>
-            <option value="60">60 минут</option>
-          </NativeSelect>
-          <Button type="submit" variant="outline" className="w-full" disabled={!trialStartsAt}>
-            Создать пробный урок
-          </Button>
-        </form>
-      )}
     </div>
+  );
+}
+
+// One primary action per state; anything else simply does not exist in that
+// state. The action expands in place and collapses once the transition lands.
+function LeadStateAction({
+  lead,
+  action,
+  setAction,
+  linkedStudent,
+}: {
+  lead: TeacherLeadDto;
+  action: LeadSubAction | null;
+  setAction: (action: LeadSubAction | null) => void;
+  linkedStudent: StudentDirectoryEntry | null;
+}) {
+  switch (lead.status) {
+    case "new":
+    case "contacted":
+      if (lead.trialLessonId) return null;
+      return action === "trial" ? (
+        <LeadTrialForm lead={lead} onCancel={() => setAction(null)} />
+      ) : (
+        <Button type="button" className="w-full" onClick={() => setAction("trial")}>
+          Назначить пробный урок
+        </Button>
+      );
+    case "trial_booked":
+      return action === "trialDone" ? (
+        <LeadTrialDoneForm lead={lead} onCancel={() => setAction(null)} />
+      ) : (
+        <div className="space-y-2">
+          <Button type="button" className="w-full" onClick={() => setAction("trialDone")}>
+            Пробный пройден
+          </Button>
+          <p className="text-center text-xs text-gojo-ink-muted">
+            После урока отметьте результат — уровень выставляется тем же действием.
+          </p>
+        </div>
+      );
+    case "trial_done":
+      return action === "sendLink" ? (
+        <LeadSendLinkConfirm lead={lead} onCancel={() => setAction(null)} />
+      ) : lead.email || lead.telegramId ? (
+        <Button type="button" className="w-full" onClick={() => setAction("sendLink")}>
+          Отправить ссылку для входа
+        </Button>
+      ) : (
+        <div className="rounded-xl border border-gojo-ink/10 bg-gojo-paper-2 p-3.5 text-sm text-gojo-ink-muted">
+          Ссылку некуда отправить — добавьте email в форме ниже. Telegram-ник без нажатия «Start» в
+          боте не работает как канал.
+        </div>
+      );
+    case "link_sent":
+    case "converted":
+      return (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-gojo-ink/10 bg-gojo-paper-2 p-3.5 text-sm text-gojo-ink-muted">
+            {lead.status === "link_sent"
+              ? "Ссылка отправлена, аккаунт создан. Заявка станет «Конвертирована», когда клиент впервые войдёт."
+              : "Аккаунт создан, клиент уже входил."}
+          </div>
+          {lead.studentId ? (
+            <Link
+              href={`/teacher/students/${lead.studentId}`}
+              className={buttonVariants({ variant: "secondary", className: "w-full" })}
+            >
+              Открыть студента <ArrowUpRight />
+            </Link>
+          ) : null}
+          {lead.studentId && linkedStudent ? (
+            <ResendInviteButton
+              studentId={lead.studentId}
+              lastSentAt={linkedStudent.inviteLastSentAt}
+              lastLoginAt={linkedStudent.lastLoginAt}
+            />
+          ) : null}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+function LeadTrialForm({ lead, onCancel }: { lead: TeacherLeadDto; onCancel: () => void }) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    createTrialLessonAction,
+    {},
+  );
+  const router = useRouter();
+  const [title, setTitle] = useState(`Пробный урок · ${lead.name}`);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("19:00");
+  const [duration, setDuration] = useState("50");
+  const [today, setToday] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    setToday(formatDateInput(now));
+    setDate(formatDateInput(new Date(now.getTime() + 86_400_000)));
+  }, []);
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Пробный урок создан и привязан к заявке");
+    router.refresh();
+  }, [router, state.ok]);
+
+  const startsAt = localDateTimeIso(date, time);
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-xl border border-gojo-orange/40 p-4">
+      <Input type="hidden" name="leadId" value={lead.id} />
+      <Input type="hidden" name="startsAt" value={startsAt} />
+      <h3 className="font-bold">Пробный урок</h3>
+      <Input name="title" value={title} onChange={(event) => setTitle(event.target.value)} />
+      <TimeZoneNote />
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          name="date"
+          type="date"
+          min={today}
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+          required
+        />
+        <Input
+          name="time"
+          type="time"
+          value={time}
+          onChange={(event) => setTime(event.target.value)}
+          required
+        />
+      </div>
+      <NativeSelect
+        name="duration"
+        value={duration}
+        onChange={(event) => setDuration(event.target.value)}
+      >
+        <option value="30">30 минут</option>
+        <option value="50">50 минут</option>
+        <option value="60">60 минут</option>
+      </NativeSelect>
+      {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+      <div className="flex gap-2">
+        <Button type="submit" className="flex-1" disabled={pending || !startsAt}>
+          {pending ? "Создаём..." : "Создать урок"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Отмена
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function LeadTrialDoneForm({ lead, onCancel }: { lead: TeacherLeadDto; onCancel: () => void }) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    markTrialDoneAction,
+    {},
+  );
+  const router = useRouter();
+  const [level, setLevel] = useState(lead.assessedLevel ?? "");
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Пробный отмечен — можно отправлять ссылку для входа");
+    router.refresh();
+  }, [router, state.ok]);
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-xl border border-gojo-orange/40 p-4">
+      <Input type="hidden" name="leadId" value={lead.id} />
+      <div>
+        <h3 className="font-bold">Итог пробного урока</h3>
+        <p className="mt-1 text-sm text-gojo-ink-muted">
+          Уровень обязателен: он уйдёт в аккаунт студента вместе со ссылкой для входа.
+        </p>
+      </div>
+      <Field>
+        <FieldLabel htmlFor={`trial-level-${lead.id}`}>JLPT по итогам урока</FieldLabel>
+        <NativeSelect
+          id={`trial-level-${lead.id}`}
+          name="jlptLevel"
+          required
+          value={level}
+          onChange={(event) => setLevel(event.target.value)}
+        >
+          <option value="" disabled>
+            Выбери уровень
+          </option>
+          <option value="N5">N5</option>
+          <option value="N4">N4</option>
+          <option value="N3">N3</option>
+          <option value="N2">N2</option>
+        </NativeSelect>
+      </Field>
+      {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+      <div className="flex gap-2">
+        <Button type="submit" className="flex-1" disabled={pending || !level}>
+          {pending ? "Сохраняем..." : "Пробный пройден"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Отмена
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Send-link is a confirm, not a form: the channel is derived from the lead's
+// data, previewed before the irreversible outbound send.
+function LeadSendLinkConfirm({ lead, onCancel }: { lead: TeacherLeadDto; onCancel: () => void }) {
+  const [state, formAction, pending] = useActionState<SendLeadLinkState, FormData>(
+    sendLeadLinkAction,
+    {},
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state.ok) return;
+    const channels = [state.sentEmail ? "email" : null, state.sentTelegram ? "Telegram" : null]
+      .filter(Boolean)
+      .join(" и ");
+    toast.success(channels ? `Ссылка отправлена: ${channels}` : "Ссылка отправлена");
+    router.refresh();
+  }, [router, state]);
+
+  const channelPreview = [
+    lead.email ? `magic-link на ${lead.email}` : null,
+    lead.telegramId ? "кнопка от бота в Telegram" : null,
+  ]
+    .filter(Boolean)
+    .join(" и ");
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-xl border border-gojo-orange/40 p-4">
+      <Input type="hidden" name="leadId" value={lead.id} />
+      <div>
+        <h3 className="font-bold">Отправить ссылку для входа</h3>
+        <p className="mt-1 text-sm text-gojo-ink-muted">
+          Создаст аккаунт с уровнем {lead.assessedLevel ?? "—"} и отправит {channelPreview}. Оплата
+          и доступ к контенту — отдельно, после входа.
+        </p>
+      </div>
+      {state.matches?.length ? (
+        <div className="space-y-2">
+          <p className="text-sm font-bold">
+            Студент с таким контактом уже существует — привяжи заявку:
+          </p>
+          {state.matches.map((match) => (
+            <Button
+              key={match.id}
+              type="submit"
+              name="existingStudentId"
+              value={match.id}
+              variant="outline"
+              className="h-auto w-full justify-start py-2.5 text-left"
+              disabled={pending}
+            >
+              <span>
+                <span className="block font-bold">{match.name}</span>
+                <span className="block text-xs font-normal text-gojo-ink-muted">
+                  {[
+                    match.email.endsWith("@telegram.gojo.local") ? null : match.email,
+                    match.telegramUsername ? `@${match.telegramUsername}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+            </Button>
+          ))}
+        </div>
+      ) : null}
+      {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+      <div className="flex gap-2">
+        {state.matches?.length ? null : (
+          <Button type="submit" className="flex-1" disabled={pending}>
+            {pending ? "Отправляем..." : "Отправить"}
+          </Button>
+        )}
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+          Отмена
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function LeadRejectConfirm({ lead, onCancel }: { lead: TeacherLeadDto; onCancel: () => void }) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    rejectLeadAction,
+    {},
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Заявка отклонена");
+    router.refresh();
+  }, [router, state.ok]);
+
+  return (
+    <form
+      action={formAction}
+      className="space-y-3 rounded-xl border border-gojo-error/30 bg-gojo-error-soft/40 p-4"
+    >
+      <Input type="hidden" name="leadId" value={lead.id} />
+      <p className="text-sm">Заявка уйдёт в «Отклонена» — это терминальное состояние.</p>
+      {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+      <div className="flex gap-2">
+        <Button type="submit" variant="destructive" className="flex-1" disabled={pending}>
+          {pending ? "Отклоняем..." : "Отклонить"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+          Отмена
+        </Button>
+      </div>
+    </form>
   );
 }
 

@@ -481,6 +481,7 @@ export type TeacherLeadDto = {
   email: string | null;
   phone: string | null;
   level: string | null;
+  assessedLevel: string | null;
   goal: string | null;
   notes: string | null;
   nextFollowUpAt: string | null;
@@ -678,29 +679,19 @@ export type LeadConversionMatch = {
   telegramUsername: string | null;
 };
 
-export type LeadConversionResult =
-  | {
-      ok: true;
-      userId: string;
-      created: boolean;
-      alreadyConverted: boolean;
-    }
+export type SendLeadLinkResult =
+  | { ok: true; userId: string; sentEmail?: boolean; sentTelegram?: boolean }
   | { ok: false; requiresLink: true; matches: LeadConversionMatch[] };
 
-export function convertTeacherLead(
-  leadId: string,
-  body: {
-    name: string;
-    email: string | null;
-    nickname?: string;
-    telegramUsername: string | null;
-    telegramId: number | null;
-    jlptLevel: "N5" | "N4" | "N3" | "N2";
-    planId: string | null;
-    existingStudentId?: string;
-  },
-) {
-  return apiFetch<LeadConversionResult>(`/teacher/leads/${leadId}/convert`, {
+export function markLeadTrialDone(leadId: string, body: { jlptLevel: "N5" | "N4" | "N3" | "N2" }) {
+  return apiFetch<{ ok: boolean }>(`/teacher/leads/${leadId}/trial-done`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function sendLeadLoginLink(leadId: string, body: { existingStudentId?: string } = {}) {
+  return apiFetch<SendLeadLinkResult>(`/teacher/leads/${leadId}/send-link`, {
     method: "POST",
     body: JSON.stringify(body),
   });
