@@ -4,14 +4,19 @@ import { zValidator } from "@hono/zod-validator";
 import { and, eq, gt, lt, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { issueMagicLinkUrl } from "../auth.ts";
 import type { AuthContext } from "../auth/middleware.ts";
 import { createSessionCookie } from "../auth/session.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 import { sendEmail } from "../mailer.ts";
 import { sendTelegramMessage } from "../reminders.ts";
+import { telegramLoginMarkup } from "./telegram.ts";
 
-const requestCodeInput = z.object({ identifier: z.string().trim().min(3).max(200) });
+const requestCodeInput = z.object({
+  identifier: z.string().trim().min(3).max(200),
+  role: z.enum(["student", "admin"]).default("student"),
+});
 const verifyCodeInput = z.object({
   challengeId: z.string().uuid(),
   code: z.string().regex(/^\d{6}$/),
@@ -24,17 +29,19 @@ const recentRequests = new Map<string, number>();
 
 type DeliveryChannel = { type: "email" | "telegram"; label: string };
 
-type OtpRecord = { userId: string; digest: string; attempts: number };
+type OtpRecord = { userId: string; digest: string; attempts: number; role?: "student" | "admin" };
 
 export const loginRoute = new Hono<AuthContext>();
 
 loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
-  const parsed = parseIdentifier(c.req.valid("json").identifier);
+  const { identifier, role } = c.req.valid("json");
+  const parsed = parseIdentifier(identifier);
   if (!parsed) return c.json({ error: "invalid_identifier" }, 400);
 
   const [account] = await db
     .select({
       id: userTable.id,
+      name: userTable.name,
       email: userTable.email,
       telegramId: userTable.telegramId,
       telegramUsername: userTable.telegramUsername,
@@ -42,7 +49,7 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
     .from(userTable)
     .where(
       and(
-        eq(userTable.role, "student"),
+        eq(userTable.role, role),
         or(
           sql`lower(${userTable.email}) = ${parsed.email}`,
           sql`lower(${userTable.telegramUsername}) = ${parsed.telegram}`,
@@ -85,6 +92,7 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
       userId: account.id,
       digest: codeDigest(challengeId, code),
       attempts: 0,
+      role,
     } satisfies OtpRecord),
     expiresAt: new Date(now + OTP_TTL_MS),
     updatedAt: new Date(),
@@ -92,15 +100,34 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
 
   const channels: DeliveryChannel[] = [];
   if (!isTelegramPlaceholderEmail(account.email)) {
+    // One email carries BOTH ways in: the 6-digit code and a magic link.
+    // Link issuance is best-effort — a code-only email still logs the user in.
+    let magicUrl: string | null = null;
+    try {
+      magicUrl = await issueMagicLinkUrl({
+        email: account.email,
+        name: account.name,
+        callbackURL: `${env.WEB_ORIGIN}${role === "admin" ? "/teacher" : "/dashboard"}`,
+        headers: c.req.raw.headers,
+      });
+    } catch (error) {
+      console.error("login magic-link issuance failed:", error);
+    }
     try {
       await sendEmail(
         account.email,
-        "Код для входа в Gojo Learn",
+        "Вход в Gojo Learn",
         `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
             <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
             <h1 style="margin-bottom:8px">Код для входа</h1>
             <p style="font-size:28px;letter-spacing:6px;font-weight:700;margin:16px 0">${code}</p>
-            <p>Код действует 10 минут. Если это были не вы, просто проигнорируйте письмо.</p>
+            ${
+              magicUrl
+                ? `<p style="margin:20px 0">Или войдите в один клик:</p>
+            <p style="margin:0 0 20px"><a href="${magicUrl}" style="display:inline-block;background:#e8420a;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:10px">Войти без кода</a></p>`
+                : ""
+            }
+            <p>Код и ссылка действуют 10 минут. Если это были не вы, просто проигнорируйте письмо.</p>
           </div>`,
       );
       channels.push({ type: "email", label: maskEmail(account.email) });
@@ -115,9 +142,10 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
     try {
       const sent = await sendTelegramMessage(
         account.telegramId,
-        `Код для входа в Gojo Learn: ${code}`,
+        `Код для входа в Gojo Learn: ${code}\n\nМожно ввести код на сайте — или просто нажать кнопку ниже.`,
         "auth.telegram_otp",
         account.id,
+        telegramLoginMarkup(),
       );
       if (sent) {
         channels.push({
@@ -175,7 +203,7 @@ loginRoute.post("/code/verify", zValidator("json", verifyCodeInput), async (c) =
   const [account] = await db
     .select({ id: userTable.id })
     .from(userTable)
-    .where(and(eq(userTable.id, record.userId), eq(userTable.role, "student")))
+    .where(and(eq(userTable.id, record.userId), eq(userTable.role, record.role ?? "student")))
     .limit(1);
   if (!account) {
     await db.delete(verification).where(eq(verification.id, row.id));

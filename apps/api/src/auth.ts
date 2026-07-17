@@ -9,6 +9,35 @@ import { sendEmail } from "./mailer.ts";
 
 const db = createDb(env.DATABASE_URL);
 
+// When a combined login flow (code + link in ONE message) needs the magic-link
+// URL instead of the default standalone email, it registers a capture here
+// before calling signInMagicLink; sendMagicLink hands the URL over and skips
+// its own send. Keyed by lowercased email; in-process is fine — the API is a
+// single container and signInMagicLink awaits sendMagicLink synchronously.
+const magicLinkCaptures = new Map<string, (url: string) => void>();
+
+export async function issueMagicLinkUrl(opts: {
+  email: string;
+  name?: string;
+  callbackURL: string;
+  headers: Headers;
+}): Promise<string | null> {
+  const key = opts.email.toLowerCase();
+  let captured: string | null = null;
+  magicLinkCaptures.set(key, (url) => {
+    captured = url;
+  });
+  try {
+    await auth.api.signInMagicLink({
+      body: { email: key, name: opts.name, callbackURL: opts.callbackURL },
+      headers: opts.headers,
+    });
+  } finally {
+    magicLinkCaptures.delete(key);
+  }
+  return captured;
+}
+
 export const auth = betterAuth({
   secret: env.JWT_SECRET,
   baseURL: env.API_ORIGIN,
@@ -51,7 +80,16 @@ export const auth = betterAuth({
       // A magic link is sign-in/invitation only. POST /teacher/students creates
       // the account before requesting its first link.
       disableSignUp: true,
+      // Match the login-code TTL (and the "10 минут" copy in every message).
+      expiresIn: 600,
       sendMagicLink: async ({ email, url, metadata }) => {
+        const capture = magicLinkCaptures.get(email.toLowerCase());
+        if (capture) {
+          // The caller already resolved and authorized the account; it will
+          // deliver the URL inside its own combined message.
+          capture(url);
+          return;
+        }
         const [existing] = await db
           .select({ role: user.role })
           .from(user)
