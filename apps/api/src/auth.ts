@@ -1,9 +1,9 @@
 import { createDb } from "@gojo/db";
 import { account, leads, session, user, verification } from "@gojo/db";
-import { and } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
+import { and } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { env } from "./env.ts";
 import { sendEmail } from "./mailer.ts";
@@ -101,8 +101,8 @@ export const auth = betterAuth({
     // Caddy route, so — unlike the old verify/reset emails — it needs no manual
     // /api rewrite.
     magicLink({
-      // A magic link is sign-in/invitation only. POST /teacher/students creates
-      // the account before requesting its first link.
+      // A magic link is sign-in/invitation only. Lead conversion creates the
+      // student account before requesting its first link.
       disableSignUp: true,
       // Match the login-code TTL (and the "10 минут" copy in every message).
       expiresIn: 600,

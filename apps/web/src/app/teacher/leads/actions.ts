@@ -69,6 +69,7 @@ export async function createTrialLessonAction(
   const leadId = String(formData.get("leadId") ?? "");
   const durationMin = Number(formData.get("duration") ?? 50);
   const title = String(formData.get("title") ?? "Пробный урок").trim();
+  const meetingUrl = String(formData.get("meetingUrl") ?? "").trim() || undefined;
   const startsAt = new Date(String(formData.get("startsAt") ?? ""));
 
   if (!leadId) return { error: "Заявка не найдена" };
@@ -81,6 +82,7 @@ export async function createTrialLessonAction(
       title: title || "Пробный урок",
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
+      meetingUrl,
     });
   } catch (e) {
     return { error: e instanceof ApiError ? e.message : "Не удалось создать урок" };

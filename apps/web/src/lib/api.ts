@@ -554,22 +554,6 @@ export function fetchTeacherStudentProfile(studentId: string): Promise<TeacherSt
   return apiFetch(`/teacher/students/${studentId}`);
 }
 
-export function createStudent(body: {
-  email: string;
-  name: string;
-  nickname?: string;
-  telegramUsername?: string;
-  telegramId?: number | null;
-  planId: string;
-  activeUntil: string | null;
-  lessonCredits: number;
-}) {
-  return apiFetch<{ ok: boolean; userId: string }>("/teacher/students", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
-
 export function setStudentPlan(studentId: string, planId: string) {
   return apiFetch<{ studentId: string; assignedPlanId: string }>(
     `/teacher/students/${studentId}/plan`,
@@ -663,7 +647,7 @@ export function updateTeacherLead(
 
 export function createTrialLessonForLead(
   leadId: string,
-  body: { title: string; startsAt: string; endsAt: string },
+  body: { title: string; startsAt: string; endsAt: string; meetingUrl?: string },
 ) {
   return apiFetch<LessonDto>(`/teacher/leads/${leadId}/trial-lesson`, {
     method: "POST",

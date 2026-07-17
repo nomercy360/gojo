@@ -116,8 +116,7 @@ export default async function TeacherPage({
             : params.collection === "curriculum"
               ? "curriculum"
               : "home";
-  const initialPanel =
-    params.panel === "new-student" || params.panel === "new-lesson" ? params.panel : undefined;
+  const initialPanel = params.panel === "new-lesson" ? params.panel : undefined;
 
   return (
     <AdminWorkspace

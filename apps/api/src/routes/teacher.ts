@@ -14,7 +14,6 @@ import {
 } from "@gojo/db";
 import {
   addLessonCardInput,
-  createStudentInput,
   reviewSubmissionInput,
   setHomeworkStatusInput,
   setStudentLevelInput,
@@ -87,6 +86,7 @@ const createTrialLessonInput = z.object({
   title: z.string().min(1).max(200),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
+  meetingUrl: z.string().url().max(500).optional(),
 });
 
 // Marking the trial as done requires the assessed level in the same action —
@@ -247,6 +247,7 @@ teacherRoute.post(
         startsAt,
         endsAt,
         maxStudents: 1,
+        meetingUrl: body.meetingUrl,
         metadata: { topic: `trial:${lead.id}` },
       })
       .returning();
@@ -280,12 +281,17 @@ teacherRoute.post(
           bookingId: booking?.id,
           userId: lead.userId,
           email: lead.email,
+          telegramId: lead.telegramId,
         },
         lesson.title,
         lesson.startsAt,
       );
     } else {
-      await sendLessonConfirmation({ email: lead.email }, lesson.title, lesson.startsAt);
+      await sendLessonConfirmation(
+        { email: lead.email, telegramId: lead.telegramId },
+        lesson.title,
+        lesson.startsAt,
+      );
     }
 
     return c.json(toLessonDto(lesson, null), 201);
@@ -950,89 +956,6 @@ teacherRoute.get("/students/:studentId", async (c) => {
       createdAt: l.createdAt.toISOString(),
     })),
   });
-});
-
-// Accounts are admin-provisioned only (no public self-signup) — this is the
-// one path that creates a student login. Auth is passwordless: we create the
-// user directly, then email a magic-link invite that activates the account.
-teacherRoute.post("/students", zValidator("json", createStudentInput), async (c) => {
-  const {
-    email,
-    name,
-    nickname,
-    telegramUsername,
-    telegramId,
-    planId,
-    activeUntil: activeUntilIso,
-    lessonCredits,
-  } = c.req.valid("json");
-  const normalizedEmail = email.toLowerCase();
-  if (!paymentPlans.some((p) => p.id === planId)) {
-    throw new HTTPException(400, { message: "unknown plan" });
-  }
-  const activeUntil = activeUntilIso ? new Date(activeUntilIso) : null;
-  if (planId === "monthly-standard") {
-    if (!activeUntil || activeUntil.getTime() <= Date.now()) {
-      throw new HTTPException(400, { message: "invalid_access_end" });
-    }
-    if (lessonCredits !== 0) {
-      throw new HTTPException(400, { message: "monthly_plan_cannot_have_credits" });
-    }
-  }
-  if (planId === "bundle-8" && (activeUntil || lessonCredits < 1)) {
-    throw new HTTPException(400, { message: "invalid_lesson_credits" });
-  }
-
-  const ctx = await auth.$context;
-  if (await ctx.internalAdapter.findUserByEmail(normalizedEmail)) {
-    throw new HTTPException(400, { message: "email already registered" });
-  }
-  if (telegramUsername) {
-    const [existingTelegram] = await db
-      .select({ id: userTable.id })
-      .from(userTable)
-      .where(eq(userTable.telegramUsername, telegramUsername))
-      .limit(1);
-    if (existingTelegram) {
-      throw new HTTPException(400, { message: "telegram_username_already_in_use" });
-    }
-  }
-  if (telegramId) {
-    const [existingTelegramId] = await db
-      .select({ id: userTable.id })
-      .from(userTable)
-      .where(eq(userTable.telegramId, telegramId))
-      .limit(1);
-    if (existingTelegramId) {
-      throw new HTTPException(400, { message: "telegram_already_in_use" });
-    }
-  }
-  const created = await ctx.internalAdapter.createUser({
-    email: normalizedEmail,
-    name,
-    emailVerified: false,
-    role: "student",
-    ...(nickname ? { nickname } : {}),
-    ...(telegramUsername ? { telegramUsername } : {}),
-    ...(telegramId ? { telegramId } : {}),
-  });
-
-  await db.insert(studentAccess).values({
-    userId: created.id,
-    assignedPlanId: planId,
-    activeUntil: planId === "monthly-standard" ? activeUntil : null,
-    lessonCredits: planId === "bundle-8" ? lessonCredits : 0,
-    updatedAt: new Date(),
-  });
-
-  // Passwordless activation: a magic link that signs them straight in.
-  await auth.api.signInMagicLink({
-    body: { email: normalizedEmail, name, callbackURL: `${env.WEB_ORIGIN}/dashboard` },
-    headers: c.req.raw.headers,
-  });
-  await logNotification("auth.invite", "email", normalizedEmail, "sent", created.id);
-
-  return c.json({ ok: true, userId: created.id }, 201);
 });
 
 // Re-deliver access for a student who lost or never received the original

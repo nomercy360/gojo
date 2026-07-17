@@ -4,6 +4,7 @@ import { findUserId, getStudentAccess, resetMutableStudent } from "./support/dat
 import { expectPageHeading } from "./support/ui";
 
 const webURL = process.env.E2E_WEB_URL ?? "http://localhost:3000";
+const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
 
 test.describe("admin", () => {
   test.use({ storageState: adminAuthFile });
@@ -24,17 +25,20 @@ test.describe("admin", () => {
     await expect(page.getByRole("menuitem", { name: "Выйти" })).toBeVisible();
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Новый студент" }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(
-      page.getByRole("dialog").getByRole("heading", { name: "Новый студент" }),
-    ).toBeVisible();
-    const newStudentDialog = page.getByRole("dialog");
-    await newStudentDialog.getByLabel("Тариф и доступ").selectOption("monthly-standard");
-    await expect(newStudentDialog.getByLabel("Доступ до (включительно)")).toBeVisible();
-    await newStudentDialog.getByLabel("Тариф и доступ").selectOption("bundle-8");
-    await expect(newStudentDialog.getByLabel("Количество уроков")).toHaveValue("8");
-    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: "Новый студент" })).toHaveCount(0);
+    const directProvision = await page.request.post(`${apiURL}/teacher/students`, {
+      data: {
+        email: `forbidden-${Date.now()}@example.com`,
+        name: "Forbidden Direct Student",
+        planId: "bundle-8",
+        activeUntil: null,
+        lessonCredits: 8,
+      },
+    });
+    expect(directProvision.status()).toBe(404);
+
+    await page.goto("/teacher/students/new");
+    await expect(page).toHaveURL(/collection=leads/);
 
     await sidebar.getByRole("button", { name: "Уроки" }).click();
     await expectPageHeading(page, "Уроки");

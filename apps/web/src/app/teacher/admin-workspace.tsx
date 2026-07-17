@@ -87,7 +87,6 @@ import {
   updateLeadAction,
 } from "./leads/actions";
 import { LessonPanel } from "./lesson-panel";
-import { CreateStudentForm } from "./students/new/create-form";
 
 export type DashboardStudent = StudentDirectoryEntry & {
   lessonCount: number;
@@ -106,7 +105,6 @@ export type CurriculumData = {
 
 type Collection = "home" | "students" | "lessons" | "leads" | "curriculum" | "admins";
 type Panel =
-  | { kind: "new-student" }
   | { kind: "new-lesson" }
   | { kind: "new-admin" }
   | { kind: "new-unit"; levelId: number }
@@ -161,14 +159,13 @@ export function AdminWorkspace({
   error?: string | null;
   currentUser: { email: string; nickname: string | null; avatarUrl: string | null };
   initialCollection?: Collection;
-  initialPanel?: "new-student" | "new-lesson";
+  initialPanel?: "new-lesson";
   initialLessonId?: string;
 }) {
   const router = useRouter();
   const [collection, setCollection] = useState<Collection>(initialCollection);
   const [query, setQuery] = useState("");
   const [panel, setPanel] = useState<Panel>(() => {
-    if (initialPanel === "new-student") return { kind: "new-student" };
     if (initialPanel === "new-lesson") return { kind: "new-lesson" };
     if (initialLessonId) {
       const record = lessons.find((lesson) => lesson.id === initialLessonId);
@@ -390,30 +387,20 @@ export function AdminWorkspace({
                   </div>
                   <h1 className="mt-1 font-serif text-3xl font-bold">{collectionLabel}</h1>
                 </div>
-                {isStudents || isLessons || isAdmins || isCurriculum ? (
+                {isLessons || isAdmins || isCurriculum ? (
                   <Button
                     onClick={() =>
                       setPanel(
                         isCurriculum
                           ? { kind: "new-unit", levelId: curriculum?.level ?? 1 }
                           : {
-                              kind: isStudents
-                                ? "new-student"
-                                : isLessons
-                                  ? "new-lesson"
-                                  : "new-admin",
+                              kind: isLessons ? "new-lesson" : "new-admin",
                             },
                       )
                     }
                   >
                     <Plus />
-                    {isStudents
-                      ? "Новый студент"
-                      : isLessons
-                        ? "Новый урок"
-                        : isCurriculum
-                          ? "Новый юнит"
-                          : "Новый администратор"}
+                    {isLessons ? "Новый урок" : isCurriculum ? "Новый юнит" : "Новый администратор"}
                   </Button>
                 ) : null}
               </header>
@@ -911,27 +898,25 @@ function RecordSheet({
   onClose: () => void;
 }) {
   const title =
-    panel?.kind === "new-student"
-      ? "Новый студент"
-      : panel?.kind === "new-lesson"
-        ? "Новый урок"
-        : panel?.kind === "new-admin"
-          ? "Новый администратор"
-          : panel?.kind === "new-unit"
-            ? `Новый юнит · уровень ${panel.levelId}`
-            : panel?.kind === "student"
-              ? (panel.record.nickname ?? panel.record.name)
-              : panel?.kind === "lesson"
-                ? panel.record.title
-                : panel?.kind === "lead"
-                  ? panel.record.name
-                  : panel?.kind === "admin"
-                    ? (panel.record.nickname ?? panel.record.name)
-                    : panel?.kind === "unit"
-                      ? panel.record.title
-                      : panel?.kind === "vocab"
-                        ? panel.record.word
-                        : "Запись";
+    panel?.kind === "new-lesson"
+      ? "Новый урок"
+      : panel?.kind === "new-admin"
+        ? "Новый администратор"
+        : panel?.kind === "new-unit"
+          ? `Новый юнит · уровень ${panel.levelId}`
+          : panel?.kind === "student"
+            ? (panel.record.nickname ?? panel.record.name)
+            : panel?.kind === "lesson"
+              ? panel.record.title
+              : panel?.kind === "lead"
+                ? panel.record.name
+                : panel?.kind === "admin"
+                  ? (panel.record.nickname ?? panel.record.name)
+                  : panel?.kind === "unit"
+                    ? panel.record.title
+                    : panel?.kind === "vocab"
+                      ? panel.record.word
+                      : "Запись";
 
   return (
     <Sheet open={panel !== null} onOpenChange={(open) => !open && onClose()}>
@@ -942,25 +927,21 @@ function RecordSheet({
           </div>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
-            {panel?.kind === "new-student"
-              ? "Создаст аккаунт и отправит приглашение на email."
-              : panel?.kind === "new-lesson"
-                ? "Урок сразу появится у выбранных студентов."
-                : panel?.kind === "new-admin"
-                  ? "Создаст аккаунт с ролью администратора и отправит приглашение на email."
-                  : panel?.kind === "new-unit" || panel?.kind === "unit"
-                    ? "Юнит — кусок уровня размером в занятие. «Пройден» на привязанном уроке выдаёт студенту деку юнита и открывает уровень."
-                    : panel?.kind === "vocab"
-                      ? "Дека связана: правка обновит карточку у всех студентов, кому слово уже выдано."
-                      : panel?.kind === "admin"
-                        ? "Единая роль администратора и преподавателя. Любой администратор может редактировать запись."
-                        : "Изменения сохраняются в текущей коллекции."}
+            {panel?.kind === "new-lesson"
+              ? "Урок сразу появится у выбранных студентов."
+              : panel?.kind === "new-admin"
+                ? "Создаст аккаунт с ролью администратора и отправит приглашение на email."
+                : panel?.kind === "new-unit" || panel?.kind === "unit"
+                  ? "Юнит — кусок уровня размером в занятие. «Пройден» на привязанном уроке выдаёт студенту деку юнита и открывает уровень."
+                  : panel?.kind === "vocab"
+                    ? "Дека связана: правка обновит карточку у всех студентов, кому слово уже выдано."
+                    : panel?.kind === "admin"
+                      ? "Единая роль администратора и преподавателя. Любой администратор может редактировать запись."
+                      : "Изменения сохраняются в текущей коллекции."}
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
-          {panel?.kind === "new-student" ? (
-            <CreateStudentForm plans={plans} presentation="plain" onSuccess={onClose} />
-          ) : panel?.kind === "new-lesson" ? (
+          {panel?.kind === "new-lesson" ? (
             <CreateLessonForm
               students={directory}
               units={units}
@@ -2333,6 +2314,15 @@ function LeadTrialForm({ lead, onCancel }: { lead: TeacherLeadDto; onCancel: () 
         <option value="50">50 минут</option>
         <option value="60">60 минут</option>
       </NativeSelect>
+      <Field>
+        <FieldLabel htmlFor={`trial-meeting-url-${lead.id}`}>Ссылка на встречу</FieldLabel>
+        <Input
+          id={`trial-meeting-url-${lead.id}`}
+          name="meetingUrl"
+          type="url"
+          placeholder="https://meet.google.com/..."
+        />
+      </Field>
       {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
       <div className="flex gap-2">
         <Button type="submit" className="flex-1" disabled={pending || !startsAt}>
