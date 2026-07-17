@@ -851,6 +851,11 @@ function RecordSheet({
           ) : panel?.kind === "lead" ? (
             <LeadPanel
               lead={panel.record}
+              linkedStudent={
+                panel.record.studentId
+                  ? (directory.find((s) => s.id === panel.record.studentId) ?? null)
+                  : null
+              }
               onSuccess={onClose}
               onConvert={() => onConvertLead(panel.record)}
             />
@@ -1218,11 +1223,25 @@ function StudentPanel({
           className="border-l border-gojo-ink/10 pl-4"
         />
       </div>
-      <ResendInviteButton
-        studentId={student.id}
-        lastSentAt={student.inviteLastSentAt}
-        lastLoginAt={student.lastLoginAt}
-      />
+      <p className="mt-3 text-center text-[12px] text-gojo-ink-muted">
+        {student.inviteLastSentAt ? (
+          <>
+            Приглашение отправлено{" "}
+            <LocalTime iso={student.inviteLastSentAt} options={{ day: "numeric", month: "long" }} />
+          </>
+        ) : (
+          "Приглашение не отправлялось"
+        )}
+        {" · "}
+        {student.lastLoginAt ? (
+          <>
+            входил{" "}
+            <LocalTime iso={student.lastLoginAt} options={{ day: "numeric", month: "long" }} />
+          </>
+        ) : (
+          <span className="font-semibold text-gojo-orange">ещё не входил</span>
+        )}
+      </p>
 
       <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-gojo-ink-ghost">
         <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
@@ -1600,10 +1619,12 @@ function LessonPanel({ lesson, onSuccess }: { lesson: TeacherLessonDto; onSucces
 
 function LeadPanel({
   lead,
+  linkedStudent,
   onSuccess,
   onConvert,
 }: {
   lead: TeacherLeadDto;
+  linkedStudent: StudentDirectoryEntry | null;
   onSuccess: () => void;
   onConvert: () => void;
 }) {
@@ -1660,6 +1681,14 @@ function LeadPanel({
         <Button type="button" className="w-full" onClick={onConvert}>
           Конвертировать в студента
         </Button>
+      ) : null}
+
+      {lead.studentId && linkedStudent ? (
+        <ResendInviteButton
+          studentId={lead.studentId}
+          lastSentAt={linkedStudent.inviteLastSentAt}
+          lastLoginAt={linkedStudent.lastLoginAt}
+        />
       ) : null}
 
       <form action={formAction} className="space-y-5">
