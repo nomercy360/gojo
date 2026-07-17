@@ -53,9 +53,11 @@ export default function AdminLoginPage() {
 
       if (response.status === 404) {
         // Deliberately generic — don't confirm which emails are admin accounts.
+        // Same cooldown as a real send so the two are indistinguishable here.
         setNotice(
           "Если этот адрес принадлежит администратору, код и ссылка для входа уже отправлены.",
         );
+        setResendIn(60);
         return;
       }
       if (response.status === 429) {
@@ -128,8 +130,16 @@ export default function AdminLoginPage() {
                   onChange={(event) => setEmail(event.target.value)}
                 />
               </Field>
-              <Button type="submit" disabled={pending || !email.trim()} className="w-full">
-                {pending ? "Отправляем…" : "Получить код и ссылку"}
+              <Button
+                type="submit"
+                disabled={pending || !email.trim() || resendIn > 0}
+                className="w-full"
+              >
+                {pending
+                  ? "Отправляем…"
+                  : resendIn > 0
+                    ? `Повторно через 0:${String(resendIn).padStart(2, "0")}`
+                    : "Получить код и ссылку"}
               </Button>
             </form>
           </>

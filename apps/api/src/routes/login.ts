@@ -26,6 +26,7 @@ const OTP_TTL_MS = 10 * 60_000;
 const OTP_RESEND_MS = 60_000;
 const OTP_MAX_ATTEMPTS = 5;
 const recentRequests = new Map<string, number>();
+const recentIdentifierRequests = new Map<string, number>();
 
 type DeliveryChannel = { type: "email" | "telegram"; label: string };
 
@@ -46,6 +47,29 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
   const { identifier, role } = c.req.valid("json");
   const parsed = parseIdentifier(identifier);
   if (!parsed) return c.json({ error: "invalid_identifier" }, 400);
+
+  // Throttle by the RAW identifier before the account lookup, so probing
+  // unknown emails (an enumeration oracle — 404 vs 200) is rate-limited the
+  // same way real logins are. The per-account check below still guards
+  // against alternating identifiers that resolve to one account.
+  const now = Date.now();
+  if (env.NODE_ENV === "production") {
+    const idKey = `${role}:${parsed.email || parsed.telegram}`;
+    const lastIdRequest = recentIdentifierRequests.get(idKey) ?? 0;
+    if (now - lastIdRequest < OTP_RESEND_MS) {
+      return c.json(
+        {
+          error: "too_many_requests",
+          retryAfter: Math.ceil((OTP_RESEND_MS - now + lastIdRequest) / 1000),
+        },
+        429,
+      );
+    }
+    recentIdentifierRequests.set(idKey, now);
+    for (const [key, requestedAt] of recentIdentifierRequests) {
+      if (now - requestedAt > OTP_TTL_MS) recentIdentifierRequests.delete(key);
+    }
+  }
 
   const [account] = await db
     .select({
@@ -69,7 +93,6 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
 
   if (!account) return c.json({ error: "account_not_found" }, 404);
 
-  const now = Date.now();
   if (env.NODE_ENV === "production") {
     // One account may be addressed by email or Telegram. Limiting by the
     // resolved user id prevents alternating identifiers to bypass cooldowns.
