@@ -72,6 +72,10 @@ const leadStatusInput = z.object({
   assigneeId: z.string().min(1).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
   nextFollowUpAt: z.string().datetime().nullable().optional(),
+  name: z.string().trim().min(1).max(200).optional(),
+  email: z.string().trim().email().max(320).nullable().optional(),
+  phone: z.string().trim().max(40).nullable().optional(),
+  telegram: z.string().trim().max(64).nullable().optional(),
 });
 
 const createTrialLessonInput = z.object({
@@ -187,6 +191,13 @@ teacherRoute.patch("/leads/:id", zValidator("json", leadStatusInput), async (c) 
   if (body.notes !== undefined) patch.notes = body.notes;
   if (body.nextFollowUpAt !== undefined) {
     patch.nextFollowUpAt = body.nextFollowUpAt ? new Date(body.nextFollowUpAt) : null;
+  }
+  if (body.name !== undefined) patch.name = body.name;
+  if (body.email !== undefined) patch.email = body.email?.toLowerCase() ?? null;
+  if (body.phone !== undefined) patch.phone = body.phone || null;
+  if (body.telegram !== undefined) {
+    // stored as a bare lowercase handle, no leading @
+    patch.telegram = body.telegram?.replace(/^@/, "").toLowerCase() || null;
   }
 
   const [row] = await db.update(leads).set(patch).where(eq(leads.id, id)).returning();

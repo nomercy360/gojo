@@ -1607,6 +1607,40 @@ function LeadPanel({
       <form action={formAction} className="space-y-5">
         <Input type="hidden" name="leadId" value={lead.id} />
         <Field>
+          <FieldLabel htmlFor={`lead-name-${lead.id}`}>Имя</FieldLabel>
+          <Input id={`lead-name-${lead.id}`} name="name" defaultValue={lead.name} required />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field>
+            <FieldLabel htmlFor={`lead-email-${lead.id}`}>Email</FieldLabel>
+            <Input
+              id={`lead-email-${lead.id}`}
+              name="email"
+              type="email"
+              defaultValue={lead.email ?? ""}
+              placeholder="—"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`lead-phone-${lead.id}`}>Телефон</FieldLabel>
+            <Input
+              id={`lead-phone-${lead.id}`}
+              name="phone"
+              defaultValue={lead.phone ?? ""}
+              placeholder="—"
+            />
+          </Field>
+        </div>
+        <Field>
+          <FieldLabel htmlFor={`lead-telegram-${lead.id}`}>Telegram (ник)</FieldLabel>
+          <Input
+            id={`lead-telegram-${lead.id}`}
+            name="telegram"
+            defaultValue={lead.telegram ?? ""}
+            placeholder="@username"
+          />
+        </Field>
+        <Field>
           <FieldLabel htmlFor={`lead-status-${lead.id}`}>Статус</FieldLabel>
           <NativeSelect id={`lead-status-${lead.id}`} name="status" defaultValue={lead.status}>
             {LEAD_STATUSES.map((status) => (

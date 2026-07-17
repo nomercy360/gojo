@@ -546,6 +546,10 @@ export function updateTeacherLead(
     assigneeId?: string | null;
     notes?: string | null;
     nextFollowUpAt?: string | null;
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+    telegram?: string | null;
   },
 ) {
   return apiFetch<{ ok: boolean }>(`/teacher/leads/${leadId}`, {

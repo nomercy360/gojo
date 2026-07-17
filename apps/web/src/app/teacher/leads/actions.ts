@@ -13,13 +13,22 @@ export async function updateLeadAction(
   if (!leadId) return { error: "Заявка не найдена" };
 
   const nextFollowUpRaw = String(formData.get("nextFollowUpAt") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: "Имя не может быть пустым" };
   try {
     await updateTeacherLead(leadId, {
       status: String(formData.get("status") ?? ""),
       notes: String(formData.get("notes") ?? "") || null,
       nextFollowUpAt: nextFollowUpRaw ? new Date(nextFollowUpRaw).toISOString() : null,
+      name,
+      email: String(formData.get("email") ?? "").trim() || null,
+      phone: String(formData.get("phone") ?? "").trim() || null,
+      telegram: String(formData.get("telegram") ?? "").trim() || null,
     });
   } catch (e) {
+    if (e instanceof ApiError && e.status === 400) {
+      return { error: "Проверь контактные данные (email должен быть корректным)" };
+    }
     return { error: e instanceof ApiError ? e.message : "Не удалось сохранить заявку" };
   }
   revalidatePath("/teacher");
