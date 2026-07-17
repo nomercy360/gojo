@@ -123,7 +123,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
         and(
           idMatch,
           eq(leads.kind, data.kind),
-          inArray(leads.status, ["new", "contacted", "trial_booked"]),
+          inArray(leads.status, ["new", "contacted", "trial_booked", "trial_done", "link_sent"]),
         ),
       )
       .limit(1);

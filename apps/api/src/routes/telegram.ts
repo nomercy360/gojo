@@ -312,7 +312,7 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
       .where(
         and(
           eq(leads.telegramId, from.id),
-          inArray(leads.status, ["new", "contacted", "trial_booked"]),
+          inArray(leads.status, ["new", "contacted", "trial_booked", "trial_done", "link_sent"]),
         ),
       )
       .limit(1);

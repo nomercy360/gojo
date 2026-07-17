@@ -1,5 +1,6 @@
 import { createDb } from "@gojo/db";
-import { account, session, user, verification } from "@gojo/db";
+import { account, leads, session, user, verification } from "@gojo/db";
+import { and } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
@@ -62,6 +63,13 @@ export const auth = betterAuth({
             .set({ lastLoginAt: new Date(), updatedAt: new Date() })
             .where(eq(user.id, session.userId))
             .catch((err) => console.error("lastLoginAt update failed:", err));
+          // The lead lifecycle's last transition: a lead whose login link was
+          // sent counts as converted the moment the client actually enters.
+          await db
+            .update(leads)
+            .set({ status: "converted", updatedAt: new Date() })
+            .where(and(eq(leads.studentId, session.userId), eq(leads.status, "link_sent")))
+            .catch((err) => console.error("lead conversion flip failed:", err));
         },
       },
     },

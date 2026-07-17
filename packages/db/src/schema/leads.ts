@@ -29,6 +29,9 @@ export const leads = pgTable("leads", {
   email: text(),
   phone: text(), // opt-in callback number, digits normalized
   level: text(), // self-reported level (booking form)
+  // JLPT level the teacher assessed on the trial lesson. Required before the
+  // login link can go out — the created account inherits it as `jlptLevel`.
+  assessedLevel: text(),
   goal: text(), // goal (booking form)
   notes: text(),
   nextFollowUpAt: timestamp({ withTimezone: true }),

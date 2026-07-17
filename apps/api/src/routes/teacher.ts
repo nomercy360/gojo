@@ -14,7 +14,6 @@ import {
 } from "@gojo/db";
 import {
   addLessonCardInput,
-  convertLeadInput,
   createStudentInput,
   reviewSubmissionInput,
   setHomeworkStatusInput,
@@ -73,7 +72,7 @@ const updateLessonInput = z.object({
 
 const leadStatusInput = z.object({
   status: z
-    .enum(["new", "contacted", "trial_booked", "trial_done", "converted", "lost"])
+    .enum(["new", "contacted", "trial_booked", "trial_done", "link_sent", "converted", "lost"])
     .optional(),
   assigneeId: z.string().min(1).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
@@ -88,6 +87,19 @@ const createTrialLessonInput = z.object({
   title: z.string().min(1).max(200),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
+});
+
+// Marking the trial as done requires the assessed level in the same action —
+// the send-link gate depends on it, so a lead can never sit "done but
+// unleveled" between the two states.
+const trialDoneInput = z.object({
+  jlptLevel: z.enum(["N5", "N4", "N3", "N2"]),
+});
+
+const sendLeadLinkInput = z.object({
+  // Set when the send-link call previously returned `requiresLink` and the
+  // teacher picked one of the matching existing student accounts.
+  existingStudentId: z.string().min(1).optional(),
 });
 
 const updateAdminInput = z.object({
@@ -179,6 +191,7 @@ teacherRoute.get("/leads", async (c) => {
       email: r.lead.email,
       phone: r.lead.phone,
       level: r.lead.level,
+      assessedLevel: r.lead.assessedLevel,
       goal: r.lead.goal,
       notes: r.lead.notes,
       nextFollowUpAt: r.lead.nextFollowUpAt ? r.lead.nextFollowUpAt.toISOString() : null,
@@ -279,41 +292,70 @@ teacherRoute.post(
   },
 );
 
-teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), async (c) => {
+// Lead lifecycle: new → trial_booked → trial_done → link_sent → converted,
+// with `lost` as the manual terminal branch. The teacher drives the first
+// three transitions; `converted` happens on its own when the client first
+// logs in (see the session hook in auth.ts). There is no manual convert
+// form anymore — the account is assembled from the lead + assessed level.
+
+teacherRoute.post("/leads/:id/trial-done", zValidator("json", trialDoneInput), async (c) => {
+  const id = c.req.param("id");
+  const { jlptLevel } = c.req.valid("json");
+
+  const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+  if (!lead) throw new HTTPException(404, { message: "lead_not_found" });
+  if (!lead.trialLessonId) throw new HTTPException(409, { message: "lead_has_no_trial" });
+  // Re-running from trial_done is allowed so a mis-picked level can be fixed
+  // until the link goes out.
+  if (lead.status !== "trial_booked" && lead.status !== "trial_done") {
+    throw new HTTPException(409, { message: "lead_not_awaiting_trial" });
+  }
+
+  await db
+    .update(leads)
+    .set({ status: "trial_done", assessedLevel: jlptLevel, updatedAt: new Date() })
+    .where(eq(leads.id, id));
+  return c.json({ ok: true });
+});
+
+teacherRoute.post("/leads/:id/send-link", zValidator("json", sendLeadLinkInput), async (c) => {
   const leadId = c.req.param("id");
   const body = c.req.valid("json");
-  const normalizedEmail = body.email?.toLowerCase() ?? null;
-
-  if (body.planId && !paymentPlans.some((plan) => plan.id === body.planId)) {
-    throw new HTTPException(400, { message: "unknown_plan" });
-  }
 
   const conversion = await db.transaction(async (tx) => {
     const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId)).for("update").limit(1);
     if (!lead) throw new HTTPException(404, { message: "lead_not_found" });
 
-    // Idempotency: a repeated submit returns the same student and never
-    // creates another account or booking.
+    // Idempotency: once an account exists the link belongs to it; repeats
+    // go through the resend-invite endpoint (which has a cooldown).
     if (lead.studentId) {
       return {
         ok: true as const,
         userId: lead.studentId,
         created: false,
-        alreadyConverted: true,
+        alreadySent: true,
+        lead,
       };
     }
-    if (lead.status === "lost" || lead.status === "converted") {
-      throw new HTTPException(409, { message: "lead_is_terminal" });
+    if (lead.status !== "trial_done") {
+      throw new HTTPException(409, { message: "trial_not_done" });
+    }
+    const jlptLevel = lead.assessedLevel;
+    if (!jlptLevel) throw new HTTPException(409, { message: "level_not_assessed" });
+
+    const normalizedEmail = lead.email?.toLowerCase() ?? null;
+    if (!normalizedEmail && !lead.telegramId) {
+      throw new HTTPException(400, { message: "no_delivery_channel" });
     }
 
     const lockKey = normalizedEmail
       ? `student-email:${normalizedEmail}`
-      : `student-telegram:${body.telegramId!}`;
+      : `student-telegram:${lead.telegramId!}`;
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
 
     const identityMatches = or(
       ...(normalizedEmail ? [eq(userTable.email, normalizedEmail)] : []),
-      ...(body.telegramId ? [eq(userTable.telegramId, body.telegramId)] : []),
+      ...(lead.telegramId ? [eq(userTable.telegramId, lead.telegramId)] : []),
     );
     const matches = await tx
       .select({
@@ -322,12 +364,17 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
         email: userTable.email,
         telegramId: userTable.telegramId,
         telegramUsername: userTable.telegramUsername,
+        lastLoginAt: userTable.lastLoginAt,
       })
       .from(userTable)
       .where(and(eq(userTable.role, "student"), identityMatches));
 
     if (matches.length > 0 && !body.existingStudentId) {
-      return { ok: false as const, requiresLink: true as const, matches };
+      return {
+        ok: false as const,
+        requiresLink: true as const,
+        matches: matches.map(({ lastLoginAt, ...match }) => match),
+      };
     }
 
     const existing = body.existingStudentId
@@ -346,7 +393,7 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
       await tx
         .update(userTable)
         .set({
-          jlptLevel: body.jlptLevel,
+          jlptLevel,
           quizLevel: quizLevel ? sql`coalesce(${userTable.quizLevel}, ${quizLevel})` : undefined,
           sourceLeadId: sql`coalesce(${userTable.sourceLeadId}, ${lead.id})`,
           notes: goalNote ? sql`coalesce(${userTable.notes}, ${goalNote})` : undefined,
@@ -356,14 +403,13 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
     } else {
       await tx.insert(userTable).values({
         id: studentId,
-        email: normalizedEmail ?? telegramAccountEmail(body.telegramId!),
-        name: body.name,
-        nickname: body.nickname,
+        email: normalizedEmail ?? telegramAccountEmail(lead.telegramId!),
+        name: lead.name,
         role: "student",
-        jlptLevel: body.jlptLevel,
+        jlptLevel,
         quizLevel,
-        telegramId: body.telegramId,
-        telegramUsername: body.telegramUsername,
+        telegramId: lead.telegramId,
+        telegramUsername: lead.telegram,
         sourceLeadId: lead.id,
         notes: goalNote,
         personalDataConsentAt: lead.personalDataConsentAt,
@@ -372,20 +418,16 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
       });
     }
 
-    const accessPatch: Partial<typeof studentAccess.$inferInsert> = { updatedAt: now };
-    if (lead.trialLessonId) accessPatch.trialUsed = true;
-    if (body.planId) accessPatch.assignedPlanId = body.planId;
     await tx
       .insert(studentAccess)
       .values({
         userId: studentId,
-        assignedPlanId: body.planId,
         trialUsed: Boolean(lead.trialLessonId),
         updatedAt: now,
       })
       .onConflictDoUpdate({
         target: studentAccess.userId,
-        set: accessPatch,
+        set: { trialUsed: Boolean(lead.trialLessonId), updatedAt: now },
       });
 
     if (lead.trialLessonId) {
@@ -395,12 +437,15 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
         .onConflictDoNothing({ target: [bookings.lessonId, bookings.studentId] });
     }
 
+    // A linked account that has already logged in before will never fire the
+    // first-login hook again — it is converted the moment it's linked.
+    const nextStatus = existing?.lastLoginAt ? "converted" : "link_sent";
     await tx
       .update(leads)
       .set({
         userId: studentId,
         studentId,
-        status: "converted",
+        status: nextStatus,
         nextFollowUpAt: null,
         updatedAt: now,
       })
@@ -410,33 +455,44 @@ teacherRoute.post("/leads/:id/convert", zValidator("json", convertLeadInput), as
       ok: true as const,
       userId: studentId,
       created: !existing,
-      alreadyConverted: false,
+      alreadySent: false,
+      lead,
     };
   });
 
-  if (conversion.ok && conversion.created && normalizedEmail) {
-    // Account/lead/lesson state is already committed atomically; invitation
-    // delivery is intentionally best-effort and outside the transaction.
+  if (!conversion.ok) return c.json(conversion);
+  if (conversion.alreadySent) return c.json({ ok: true, userId: conversion.userId, resent: false });
+
+  // Account/lead/booking state is committed atomically above; link delivery
+  // is intentionally best-effort and outside the transaction.
+  const normalizedEmail = conversion.lead.email?.toLowerCase() ?? null;
+  let sentEmail = false;
+  let sentTelegram = false;
+  if (normalizedEmail) {
     await auth.api.signInMagicLink({
       body: {
         email: normalizedEmail,
-        name: body.name,
+        name: conversion.lead.name,
         callbackURL: `${env.WEB_ORIGIN}/dashboard`,
       },
       headers: c.req.raw.headers,
     });
+    sentEmail = true;
     await logNotification("auth.invite", "email", normalizedEmail, "sent", conversion.userId);
   }
-  if (conversion.ok && conversion.created && body.telegramId) {
-    // For telegram-only converts this is the only channel that tells the
-    // client their account exists; a send failure (blocked bot, missing
-    // /setdomain) must not fail the already-committed conversion.
-    await sendAccountWelcome(body.telegramId, conversion.userId).catch((err) => {
-      console.error("telegram account welcome failed:", err);
-    });
+  if (conversion.lead.telegramId) {
+    // For telegram-only leads this is the only channel that tells the client
+    // their account exists; a send failure (blocked bot, missing /setdomain)
+    // must not fail the already-committed conversion.
+    sentTelegram = await sendAccountWelcome(conversion.lead.telegramId, conversion.userId).catch(
+      (err) => {
+        console.error("telegram account welcome failed:", err);
+        return false;
+      },
+    );
   }
 
-  return c.json(conversion);
+  return c.json({ ok: true, userId: conversion.userId, sentEmail, sentTelegram });
 });
 
 function quizLevelFromLead(lead: typeof leads.$inferSelect) {
