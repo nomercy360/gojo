@@ -5,12 +5,14 @@ import {
   type TeacherLeadDto,
   type TeacherLessonDto,
   type TeacherStudentDto,
+  type TeacherUnit,
   fetchAdminDirectory,
   fetchPaymentPlans,
   fetchStudentDirectory,
   fetchTeacherLeads,
   fetchTeacherLessons,
   fetchTeacherStudents,
+  fetchTeacherUnits,
 } from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
@@ -29,15 +31,23 @@ export default async function TeacherPage({
   if (!user) redirect("/admin/login");
   if (!isTeacherUser(user)) redirect("/dashboard");
 
-  const [lessonsResult, directoryResult, statsResult, plansResult, leadsResult, adminsResult] =
-    await Promise.allSettled([
-      fetchTeacherLessons(),
-      fetchStudentDirectory(),
-      fetchTeacherStudents(),
-      fetchPaymentPlans(),
-      fetchTeacherLeads(),
-      fetchAdminDirectory(),
-    ]);
+  const [
+    lessonsResult,
+    directoryResult,
+    statsResult,
+    plansResult,
+    leadsResult,
+    adminsResult,
+    unitsResult,
+  ] = await Promise.allSettled([
+    fetchTeacherLessons(),
+    fetchStudentDirectory(),
+    fetchTeacherStudents(),
+    fetchPaymentPlans(),
+    fetchTeacherLeads(),
+    fetchAdminDirectory(),
+    fetchTeacherUnits(),
+  ]);
 
   const lessons: TeacherLessonDto[] = valueOr(lessonsResult, []);
   const directory: StudentDirectoryEntry[] = valueOr(directoryResult, []);
@@ -45,6 +55,7 @@ export default async function TeacherPage({
   const plans: PaymentPlanDto[] = valueOr(plansResult, []);
   const leads: TeacherLeadDto[] = valueOr(leadsResult, []);
   const admins: AdminDirectoryEntry[] = valueOr(adminsResult, []);
+  const units: TeacherUnit[] = valueOr(unitsResult, []);
   const errors = [
     lessonsResult,
     directoryResult,
@@ -95,6 +106,7 @@ export default async function TeacherPage({
       leads={leads}
       admins={admins}
       directory={directory}
+      units={units}
       plans={plans}
       error={errors[0] ?? null}
       currentUser={{

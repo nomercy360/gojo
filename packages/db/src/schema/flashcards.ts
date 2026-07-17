@@ -1,13 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  integer,
-  numeric,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { integer, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
 import { levelVocab } from "./curriculum.ts";
 import { lessons } from "./lessons.ts";

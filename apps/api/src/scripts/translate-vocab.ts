@@ -38,9 +38,7 @@ console.log(`${rows.length} vocab rows to translate`);
 const BATCH = 50;
 for (let i = 0; i < rows.length; i += BATCH) {
   const batch = rows.slice(i, i + BATCH);
-  const list = batch
-    .map((r) => `${r.id} | ${r.word}（${r.reading}）| ${r.meaningEn}`)
-    .join("\n");
+  const list = batch.map((r) => `${r.id} | ${r.word}（${r.reading}）| ${r.meaningEn}`).join("\n");
 
   const response = await client.messages.parse({
     model: "claude-opus-4-8",

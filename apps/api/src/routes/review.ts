@@ -69,54 +69,50 @@ reviewRoute.get("/queue", async (c) => {
   return c.json(response);
 });
 
-reviewRoute.post(
-  "/cards/:id",
-  zValidator("json", submitReviewInput),
-  async (c) => {
-    const u = c.get("user")!;
-    const cardId = c.req.param("id");
-    const { correct } = c.req.valid("json");
+reviewRoute.post("/cards/:id", zValidator("json", submitReviewInput), async (c) => {
+  const u = c.get("user")!;
+  const cardId = c.req.param("id");
+  const { correct } = c.req.valid("json");
 
-    const [card] = await db
-      .select()
-      .from(flashcards)
-      .where(and(eq(flashcards.id, cardId), eq(flashcards.userId, u.id)))
-      .limit(1);
-    if (!card) throw new HTTPException(404, { message: "card not found" });
-    if (card.stage < 0) {
-      throw new HTTPException(400, { message: "card not yet promoted from unlearned" });
-    }
+  const [card] = await db
+    .select()
+    .from(flashcards)
+    .where(and(eq(flashcards.id, cardId), eq(flashcards.userId, u.id)))
+    .limit(1);
+  if (!card) throw new HTTPException(404, { message: "card not found" });
+  if (card.stage < 0) {
+    throw new HTTPException(400, { message: "card not yet promoted from unlearned" });
+  }
 
-    const next = review(
-      {
-        stage: card.stage,
-        modifier: Number(card.modifier),
-        streak: card.streak,
-        lapses: card.lapses,
-        due: card.due,
-        lastReview: card.lastReview,
-      },
-      correct,
-    );
+  const next = review(
+    {
+      stage: card.stage,
+      modifier: Number(card.modifier),
+      streak: card.streak,
+      lapses: card.lapses,
+      due: card.due,
+      lastReview: card.lastReview,
+    },
+    correct,
+  );
 
-    const [updated] = await db
-      .update(flashcards)
-      .set({
-        stage: next.stage,
-        modifier: next.modifier.toFixed(2),
-        streak: next.streak,
-        lapses: next.lapses,
-        due: next.due,
-        lastReview: next.lastReview,
-        updatedAt: new Date(),
-      })
-      .where(eq(flashcards.id, cardId))
-      .returning();
-    if (!updated) throw new HTTPException(500, { message: "update failed" });
+  const [updated] = await db
+    .update(flashcards)
+    .set({
+      stage: next.stage,
+      modifier: next.modifier.toFixed(2),
+      streak: next.streak,
+      lapses: next.lapses,
+      due: next.due,
+      lastReview: next.lastReview,
+      updatedAt: new Date(),
+    })
+    .where(eq(flashcards.id, cardId))
+    .returning();
+  if (!updated) throw new HTTPException(500, { message: "update failed" });
 
-    return c.json(toFlashcardDto(updated));
-  },
-);
+  return c.json(toFlashcardDto(updated));
+});
 
 reviewRoute.post("/cards/:id/promote", async (c) => {
   const u = c.get("user")!;

@@ -45,12 +45,15 @@ export async function createLessonAction(
 
   const endsAt = new Date(startsAt.getTime() + durationMin * 60000);
 
+  const unitId = String(formData.get("unitId") ?? "").trim() || null;
+
   try {
     await createLesson({
       title,
       studentIds,
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
+      unitId,
       ...(meetingUrl ? { meetingUrl } : {}),
     });
   } catch (e) {
@@ -315,11 +318,14 @@ export async function updateLessonAction(
     return { error: "Неверная длительность урока" };
   }
 
+  const unitId = String(formData.get("unitId") ?? "").trim() || null;
+
   try {
     await updateLesson(lessonId, {
       title,
       startsAt: startsAt.toISOString(),
       endsAt: new Date(startsAt.getTime() + durationMin * 60000).toISOString(),
+      unitId,
       meetingUrl: meetingUrl || null,
     });
   } catch (e) {

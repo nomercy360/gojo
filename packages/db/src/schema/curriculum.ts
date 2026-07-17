@@ -34,21 +34,18 @@ export const levels = pgTable("levels", {
  * sourceBook/sourceChapter are a reference pointer (students buy the book;
  * we never host publisher PDFs) — promote to a books table when reuse needs it.
  */
-export const units = pgTable(
-  "units",
-  {
-    id: uuid().default(sql`uuidv7()`).primaryKey(),
-    levelId: integer()
-      .notNull()
-      .references(() => levels.id, { onDelete: "cascade" }),
-    position: integer().notNull().default(0),
-    title: text().notNull(),
-    sourceBook: text(),
-    sourceChapter: text(),
-    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-  },
-);
+export const units = pgTable("units", {
+  id: uuid().default(sql`uuidv7()`).primaryKey(),
+  levelId: integer()
+    .notNull()
+    .references(() => levels.id, { onDelete: "cascade" }),
+  position: integer().notNull().default(0),
+  title: text().notNull(),
+  sourceBook: text(),
+  sourceChapter: text(),
+  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+});
 
 /** Kanji assigned to a level, ordered by frequency. References the Kanji Alive reference table. */
 export const levelKanji = pgTable(

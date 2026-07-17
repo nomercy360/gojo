@@ -32,6 +32,8 @@ export const levelVocabDto = z.object({
   /** RU gloss when translated; falls back to EN until the translation pass runs. */
   meaning: z.string(),
   position: z.number(),
+  /** Unit this word is assigned to (deck membership); null = unassigned. */
+  unitId: z.string().uuid().nullable(),
 });
 export type LevelVocabDto = z.infer<typeof levelVocabDto>;
 
@@ -45,6 +47,18 @@ export const levelGrammarDto = z.object({
   position: z.number(),
 });
 export type LevelGrammarDto = z.infer<typeof levelGrammarDto>;
+
+export const unitDto = z.object({
+  id: z.string().uuid(),
+  levelId: z.number().int(),
+  position: z.number(),
+  title: z.string(),
+  sourceBook: z.string().nullable(),
+  sourceChapter: z.string().nullable(),
+  vocabCount: z.number(),
+  lessonCount: z.number(),
+});
+export type UnitDto = z.infer<typeof unitDto>;
 
 export const levelDetailDto = z.object({
   id: z.number().int(),

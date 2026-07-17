@@ -37,7 +37,9 @@ async function postWebhook() {
 
 describe("POST /yookassa/webhook", () => {
   test("a redelivered payment.succeeded grants plan access exactly once", async () => {
-    await db.insert(user).values({ id: userId, name: "Webhook Test", email: `${userId}@test.local` });
+    await db
+      .insert(user)
+      .values({ id: userId, name: "Webhook Test", email: `${userId}@test.local` });
     await db.insert(payments).values({
       userId,
       idempotenceKey: crypto.randomUUID(),

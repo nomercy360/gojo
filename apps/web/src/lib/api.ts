@@ -148,6 +148,7 @@ export function createLesson(body: {
   startsAt: string;
   endsAt: string;
   studentIds?: string[];
+  unitId?: string | null;
   meetingUrl?: string;
 }) {
   return apiFetch<LessonDto>("/teacher/lessons", {
@@ -243,6 +244,7 @@ export function updateLesson(
     title?: string;
     startsAt?: string;
     endsAt?: string;
+    unitId?: string | null;
     meetingUrl?: string | null;
   },
 ) {
@@ -288,6 +290,87 @@ export function createAdmin(body: {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export function fetchLevelDetail(levelId: number) {
+  return apiFetch<import("@gojo/shared").LevelDetailDto>(`/levels/${levelId}`);
+}
+
+export function fetchLevelSummaries() {
+  return apiFetch<import("@gojo/shared").LevelSummaryDto[]>("/levels");
+}
+
+export type TeacherUnit = {
+  id: string;
+  levelId: number;
+  position: number;
+  title: string;
+  sourceBook: string | null;
+  sourceChapter: string | null;
+  vocabCount: number;
+  lessonCount: number;
+};
+
+export function fetchTeacherUnits(): Promise<TeacherUnit[]> {
+  return apiFetch("/teacher/units");
+}
+
+export function createTeacherUnit(body: {
+  levelId: number;
+  title: string;
+  sourceBook?: string | null;
+  sourceChapter?: string | null;
+}) {
+  return apiFetch<{ ok: boolean; unitId: string }>("/teacher/units", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateTeacherUnit(
+  unitId: string,
+  body: {
+    title?: string;
+    position?: number;
+    sourceBook?: string | null;
+    sourceChapter?: string | null;
+  },
+) {
+  return apiFetch<{ ok: boolean }>(`/teacher/units/${unitId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteTeacherUnit(unitId: string) {
+  return apiFetch<{ ok: boolean }>(`/teacher/units/${unitId}`, { method: "DELETE" });
+}
+
+export function createLevelVocab(body: {
+  levelId: number;
+  word: string;
+  reading: string;
+  meaning: string;
+  unitId?: string | null;
+}) {
+  return apiFetch<{ ok: boolean; vocabId: string }>("/teacher/level-vocab", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateLevelVocab(
+  vocabId: string,
+  body: { word?: string; reading?: string; meaning?: string; unitId?: string | null },
+) {
+  return apiFetch<{ ok: boolean }>(`/teacher/level-vocab/${vocabId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteLevelVocab(vocabId: string) {
+  return apiFetch<{ ok: boolean }>(`/teacher/level-vocab/${vocabId}`, { method: "DELETE" });
 }
 
 export function deleteLessonMaterial(lessonId: string, materialId: string) {

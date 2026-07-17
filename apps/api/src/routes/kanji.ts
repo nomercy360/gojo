@@ -30,12 +30,7 @@ kanjiRoute.get("/list", async (c) => {
         ? inArray(kanji.jlpt, jlptLevels)
         : undefined;
 
-  const rows = await db
-    .select()
-    .from(kanji)
-    .where(where)
-    .orderBy(sql`random()`)
-    .limit(limit);
+  const rows = await db.select().from(kanji).where(where).orderBy(sql`random()`).limit(limit);
 
   return c.json(rows.map(toKanjiDto));
 });

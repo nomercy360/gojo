@@ -1,11 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import {
-  homeworkSubmissions,
-  lessonCards,
-  lessons,
-  user as userTable,
-} from "@gojo/db";
+import { homeworkSubmissions, lessonCards, lessons, user as userTable } from "@gojo/db";
 import { homeworkAiReviewSchema } from "@gojo/shared";
 import * as Sentry from "@sentry/bun";
 import { asc, eq } from "drizzle-orm";
@@ -76,7 +71,9 @@ async function runAiReview(submissionId: string): Promise<void> {
     .orderBy(asc(lessonCards.position));
 
   const context = [
-    lesson ? `Урок: «${lesson.title}»${lesson.metadata?.topic ? ` (тема: ${lesson.metadata.topic})` : ""}.` : null,
+    lesson
+      ? `Урок: «${lesson.title}»${lesson.metadata?.topic ? ` (тема: ${lesson.metadata.topic})` : ""}.`
+      : null,
     lesson?.jlptLevel ? `Уровень урока: ${lesson.jlptLevel}.` : null,
     student?.jlptLevel ? `Уровень студента: ${student.jlptLevel}.` : null,
     cards.length > 0

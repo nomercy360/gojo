@@ -52,7 +52,8 @@ async function run() {
       startsAt,
       endsAt,
       jlptLevel: "N5",
-      recordingUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      recordingUrl:
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       maxStudents: 8,
     })
     .returning();
@@ -125,7 +126,8 @@ async function run() {
       lessonId: lesson.id,
       uploadedBy: teacher.id,
       title: "Словарь урока (изображение)",
-      fileUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Hiragana_KA.png/240px-Hiragana_KA.png",
+      fileUrl:
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Hiragana_KA.png/240px-Hiragana_KA.png",
       fileType: "image/png",
     },
   ]);

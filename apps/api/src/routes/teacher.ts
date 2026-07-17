@@ -7,7 +7,9 @@ import {
   lessonCards,
   lessonMaterials,
   lessons,
+  levelVocab,
   studentAccess,
+  units,
   user as userTable,
 } from "@gojo/db";
 import {
@@ -31,6 +33,7 @@ import { env } from "../env.ts";
 import {
   materializeCardsForAttendance,
   materializeNewCardForAttendedBookings,
+  materializeUnitDeckForAttendance,
 } from "../lib/materialize.ts";
 import { logNotification } from "../reminders.ts";
 import { putObject } from "../s3.ts";
@@ -50,6 +53,7 @@ const createLessonInput = z.object({
   // so one lesson can invite a whole group at creation time.
   studentId: z.string().min(1).optional(),
   studentIds: z.array(z.string().min(1)).max(8).optional(),
+  unitId: z.string().uuid().nullable().optional(),
   meetingUrl: z.string().url().max(500).optional(),
   metadata: z
     .object({
@@ -63,6 +67,7 @@ const updateLessonInput = z.object({
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
   status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).optional(),
+  unitId: z.string().uuid().nullable().optional(),
   meetingUrl: z.string().url().max(500).nullable().optional(),
 });
 
@@ -1132,6 +1137,15 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
     }
   }
 
+  if (body.unitId) {
+    const [unit] = await db
+      .select({ id: units.id })
+      .from(units)
+      .where(eq(units.id, body.unitId))
+      .limit(1);
+    if (!unit) throw new HTTPException(400, { message: "unknown_unit" });
+  }
+
   const created = await db.transaction(async (tx) => {
     const [lesson] = await tx
       .insert(lessons)
@@ -1140,6 +1154,7 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
         title: body.title,
         startsAt,
         endsAt,
+        unitId: body.unitId ?? null,
         meetingUrl: body.meetingUrl,
         metadata: body.metadata,
         ...(studentIds.length > 0 ? { maxStudents: studentIds.length } : {}),
@@ -1191,6 +1206,17 @@ teacherRoute.patch("/lessons/:id", zValidator("json", updateLessonInput), async 
   if (body.endsAt !== undefined) patch.endsAt = new Date(body.endsAt);
   if (body.status !== undefined) patch.status = body.status;
   if (body.meetingUrl !== undefined) patch.meetingUrl = body.meetingUrl;
+  if (body.unitId !== undefined) {
+    if (body.unitId) {
+      const [unit] = await db
+        .select({ id: units.id })
+        .from(units)
+        .where(eq(units.id, body.unitId))
+        .limit(1);
+      if (!unit) throw new HTTPException(400, { message: "unknown_unit" });
+    }
+    patch.unitId = body.unitId;
+  }
 
   const [row] = await db.update(lessons).set(patch).where(eq(lessons.id, id)).returning();
   if (!row) throw new HTTPException(500, { message: "update failed" });
@@ -1529,6 +1555,7 @@ teacherRoute.patch(
 
     if (body.attendanceStatus === "attended") {
       await materializeCardsForAttendance(studentId, lessonId);
+      await materializeUnitDeckForAttendance(studentId, lessonId);
     }
 
     return c.json({
@@ -1670,5 +1697,200 @@ teacherRoute.delete("/lessons/:id/cards/:cardId", async (c) => {
   await db
     .delete(lessonCards)
     .where(and(eq(lessonCards.id, cardId), eq(lessonCards.lessonId, lessonId)));
+  return c.json({ ok: true });
+});
+
+// ---------------------------------------------------------------------------
+// Curriculum authoring: units (lesson-sized slices of a level) and the level
+// vocab they hand out. This is the cold-path CMS surface — lesson prep never
+// mutates units; it only points lessons at them.
+// ---------------------------------------------------------------------------
+
+const createUnitInput = z.object({
+  levelId: z.number().int().min(1).max(30),
+  title: z.string().trim().min(1).max(200),
+  sourceBook: z.string().trim().max(200).nullable().optional(),
+  sourceChapter: z.string().trim().max(100).nullable().optional(),
+});
+
+const updateUnitInput = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  position: z.number().int().min(0).max(999).optional(),
+  sourceBook: z.string().trim().max(200).nullable().optional(),
+  sourceChapter: z.string().trim().max(100).nullable().optional(),
+});
+
+teacherRoute.get("/units", async (c) => {
+  // Raw aliases in the correlated subqueries: drizzle strips table qualifiers
+  // from sql`` fragments in single-table selects.
+  const rows = await db
+    .select({
+      unit: units,
+      vocabCount: sql<number>`(select count(*) from level_vocab lv where lv.unit_id = units.id)`.as(
+        "vocab_count",
+      ),
+      lessonCount:
+        sql<number>`(select count(*) from lessons l where l.unit_id = units.id and l.deleted_at is null)`.as(
+          "lesson_count",
+        ),
+    })
+    .from(units)
+    .orderBy(asc(units.levelId), asc(units.position), asc(units.createdAt));
+
+  return c.json(
+    rows.map((r) => ({
+      id: r.unit.id,
+      levelId: r.unit.levelId,
+      position: r.unit.position,
+      title: r.unit.title,
+      sourceBook: r.unit.sourceBook ?? null,
+      sourceChapter: r.unit.sourceChapter ?? null,
+      vocabCount: Number(r.vocabCount),
+      lessonCount: Number(r.lessonCount),
+    })),
+  );
+});
+
+teacherRoute.post("/units", zValidator("json", createUnitInput), async (c) => {
+  const body = c.req.valid("json");
+  const [positionRow] = await db
+    .select({ nextPosition: sql<number>`coalesce(max(position), 0) + 1` })
+    .from(units)
+    .where(eq(units.levelId, body.levelId));
+  const nextPosition = Number(positionRow?.nextPosition ?? 1);
+
+  const [row] = await db
+    .insert(units)
+    .values({
+      levelId: body.levelId,
+      position: nextPosition,
+      title: body.title,
+      sourceBook: body.sourceBook ?? null,
+      sourceChapter: body.sourceChapter ?? null,
+    })
+    .returning();
+  if (!row) throw new HTTPException(500, { message: "unit_create_failed" });
+  return c.json({ ok: true, unitId: row.id }, 201);
+});
+
+teacherRoute.patch("/units/:id", zValidator("json", updateUnitInput), async (c) => {
+  const id = c.req.param("id");
+  const body = c.req.valid("json");
+  const patch: Partial<typeof units.$inferInsert> = { updatedAt: new Date() };
+  if (body.title !== undefined) patch.title = body.title;
+  if (body.position !== undefined) patch.position = body.position;
+  if (body.sourceBook !== undefined) patch.sourceBook = body.sourceBook;
+  if (body.sourceChapter !== undefined) patch.sourceChapter = body.sourceChapter;
+
+  const [row] = await db.update(units).set(patch).where(eq(units.id, id)).returning();
+  if (!row) throw new HTTPException(404, { message: "unit_not_found" });
+  return c.json({ ok: true });
+});
+
+teacherRoute.delete("/units/:id", async (c) => {
+  const id = c.req.param("id");
+  // FKs detach dependents (level_vocab.unit_id and lessons.unit_id both SET
+  // NULL); already-materialized student flashcards are untouched.
+  const [row] = await db.delete(units).where(eq(units.id, id)).returning({ id: units.id });
+  if (!row) throw new HTTPException(404, { message: "unit_not_found" });
+  return c.json({ ok: true });
+});
+
+const createLevelVocabInput = z.object({
+  levelId: z.number().int().min(1).max(30),
+  word: z.string().trim().min(1).max(100),
+  reading: z.string().trim().min(1).max(200),
+  meaning: z.string().trim().min(1).max(300),
+  unitId: z.string().uuid().nullable().optional(),
+});
+
+const updateLevelVocabInput = z.object({
+  word: z.string().trim().min(1).max(100).optional(),
+  reading: z.string().trim().min(1).max(200).optional(),
+  meaning: z.string().trim().min(1).max(300).optional(),
+  unitId: z.string().uuid().nullable().optional(),
+});
+
+async function assertUnitInLevel(unitId: string, levelId: number) {
+  const [unit] = await db
+    .select({ levelId: units.levelId })
+    .from(units)
+    .where(eq(units.id, unitId))
+    .limit(1);
+  if (!unit) throw new HTTPException(400, { message: "unknown_unit" });
+  if (unit.levelId !== levelId) throw new HTTPException(400, { message: "unit_level_mismatch" });
+}
+
+teacherRoute.post("/level-vocab", zValidator("json", createLevelVocabInput), async (c) => {
+  const body = c.req.valid("json");
+  if (body.unitId) await assertUnitInLevel(body.unitId, body.levelId);
+
+  const [vocabPositionRow] = await db
+    .select({ nextPosition: sql<number>`coalesce(max(position), 0) + 1` })
+    .from(levelVocab)
+    .where(eq(levelVocab.levelId, body.levelId));
+  const nextPosition = Number(vocabPositionRow?.nextPosition ?? 1);
+
+  const [row] = await db
+    .insert(levelVocab)
+    .values({
+      levelId: body.levelId,
+      word: body.word,
+      reading: body.reading,
+      meaningRu: body.meaning,
+      meaningEn: body.meaning,
+      position: nextPosition,
+      unitId: body.unitId ?? null,
+    })
+    .onConflictDoNothing({ target: [levelVocab.levelId, levelVocab.word] })
+    .returning();
+  if (!row) throw new HTTPException(400, { message: "word_already_in_level" });
+  return c.json({ ok: true, vocabId: row.id }, 201);
+});
+
+teacherRoute.patch("/level-vocab/:id", zValidator("json", updateLevelVocabInput), async (c) => {
+  const id = c.req.param("id");
+  const body = c.req.valid("json");
+
+  const [existing] = await db.select().from(levelVocab).where(eq(levelVocab.id, id)).limit(1);
+  if (!existing) throw new HTTPException(404, { message: "vocab_not_found" });
+  if (body.unitId) await assertUnitInLevel(body.unitId, existing.levelId);
+
+  const patch: Partial<typeof levelVocab.$inferInsert> = {};
+  if (body.word !== undefined) patch.word = body.word;
+  if (body.reading !== undefined) patch.reading = body.reading;
+  if (body.meaning !== undefined) patch.meaningRu = body.meaning;
+  if (body.unitId !== undefined) patch.unitId = body.unitId;
+  await db.update(levelVocab).set(patch).where(eq(levelVocab.id, id));
+
+  // Propagate display-field fixes to already-materialized student cards (SRS
+  // state untouched). The NOT EXISTS guard skips students whose deck already
+  // has the new word from another source — the (user_id, word) index would
+  // reject those rows.
+  const word = body.word ?? existing.word;
+  const reading = body.reading ?? existing.reading;
+  const meaning = body.meaning ?? existing.meaningRu ?? existing.meaningEn;
+  if (body.word !== undefined || body.reading !== undefined || body.meaning !== undefined) {
+    await db.execute(sql`
+      update flashcards f
+      set word = ${word}, reading = ${reading}, meaning = ${meaning}, updated_at = now()
+      where f.level_vocab_id = ${id}
+        and not exists (
+          select 1 from flashcards f2
+          where f2.user_id = f.user_id and f2.word = ${word} and f2.id <> f.id
+        )
+    `);
+  }
+  return c.json({ ok: true });
+});
+
+teacherRoute.delete("/level-vocab/:id", async (c) => {
+  const id = c.req.param("id");
+  // flashcards.level_vocab_id is SET NULL — students keep already-learned cards.
+  const [row] = await db
+    .delete(levelVocab)
+    .where(eq(levelVocab.id, id))
+    .returning({ id: levelVocab.id });
+  if (!row) throw new HTTPException(404, { message: "vocab_not_found" });
   return c.json({ ok: true });
 });

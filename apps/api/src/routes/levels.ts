@@ -18,8 +18,14 @@ levelsRoute.get("/", async (c) => {
   const count = sql<number>`count(*)`;
   const [levelRows, kanjiCounts, vocabCounts, grammarCounts] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.id)),
-    db.select({ levelId: levelKanji.levelId, n: count }).from(levelKanji).groupBy(levelKanji.levelId),
-    db.select({ levelId: levelVocab.levelId, n: count }).from(levelVocab).groupBy(levelVocab.levelId),
+    db
+      .select({ levelId: levelKanji.levelId, n: count })
+      .from(levelKanji)
+      .groupBy(levelKanji.levelId),
+    db
+      .select({ levelId: levelVocab.levelId, n: count })
+      .from(levelVocab)
+      .groupBy(levelVocab.levelId),
     db
       .select({ levelId: levelGrammar.levelId, n: count })
       .from(levelGrammar)
@@ -70,7 +76,11 @@ levelsRoute.get("/:id", async (c) => {
       .innerJoin(kanji, eq(kanji.character, levelKanji.character))
       .where(eq(levelKanji.levelId, id))
       .orderBy(asc(levelKanji.position)),
-    db.select().from(levelVocab).where(eq(levelVocab.levelId, id)).orderBy(asc(levelVocab.position)),
+    db
+      .select()
+      .from(levelVocab)
+      .where(eq(levelVocab.levelId, id))
+      .orderBy(asc(levelVocab.position)),
     db
       .select()
       .from(levelGrammar)
@@ -95,6 +105,7 @@ levelsRoute.get("/:id", async (c) => {
       reading: v.reading,
       meaning: v.meaningRu ?? v.meaningEn,
       position: v.position,
+      unitId: v.unitId ?? null,
     })),
     grammar: grammarRows.map((g) => ({
       id: g.id,

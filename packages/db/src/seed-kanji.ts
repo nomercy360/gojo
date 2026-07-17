@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, sql } from "drizzle-orm";
 import * as schema from "./schema/index.ts";
 import { kanji } from "./schema/kanji.ts";
 
@@ -88,9 +88,7 @@ async function seedKanji(db: Client, dataDir: string): Promise<number> {
   const rows = parseCsv(text);
   const [header, ...records] = rows;
   if (!header) return 0;
-  const idx: Record<string, number | undefined> = Object.fromEntries(
-    header.map((h, i) => [h, i]),
-  );
+  const idx: Record<string, number | undefined> = Object.fromEntries(header.map((h, i) => [h, i]));
   const col = (r: string[], k: string): string | undefined => {
     const i = idx[k];
     return i === undefined ? undefined : r[i];

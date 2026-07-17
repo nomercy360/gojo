@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema/index.ts";
 import { levelGrammar, levelKanji, levelVocab, levels } from "./schema/curriculum.ts";
+import * as schema from "./schema/index.ts";
 
 /**
  * Idempotent curriculum seeder: 30 level rows + N5 content (levels 1-8).
@@ -37,7 +37,10 @@ function chunkEven<T>(items: T[], parts: number): T[][] {
   return out;
 }
 
-async function isEmpty(db: Client, table: typeof levelKanji | typeof levelVocab | typeof levelGrammar | typeof levels): Promise<boolean> {
+async function isEmpty(
+  db: Client,
+  table: typeof levelKanji | typeof levelVocab | typeof levelGrammar | typeof levels,
+): Promise<boolean> {
   const [row] = await db.select({ n: sql<number>`count(*)` }).from(table);
   return Number(row?.n ?? 0) === 0;
 }
@@ -104,7 +107,10 @@ async function seedLevelVocab(db: Client, dataDir: string): Promise<void> {
   );
   const chunkSize = 500;
   for (let i = 0; i < rows.length; i += chunkSize) {
-    await db.insert(levelVocab).values(rows.slice(i, i + chunkSize)).onConflictDoNothing();
+    await db
+      .insert(levelVocab)
+      .values(rows.slice(i, i + chunkSize))
+      .onConflictDoNothing();
   }
   console.log(`[seed] inserted ${rows.length} level_vocab rows across ${N5_LEVELS} levels`);
 }

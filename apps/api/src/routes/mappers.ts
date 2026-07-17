@@ -111,6 +111,7 @@ export function toLessonDto(
     endsAt: lesson.endsAt.toISOString(),
     maxStudents: lesson.maxStudents,
     jlptLevel: lesson.jlptLevel,
+    unitId: lesson.unitId ?? null,
     recordingUrl: opts?.includeRecording === false ? null : lesson.recordingUrl,
     meetingUrl: opts?.includeMeetingUrl ? lesson.meetingUrl : null,
     ...(opts?.booked !== undefined ? { booked: opts.booked } : {}),

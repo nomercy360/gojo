@@ -30,6 +30,7 @@ import type {
   StudentDirectoryEntry,
   TeacherLeadDto,
   TeacherLessonDto,
+  TeacherUnit,
 } from "@/lib/api";
 import { quizLevelLabel } from "@/lib/quiz-level";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,7 @@ export function AdminWorkspace({
   leads,
   admins,
   directory,
+  units = [],
   plans,
   error,
   currentUser,
@@ -121,6 +123,7 @@ export function AdminWorkspace({
   leads: TeacherLeadDto[];
   admins: AdminDirectoryEntry[];
   directory: StudentDirectoryEntry[];
+  units?: TeacherUnit[];
   plans: PaymentPlanDto[];
   error?: string | null;
   currentUser: { email: string; nickname: string | null; avatarUrl: string | null };
@@ -270,6 +273,13 @@ export function AdminWorkspace({
             >
               Заявки
             </CollectionButton>
+            <Link
+              href="/teacher/curriculum"
+              className="flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <BookOpen className="size-4" />
+              Программа
+            </Link>
             <div className="mx-2 hidden border-t border-white/10 pt-5 lg:mt-6 lg:block">
               <div className="px-1 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
                 Система
@@ -395,6 +405,7 @@ export function AdminWorkspace({
         panel={panel}
         plans={plans}
         directory={directory}
+        units={units}
         onClose={closePanel}
         onConvertLead={(lead) => setPanel({ kind: "new-student", sourceLead: lead })}
       />
@@ -782,12 +793,14 @@ function RecordSheet({
   panel,
   plans,
   directory,
+  units,
   onClose,
   onConvertLead,
 }: {
   panel: Panel;
   plans: PaymentPlanDto[];
   directory: StudentDirectoryEntry[];
+  units: TeacherUnit[];
   onClose: () => void;
   onConvertLead: (lead: TeacherLeadDto) => void;
 }) {
@@ -841,13 +854,18 @@ function RecordSheet({
               sourceLead={panel.sourceLead}
             />
           ) : panel?.kind === "new-lesson" ? (
-            <CreateLessonForm students={directory} presentation="plain" onSuccess={onClose} />
+            <CreateLessonForm
+              students={directory}
+              units={units}
+              presentation="plain"
+              onSuccess={onClose}
+            />
           ) : panel?.kind === "new-admin" ? (
             <NewAdminPanel onSuccess={onClose} />
           ) : panel?.kind === "student" ? (
             <StudentPanel student={panel.record} plans={plans} onSuccess={onClose} />
           ) : panel?.kind === "lesson" ? (
-            <LessonPanel lesson={panel.record} onSuccess={onClose} />
+            <LessonPanel lesson={panel.record} units={units} onSuccess={onClose} />
           ) : panel?.kind === "lead" ? (
             <LeadPanel
               lead={panel.record}
@@ -1488,7 +1506,15 @@ function StudentPanel({
   );
 }
 
-function LessonPanel({ lesson, onSuccess }: { lesson: TeacherLessonDto; onSuccess: () => void }) {
+function LessonPanel({
+  lesson,
+  units,
+  onSuccess,
+}: {
+  lesson: TeacherLessonDto;
+  units: TeacherUnit[];
+  onSuccess: () => void;
+}) {
   const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
     updateLessonAction,
     {},
@@ -1499,6 +1525,7 @@ function LessonPanel({ lesson, onSuccess }: { lesson: TeacherLessonDto; onSucces
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(String(durationMinutes(lesson)));
   const [meetingUrl, setMeetingUrl] = useState(lesson.meetingUrl ?? "");
+  const [unitId, setUnitId] = useState(lesson.unitId ?? "");
 
   useEffect(() => {
     const localStart = new Date(lesson.startsAt);
@@ -1507,6 +1534,7 @@ function LessonPanel({ lesson, onSuccess }: { lesson: TeacherLessonDto; onSucces
     setTime(formatTimeInput(localStart));
     setDuration(String(durationMinutes(lesson)));
     setMeetingUrl(lesson.meetingUrl ?? "");
+    setUnitId(lesson.unitId ?? "");
   }, [lesson]);
 
   const startsAt = localDateTimeIso(date, time);
@@ -1586,6 +1614,24 @@ function LessonPanel({ lesson, onSuccess }: { lesson: TeacherLessonDto; onSucces
             ))}
           </NativeSelect>
         </Field>
+        {units.length > 0 ? (
+          <Field>
+            <FieldLabel htmlFor={`unit-${lesson.id}`}>Юнит программы</FieldLabel>
+            <NativeSelect
+              id={`unit-${lesson.id}`}
+              name="unitId"
+              value={unitId}
+              onChange={(event) => setUnitId(event.target.value)}
+            >
+              <option value="">— без юнита —</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  Уровень {unit.levelId} · {unit.position}. {unit.title}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        ) : null}
         <Field>
           <FieldLabel htmlFor={`meeting-${lesson.id}`}>Ссылка на Zoom / Meet</FieldLabel>
           <Input

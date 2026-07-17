@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import type { StudentDirectoryEntry } from "@/lib/api";
+import type { StudentDirectoryEntry, TeacherUnit } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -16,10 +16,12 @@ const initial: TeacherActionState = {};
 
 export function CreateLessonForm({
   students,
+  units = [],
   presentation = "card",
   onSuccess,
 }: {
   students: StudentDirectoryEntry[];
+  units?: TeacherUnit[];
   presentation?: "card" | "plain";
   onSuccess?: () => void;
 }) {
@@ -157,6 +159,19 @@ export function CreateLessonForm({
             </NativeSelect>
           </Field>
         </div>
+        {units.length > 0 ? (
+          <Field>
+            <FieldLabel htmlFor="unitId">Юнит программы (пройден → выдаст деку)</FieldLabel>
+            <NativeSelect id="unitId" name="unitId" defaultValue="">
+              <option value="">— без юнита (пробный / свободный) —</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  Уровень {unit.levelId} · {unit.position}. {unit.title}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        ) : null}
         <Field>
           <FieldLabel htmlFor="meetingUrl">
             Ссылка на встречу (Zoom / Meet, можно добавить позже)

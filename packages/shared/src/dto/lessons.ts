@@ -37,6 +37,7 @@ export const lessonDto = z.object({
   maxStudents: z.number(),
   studentCount: z.number().optional(),
   jlptLevel: z.string().nullable(),
+  unitId: z.string().uuid().nullable(),
   recordingUrl: z.string().nullable(),
   meetingUrl: z.string().nullable(),
   booked: z.boolean().optional(),

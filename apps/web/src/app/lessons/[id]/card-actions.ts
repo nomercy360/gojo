@@ -1,7 +1,7 @@
 "use server";
 
-import type { AddLessonCardInput, LessonCardDto } from "@gojo/shared";
 import { addLessonCard, deleteLessonCard } from "@/lib/api";
+import type { AddLessonCardInput, LessonCardDto } from "@gojo/shared";
 
 export async function addLessonCardAction(
   lessonId: string,
