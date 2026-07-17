@@ -29,7 +29,16 @@ const recentRequests = new Map<string, number>();
 
 type DeliveryChannel = { type: "email" | "telegram"; label: string };
 
-type OtpRecord = { userId: string; digest: string; attempts: number; role?: "student" | "admin" };
+type OtpRecord = {
+  userId: string;
+  digest: string;
+  attempts: number;
+  role?: "student" | "admin";
+  // True when email was the ONLY channel the code went to: verifying then
+  // proves email ownership, so we can mark emailVerified and spare the user
+  // better-auth's one-time unproven-session revocation on a later magic link.
+  verifiesEmail?: boolean;
+};
 
 export const loginRoute = new Hono<AuthContext>();
 
@@ -82,21 +91,6 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
 
   const challengeId = randomUUID();
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-
-  // A login attempt owns exactly one OTP record and one code, regardless of
-  // how many linked channels can receive it.
-  await db.insert(verification).values({
-    id: randomUUID(),
-    identifier: challengeKey(challengeId),
-    value: JSON.stringify({
-      userId: account.id,
-      digest: codeDigest(challengeId, code),
-      attempts: 0,
-      role,
-    } satisfies OtpRecord),
-    expiresAt: new Date(now + OTP_TTL_MS),
-    updatedAt: new Date(),
-  });
 
   const channels: DeliveryChannel[] = [];
   if (!isTelegramPlaceholderEmail(account.email)) {
@@ -158,8 +152,23 @@ loginRoute.post("/code", zValidator("json", requestCodeInput), async (c) => {
     }
   }
 
-  if (channels.length === 0) {
-    await db.delete(verification).where(eq(verification.identifier, challengeKey(challengeId)));
+  // A login attempt owns exactly one OTP record and one code, regardless of
+  // how many linked channels received it. Written only after delivery so we
+  // know which channels the code actually reached.
+  if (channels.length > 0) {
+    await db.insert(verification).values({
+      id: randomUUID(),
+      identifier: challengeKey(challengeId),
+      value: JSON.stringify({
+        userId: account.id,
+        digest: codeDigest(challengeId, code),
+        attempts: 0,
+        role,
+        verifiesEmail: channels.length === 1 && channels[0]?.type === "email",
+      } satisfies OtpRecord),
+      expiresAt: new Date(now + OTP_TTL_MS),
+      updatedAt: new Date(),
+    });
   }
 
   void db.delete(verification).where(lt(verification.expiresAt, new Date()));
@@ -211,6 +220,12 @@ loginRoute.post("/code/verify", zValidator("json", verifyCodeInput), async (c) =
   }
 
   await db.delete(verification).where(eq(verification.id, row.id));
+  if (record.verifiesEmail) {
+    await db
+      .update(userTable)
+      .set({ emailVerified: true, updatedAt: new Date() })
+      .where(and(eq(userTable.id, account.id), eq(userTable.emailVerified, false)));
+  }
   c.header("Set-Cookie", await createSessionCookie(account.id), { append: true });
   return c.json({ ok: true });
 });
