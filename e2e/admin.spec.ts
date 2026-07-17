@@ -11,9 +11,13 @@ test.describe("admin", () => {
   test("opens the teacher dashboard", async ({ page }) => {
     await page.goto("/teacher");
     await expect(page).toHaveURL(/\/teacher$/);
-    await expectPageHeading(page, "Студенты");
-    await expect(page.getByRole("button", { name: "Уроки" })).toBeVisible();
+    // /teacher lands on the triage home; collections open from the sidebar.
+    await expect(page.getByRole("heading", { name: /Сегодня/ })).toBeVisible();
+    const sidebar = page.locator("aside");
+    await expect(sidebar.getByRole("button", { name: "Уроки" })).toBeVisible();
     await expect(page.locator("body > header")).toHaveCount(0);
+    await sidebar.getByRole("button", { name: "Студенты" }).click();
+    await expectPageHeading(page, "Студенты");
 
     await page.getByRole("button", { name: e2eAccounts.admin.email }).click();
     await expect(page.getByRole("menuitem", { name: "Управлять администраторами" })).toBeVisible();
@@ -32,7 +36,7 @@ test.describe("admin", () => {
     await expect(newStudentDialog.getByLabel("Количество уроков")).toHaveValue("8");
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Уроки" }).click();
+    await sidebar.getByRole("button", { name: "Уроки" }).click();
     await expectPageHeading(page, "Уроки");
     await expect(page.getByRole("button", { name: "Новый урок" })).toBeVisible();
     await page.locator("tbody tr").first().getByRole("button").first().click();
@@ -41,7 +45,7 @@ test.describe("admin", () => {
     await expect(lessonDialog.getByRole("link", { name: "Управлять" })).toHaveCount(0);
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Заявки" }).click();
+    await sidebar.getByRole("button", { name: "Заявки" }).click();
     await expectPageHeading(page, "Заявки");
     await expect(page).toHaveURL(/collection=leads/);
     await page.reload();
@@ -106,7 +110,7 @@ test.describe("admin", () => {
     await resetMutableStudent(studentId);
 
     try {
-      await page.goto("/teacher");
+      await page.goto("/teacher?collection=students");
       const search = page.getByPlaceholder("Поиск по имени, email или уровню");
       await search.fill(e2eAccounts.mutableStudent.email);
       let row = page.locator("tbody tr").filter({ hasText: e2eAccounts.mutableStudent.email });
@@ -179,8 +183,7 @@ test.describe("admin", () => {
   });
 
   test("rejects a past local lesson time without resetting the form", async ({ page }) => {
-    await page.goto("/teacher");
-    await page.getByRole("button", { name: "Уроки" }).click();
+    await page.goto("/teacher?collection=lessons");
     await page.getByRole("button", { name: "Новый урок" }).click();
 
     const dialog = page.getByRole("dialog");
