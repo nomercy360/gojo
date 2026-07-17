@@ -258,6 +258,13 @@ export function cancelLesson(lessonId: string) {
   return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}`, { method: "DELETE" });
 }
 
+export function resendStudentInvite(studentId: string) {
+  return apiFetch<{ ok: boolean; sentEmail: boolean; sentTelegram: boolean }>(
+    `/teacher/students/${studentId}/resend-invite`,
+    { method: "POST" },
+  );
+}
+
 export function createAdmin(body: {
   name: string;
   nickname: string | null;

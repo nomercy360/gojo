@@ -34,6 +34,7 @@ import {
 } from "../lib/materialize.ts";
 import { putObject } from "../s3.ts";
 import { sendLessonConfirmation } from "./lessons.ts";
+import { isTelegramPlaceholderEmail } from "./login.ts";
 import { toLessonCardDto, toLessonDto, toSubmissionDto } from "./mappers.ts";
 import { getStudentAccessSnapshot, paymentPlans } from "./payments.ts";
 import { sendAccountWelcome } from "./telegram.ts";
@@ -948,6 +949,45 @@ teacherRoute.post("/students", zValidator("json", createStudentInput), async (c)
   });
 
   return c.json({ ok: true, userId: created.id }, 201);
+});
+
+// Re-deliver access for a student who lost or never received the original
+// invite: magic-link email (real addresses only) and/or the Telegram login
+// button, whichever channels the account has.
+teacherRoute.post("/students/:studentId/resend-invite", async (c) => {
+  const studentId = c.req.param("studentId");
+  const [student] = await db
+    .select({
+      id: userTable.id,
+      name: userTable.name,
+      email: userTable.email,
+      telegramId: userTable.telegramId,
+    })
+    .from(userTable)
+    .where(and(eq(userTable.id, studentId), eq(userTable.role, "student")))
+    .limit(1);
+  if (!student) throw new HTTPException(404, { message: "student_not_found" });
+
+  let sentEmail = false;
+  let sentTelegram = false;
+  if (student.email && !isTelegramPlaceholderEmail(student.email)) {
+    await auth.api.signInMagicLink({
+      body: {
+        email: student.email,
+        name: student.name,
+        callbackURL: `${env.WEB_ORIGIN}/dashboard`,
+      },
+      headers: c.req.raw.headers,
+    });
+    sentEmail = true;
+  }
+  if (student.telegramId) {
+    sentTelegram = await sendAccountWelcome(student.telegramId, student.id).catch(() => false);
+  }
+  if (!sentEmail && !sentTelegram) {
+    throw new HTTPException(400, { message: "no_delivery_channel" });
+  }
+  return c.json({ ok: true, sentEmail, sentTelegram });
 });
 
 teacherRoute.patch(

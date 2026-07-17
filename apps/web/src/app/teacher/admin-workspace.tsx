@@ -52,9 +52,11 @@ import { useRouter } from "next/navigation";
 import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  type ResendInviteState,
   type TeacherActionState,
   cancelLessonAction,
   createAdminAction,
+  resendStudentInviteAction,
   updateAdminAction,
   updateLessonAction,
   updateStudentAction,
@@ -1006,6 +1008,31 @@ function AdminPanel({ admin, onSuccess }: { admin: AdminDirectoryEntry; onSucces
   );
 }
 
+function ResendInviteButton({ studentId }: { studentId: string }) {
+  const [state, formAction, pending] = useActionState<ResendInviteState, FormData>(
+    resendStudentInviteAction,
+    {},
+  );
+
+  useEffect(() => {
+    if (!state.ok) return;
+    const channels = [state.sentEmail ? "email" : null, state.sentTelegram ? "Telegram" : null]
+      .filter(Boolean)
+      .join(" и ");
+    toast.success(`Приглашение отправлено: ${channels}`);
+  }, [state]);
+
+  return (
+    <form action={formAction} className="mt-4">
+      <input type="hidden" name="studentId" value={studentId} />
+      <Button type="submit" variant="outline" disabled={pending} className="w-full rounded-xl">
+        {pending ? "Отправляем..." : "Отправить приглашение для входа"}
+      </Button>
+      {state.error ? <p className="mt-2 text-sm font-bold text-gojo-error">{state.error}</p> : null}
+    </form>
+  );
+}
+
 function NewAdminPanel({ onSuccess }: { onSuccess: () => void }) {
   const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
     createAdminAction,
@@ -1137,6 +1164,8 @@ function StudentPanel({
           className="border-l border-gojo-ink/10 pl-4"
         />
       </div>
+      <ResendInviteButton studentId={student.id} />
+
       <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-gojo-ink-ghost">
         <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
         Квиз — самооценка при регистрации. Справочно, не редактируется.

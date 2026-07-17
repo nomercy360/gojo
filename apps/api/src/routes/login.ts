@@ -210,7 +210,7 @@ function maskTelegram(username: string) {
   return `@${normalized}`;
 }
 
-function isTelegramPlaceholderEmail(email: string) {
+export function isTelegramPlaceholderEmail(email: string) {
   return email.endsWith("@telegram.gojo.local");
 }
 

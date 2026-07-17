@@ -7,6 +7,7 @@ import {
   createAdmin,
   createLesson,
   removeLessonStudent,
+  resendStudentInvite,
   updateAdmin,
   updateLesson,
   updateStudent,
@@ -136,6 +137,36 @@ export async function updateAdminAction(
 
   revalidatePath("/teacher");
   return { ok: true };
+}
+
+export type ResendInviteState = TeacherActionState & {
+  sentEmail?: boolean;
+  sentTelegram?: boolean;
+};
+
+export async function resendStudentInviteAction(
+  _prev: ResendInviteState,
+  formData: FormData,
+): Promise<ResendInviteState> {
+  const studentId = String(formData.get("studentId") ?? "");
+  if (!studentId) return { error: "Нет id студента" };
+
+  try {
+    const result = await resendStudentInvite(studentId);
+    return { ok: true, sentEmail: result.sentEmail, sentTelegram: result.sentTelegram };
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 403) return { error: "Нет прав учителя" };
+      if (e.status === 400 && e.message.includes("no_delivery_channel")) {
+        return {
+          error: "У студента нет ни настоящего email, ни Telegram — приглашение отправить некуда",
+        };
+      }
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось отправить приглашение" };
+  }
 }
 
 export async function createAdminAction(
