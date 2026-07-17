@@ -34,7 +34,7 @@ import type {
 } from "@/lib/api";
 import { quizLevelLabel } from "@/lib/quiz-level";
 import { cn } from "@/lib/utils";
-import type { PaymentPlanDto } from "@gojo/shared";
+import type { LevelDetailDto, LevelSummaryDto, LevelVocabDto, PaymentPlanDto } from "@gojo/shared";
 import {
   ArrowUpRight,
   BookOpen,
@@ -50,7 +50,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 import {
   type ResendInviteState,
@@ -63,6 +71,14 @@ import {
   updateStudentAction,
 } from "./actions";
 import { CreateLessonForm } from "./create-form";
+import {
+  addVocabAction,
+  createUnitAction,
+  deleteUnitAction,
+  deleteVocabAction,
+  updateUnitAction,
+  updateVocabAction,
+} from "./curriculum/actions";
 import { HomeDashboard } from "./home-dashboard";
 import { createTrialLessonAction, updateLeadAction } from "./leads/actions";
 import { CreateStudentForm } from "./students/new/create-form";
@@ -76,15 +92,24 @@ export type DashboardStudent = StudentDirectoryEntry & {
   isActive: boolean;
 };
 
-type Collection = "home" | "students" | "lessons" | "leads" | "admins";
+export type CurriculumData = {
+  level: number;
+  summaries: LevelSummaryDto[];
+  detail: LevelDetailDto | null;
+};
+
+type Collection = "home" | "students" | "lessons" | "leads" | "curriculum" | "admins";
 type Panel =
   | { kind: "new-student"; sourceLead?: TeacherLeadDto }
   | { kind: "new-lesson" }
   | { kind: "new-admin" }
+  | { kind: "new-unit"; levelId: number }
   | { kind: "student"; record: DashboardStudent }
   | { kind: "lesson"; record: TeacherLessonDto }
   | { kind: "lead"; record: TeacherLeadDto }
   | { kind: "admin"; record: AdminDirectoryEntry }
+  | { kind: "unit"; record: TeacherUnit }
+  | { kind: "vocab"; record: LevelVocabDto; levelId: number }
   | null;
 
 const LESSON_STATUS: Record<string, string> = {
@@ -112,6 +137,7 @@ export function AdminWorkspace({
   admins,
   directory,
   units = [],
+  curriculum = null,
   plans,
   error,
   currentUser,
@@ -124,6 +150,7 @@ export function AdminWorkspace({
   admins: AdminDirectoryEntry[];
   directory: StudentDirectoryEntry[];
   units?: TeacherUnit[];
+  curriculum?: CurriculumData | null;
   plans: PaymentPlanDto[];
   error?: string | null;
   currentUser: { email: string; nickname: string | null; avatarUrl: string | null };
@@ -197,28 +224,45 @@ export function AdminWorkspace({
   const isStudents = collection === "students";
   const isLessons = collection === "lessons";
   const isLeads = collection === "leads";
+  const isCurriculum = collection === "curriculum";
   const isAdmins = collection === "admins";
+
+  const curriculumVocab = useMemo(() => {
+    const vocab = curriculum?.detail?.vocab ?? [];
+    const term = query.trim().toLocaleLowerCase("ru");
+    if (!term) return vocab;
+    return vocab.filter((v) =>
+      [v.word, v.reading, v.meaning].some((value) => value.toLocaleLowerCase("ru").includes(term)),
+    );
+  }, [curriculum, query]);
+
   const collectionLabel = isStudents
     ? "Студенты"
     : isLessons
       ? "Уроки"
       : isLeads
         ? "Заявки"
-        : "Администраторы";
+        : isCurriculum
+          ? "Программа"
+          : "Администраторы";
   const visibleCount = isStudents
     ? filteredStudents.length
     : isLessons
       ? filteredLessons.length
       : isLeads
         ? filteredLeads.length
-        : filteredAdmins.length;
+        : isCurriculum
+          ? curriculumVocab.length
+          : filteredAdmins.length;
   const totalCount = isStudents
     ? students.length
     : isLessons
       ? lessons.length
       : isLeads
         ? leads.length
-        : admins.length;
+        : isCurriculum
+          ? (curriculum?.detail?.vocab.length ?? 0)
+          : admins.length;
 
   return (
     <main className="min-h-screen bg-gojo-surface">
@@ -273,13 +317,13 @@ export function AdminWorkspace({
             >
               Заявки
             </CollectionButton>
-            <Link
-              href="/teacher/curriculum"
-              className="flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            <CollectionButton
+              active={collection === "curriculum"}
+              icon={BookOpen}
+              onClick={() => selectCollection("curriculum")}
             >
-              <BookOpen className="size-4" />
               Программа
-            </Link>
+            </CollectionButton>
             <div className="mx-2 hidden border-t border-white/10 pt-5 lg:mt-6 lg:block">
               <div className="px-1 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
                 Система
@@ -324,16 +368,32 @@ export function AdminWorkspace({
                 <div>
                   <div className="flex items-center gap-2 text-xs font-semibold text-gojo-ink-muted">
                     {isAdmins ? "Система" : "Коллекции"} <ChevronRight className="size-3.5" />
-                    <span className="text-gojo-ink">{collectionLabel}</span>
+                    <span className={isCurriculum ? undefined : "text-gojo-ink"}>
+                      {collectionLabel}
+                    </span>
+                    {isCurriculum ? (
+                      <>
+                        <ChevronRight className="size-3.5" />
+                        <span className="text-gojo-ink">Уровень {curriculum?.level ?? 1}</span>
+                      </>
+                    ) : null}
                   </div>
                   <h1 className="mt-1 font-serif text-3xl font-bold">{collectionLabel}</h1>
                 </div>
-                {isStudents || isLessons || isAdmins ? (
+                {isStudents || isLessons || isAdmins || isCurriculum ? (
                   <Button
                     onClick={() =>
-                      setPanel({
-                        kind: isStudents ? "new-student" : isLessons ? "new-lesson" : "new-admin",
-                      })
+                      setPanel(
+                        isCurriculum
+                          ? { kind: "new-unit", levelId: curriculum?.level ?? 1 }
+                          : {
+                              kind: isStudents
+                                ? "new-student"
+                                : isLessons
+                                  ? "new-lesson"
+                                  : "new-admin",
+                            },
+                      )
                     }
                   >
                     <Plus />
@@ -341,7 +401,9 @@ export function AdminWorkspace({
                       ? "Новый студент"
                       : isLessons
                         ? "Новый урок"
-                        : "Новый администратор"}
+                        : isCurriculum
+                          ? "Новый юнит"
+                          : "Новый администратор"}
                   </Button>
                 ) : null}
               </header>
@@ -359,7 +421,9 @@ export function AdminWorkspace({
                           ? "Поиск по урокам..."
                           : isLeads
                             ? "Поиск по имени, контакту или цели..."
-                            : "Поиск по имени, email или ID..."
+                            : isCurriculum
+                              ? "Поиск по словам уровня..."
+                              : "Поиск по имени, email или ID..."
                     }
                     className="bg-gojo-paper/60 pl-10"
                   />
@@ -384,6 +448,23 @@ export function AdminWorkspace({
                 <LeadsTable
                   leads={filteredLeads}
                   onSelect={(record) => setPanel({ kind: "lead", record })}
+                />
+              ) : isCurriculum ? (
+                <CurriculumView
+                  curriculum={curriculum}
+                  vocab={curriculumVocab}
+                  units={units}
+                  students={students}
+                  onSelectLevel={(level) => {
+                    setPanel(null);
+                    router.replace(`/teacher?collection=curriculum&level=${level}`, {
+                      scroll: false,
+                    });
+                  }}
+                  onOpenUnit={(record) => setPanel({ kind: "unit", record })}
+                  onOpenVocab={(record) =>
+                    setPanel({ kind: "vocab", record, levelId: curriculum?.level ?? 1 })
+                  }
                 />
               ) : (
                 <AdminsTable
@@ -813,15 +894,21 @@ function RecordSheet({
         ? "Новый урок"
         : panel?.kind === "new-admin"
           ? "Новый администратор"
-          : panel?.kind === "student"
-            ? (panel.record.nickname ?? panel.record.name)
-            : panel?.kind === "lesson"
-              ? panel.record.title
-              : panel?.kind === "lead"
-                ? panel.record.name
-                : panel?.kind === "admin"
-                  ? (panel.record.nickname ?? panel.record.name)
-                  : "Запись";
+          : panel?.kind === "new-unit"
+            ? `Новый юнит · уровень ${panel.levelId}`
+            : panel?.kind === "student"
+              ? (panel.record.nickname ?? panel.record.name)
+              : panel?.kind === "lesson"
+                ? panel.record.title
+                : panel?.kind === "lead"
+                  ? panel.record.name
+                  : panel?.kind === "admin"
+                    ? (panel.record.nickname ?? panel.record.name)
+                    : panel?.kind === "unit"
+                      ? panel.record.title
+                      : panel?.kind === "vocab"
+                        ? panel.record.word
+                        : "Запись";
 
   return (
     <Sheet open={panel !== null} onOpenChange={(open) => !open && onClose()}>
@@ -840,9 +927,13 @@ function RecordSheet({
                 ? "Урок сразу появится у выбранных студентов."
                 : panel?.kind === "new-admin"
                   ? "Создаст аккаунт с ролью администратора и отправит приглашение на email."
-                  : panel?.kind === "admin"
-                    ? "Единая роль администратора и преподавателя. Любой администратор может редактировать запись."
-                    : "Изменения сохраняются в текущей коллекции."}
+                  : panel?.kind === "new-unit" || panel?.kind === "unit"
+                    ? "Юнит — кусок уровня размером в занятие. «Пройден» на привязанном уроке выдаёт студенту деку юнита и открывает уровень."
+                    : panel?.kind === "vocab"
+                      ? "Дека связана: правка обновит карточку у всех студентов, кому слово уже выдано."
+                      : panel?.kind === "admin"
+                        ? "Единая роль администратора и преподавателя. Любой администратор может редактировать запись."
+                        : "Изменения сохраняются в текущей коллекции."}
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
@@ -879,6 +970,16 @@ function RecordSheet({
             />
           ) : panel?.kind === "admin" ? (
             <AdminPanel admin={panel.record} onSuccess={onClose} />
+          ) : panel?.kind === "new-unit" ? (
+            <NewUnitPanel levelId={panel.levelId} onSuccess={onClose} />
+          ) : panel?.kind === "unit" ? (
+            <UnitPanel unit={panel.record} onSuccess={onClose} />
+          ) : panel?.kind === "vocab" ? (
+            <VocabPanel
+              vocab={panel.record}
+              units={units.filter((unit) => unit.levelId === panel.levelId)}
+              onSuccess={onClose}
+            />
           ) : null}
         </SheetBody>
       </SheetContent>
@@ -1029,6 +1130,419 @@ function AdminPanel({ admin, onSuccess }: { admin: AdminDirectoryEntry; onSucces
       </div>
     </div>
   );
+}
+
+function CurriculumView({
+  curriculum,
+  vocab,
+  units,
+  students,
+  onSelectLevel,
+  onOpenUnit,
+  onOpenVocab,
+}: {
+  curriculum: CurriculumData | null;
+  vocab: LevelVocabDto[];
+  units: TeacherUnit[];
+  students: DashboardStudent[];
+  onSelectLevel: (level: number) => void;
+  onOpenUnit: (unit: TeacherUnit) => void;
+  onOpenVocab: (vocab: LevelVocabDto) => void;
+}) {
+  const [addState, addAction, addPending] = useActionState<TeacherActionState, FormData>(
+    addVocabAction,
+    {},
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!addState.ok) return;
+    toast.success("Слово добавлено");
+    router.refresh();
+  }, [router, addState]);
+
+  if (!curriculum) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-10 text-sm text-gojo-ink-muted">
+        Загружаем программу…
+      </div>
+    );
+  }
+
+  const level = curriculum.level;
+  const levelUnits = units
+    .filter((unit) => unit.levelId === level)
+    .sort((a, b) => a.position - b.position);
+  const byUnit = new Map<string, LevelVocabDto[]>();
+  const unassigned: LevelVocabDto[] = [];
+  for (const word of vocab) {
+    if (word.unitId && levelUnits.some((unit) => unit.id === word.unitId)) {
+      const list = byUnit.get(word.unitId) ?? [];
+      list.push(word);
+      byUnit.set(word.unitId, list);
+    } else {
+      unassigned.push(word);
+    }
+  }
+  const studentsOnLevel = students.filter((student) => student.currentLevel === level).length;
+
+  const wordRow = (word: LevelVocabDto) => (
+    <TableRow key={word.id} onClick={() => onOpenVocab(word)} className="cursor-pointer">
+      <TableCell className="g-jp text-[16px] font-bold">{word.word}</TableCell>
+      <TableCell className="g-jp text-gojo-ink-muted">{word.reading}</TableCell>
+      <TableCell>{word.meaning}</TableCell>
+      <TableCell className="w-10 text-right text-gojo-ink-ghost">
+        <ChevronRight className="ml-auto size-4" />
+      </TableCell>
+    </TableRow>
+  );
+
+  return (
+    <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+      <div className="flex flex-wrap gap-1.5">
+        {(curriculum.summaries.length > 0
+          ? curriculum.summaries.map((s) => s.id)
+          : Array.from({ length: 30 }, (_, index) => index + 1)
+        ).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelectLevel(id)}
+            className={cn(
+              "grid size-9 place-items-center rounded-lg border text-sm font-bold transition-colors",
+              id === level
+                ? "border-gojo-orange bg-gojo-orange text-white"
+                : "border-gojo-ink/15 bg-white hover:border-gojo-orange",
+            )}
+          >
+            {id}
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-3 text-sm text-gojo-ink-muted">
+        Уровень {level} · {levelUnits.length} {plural(levelUnits.length, "юнит", "юнита", "юнитов")}{" "}
+        · {curriculum.detail?.vocab.length ?? 0}{" "}
+        {plural(curriculum.detail?.vocab.length ?? 0, "слово", "слова", "слов")} · {studentsOnLevel}{" "}
+        {plural(studentsOnLevel, "студент", "студента", "студентов")} на уровне
+      </p>
+
+      <div className="mt-4 overflow-hidden rounded-xl border border-gojo-ink/10 bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Слово</TableHead>
+              <TableHead>Чтение</TableHead>
+              <TableHead>Значение</TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {levelUnits.map((unit) => (
+              <Fragment key={unit.id}>
+                <TableRow
+                  onClick={() => onOpenUnit(unit)}
+                  className="cursor-pointer bg-gojo-paper-2/60 hover:bg-gojo-paper-2"
+                >
+                  <TableCell colSpan={3} className="py-2 text-[13px] font-bold">
+                    Юнит {unit.position} · {unit.title}
+                    {unit.sourceBook ? (
+                      <span className="ml-2 font-normal text-gojo-ink-muted">
+                        {unit.sourceBook}
+                        {unit.sourceChapter ? ` · ${unit.sourceChapter}` : ""}
+                      </span>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="py-2 text-right text-[13px] font-bold text-gojo-ink-muted">
+                    {(byUnit.get(unit.id) ?? []).length}
+                  </TableCell>
+                </TableRow>
+                {(byUnit.get(unit.id) ?? []).map(wordRow)}
+              </Fragment>
+            ))}
+            {unassigned.length > 0 ? (
+              <>
+                <TableRow className="bg-gojo-orange-soft/70 hover:bg-gojo-orange-soft">
+                  <TableCell colSpan={3} className="py-2 text-[13px] font-bold text-gojo-orange">
+                    Без юнита
+                  </TableCell>
+                  <TableCell className="py-2 text-right text-[13px] font-bold text-gojo-orange">
+                    {unassigned.length}
+                  </TableCell>
+                </TableRow>
+                {unassigned.map(wordRow)}
+              </>
+            ) : null}
+            {vocab.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-6 text-center text-sm text-gojo-ink-muted">
+                  На уровне пока нет слов.
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </div>
+
+      <form action={addAction} className="mt-4 flex flex-wrap items-center gap-2">
+        <input type="hidden" name="levelId" value={level} />
+        <Input name="word" placeholder="слово" required className="g-jp w-36" />
+        <Input name="reading" placeholder="чтение" required className="w-36" />
+        <Input name="meaning" placeholder="значение" required className="min-w-36 flex-1" />
+        <NativeSelect name="unitId" defaultValue="" className="w-48">
+          <option value="">— без юнита —</option>
+          {levelUnits.map((unit) => (
+            <option key={unit.id} value={unit.id}>
+              Юнит {unit.position} · {unit.title}
+            </option>
+          ))}
+        </NativeSelect>
+        <Button type="submit" disabled={addPending}>
+          {addPending ? "Добавляем…" : "Добавить"}
+        </Button>
+      </form>
+      {addState.error ? (
+        <p className="mt-2 text-sm font-bold text-gojo-error">{addState.error}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function NewUnitPanel({ levelId, onSuccess }: { levelId: number; onSuccess: () => void }) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    createUnitAction,
+    {},
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Юнит создан");
+    router.refresh();
+    onSuccess();
+  }, [onSuccess, router, state.ok]);
+
+  return (
+    <form action={formAction} className="space-y-5">
+      <Input type="hidden" name="levelId" value={levelId} />
+      <Field>
+        <FieldLabel htmlFor="new-unit-title">Название</FieldLabel>
+        <Input id="new-unit-title" name="title" required placeholder="Каждый день · распорядок" />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field>
+          <FieldLabel htmlFor="new-unit-book">Учебник</FieldLabel>
+          <Input id="new-unit-book" name="sourceBook" placeholder="Genki I" />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="new-unit-chapter">Глава</FieldLabel>
+          <Input id="new-unit-chapter" name="sourceChapter" placeholder="Глава 3" />
+        </Field>
+      </div>
+      {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+      <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
+        {pending ? "Создаём…" : "Создать юнит"}
+      </Button>
+    </form>
+  );
+}
+
+function UnitPanel({ unit, onSuccess }: { unit: TeacherUnit; onSuccess: () => void }) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    updateUnitAction,
+    {},
+  );
+  const router = useRouter();
+  const [deleting, startDelete] = useTransition();
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Юнит сохранён");
+    router.refresh();
+    onSuccess();
+  }, [onSuccess, router, state.ok]);
+
+  return (
+    <div>
+      <form action={formAction} className="space-y-5">
+        <Input type="hidden" name="unitId" value={unit.id} />
+        <div className="grid grid-cols-[80px_1fr] gap-3">
+          <Field>
+            <FieldLabel htmlFor={`unit-pos-${unit.id}`}>№</FieldLabel>
+            <Input
+              id={`unit-pos-${unit.id}`}
+              name="position"
+              type="number"
+              min="1"
+              defaultValue={unit.position}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`unit-title-${unit.id}`}>Название</FieldLabel>
+            <Input id={`unit-title-${unit.id}`} name="title" defaultValue={unit.title} required />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field>
+            <FieldLabel htmlFor={`unit-book-${unit.id}`}>Учебник</FieldLabel>
+            <Input
+              id={`unit-book-${unit.id}`}
+              name="sourceBook"
+              defaultValue={unit.sourceBook ?? ""}
+              placeholder="Genki I"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`unit-chapter-${unit.id}`}>Глава</FieldLabel>
+            <Input
+              id={`unit-chapter-${unit.id}`}
+              name="sourceChapter"
+              defaultValue={unit.sourceChapter ?? ""}
+              placeholder="Глава 3"
+            />
+          </Field>
+        </div>
+        {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+        <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
+          {pending ? "Сохраняем…" : "Сохранить юнит"}
+        </Button>
+      </form>
+
+      <div className="mt-7 border-t border-gojo-ink/10 pt-5">
+        <p className="text-[12px] text-gojo-ink-muted">
+          Слов в деке: {unit.vocabCount} · уроков привязано: {unit.lessonCount}. Удаление оставит
+          слова на уровне без юнита; выданные карточки у студентов не пропадут.
+        </p>
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={deleting}
+          className="mt-3 w-full"
+          onClick={() =>
+            startDelete(async () => {
+              const formData = new FormData();
+              formData.set("unitId", unit.id);
+              await deleteUnitAction(formData);
+              toast.success("Юнит удалён");
+              router.refresh();
+              onSuccess();
+            })
+          }
+        >
+          {deleting ? "Удаляем…" : "Удалить юнит"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function VocabPanel({
+  vocab,
+  units,
+  onSuccess,
+}: {
+  vocab: LevelVocabDto;
+  units: TeacherUnit[];
+  onSuccess: () => void;
+}) {
+  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
+    updateVocabAction,
+    {},
+  );
+  const router = useRouter();
+  const [deleting, startDelete] = useTransition();
+
+  useEffect(() => {
+    if (!state.ok) return;
+    toast.success("Слово сохранено");
+    router.refresh();
+    onSuccess();
+  }, [onSuccess, router, state.ok]);
+
+  return (
+    <div>
+      <form action={formAction} className="space-y-5">
+        <Input type="hidden" name="vocabId" value={vocab.id} />
+        <Field>
+          <FieldLabel htmlFor={`vocab-word-${vocab.id}`}>Слово</FieldLabel>
+          <Input
+            id={`vocab-word-${vocab.id}`}
+            name="word"
+            defaultValue={vocab.word}
+            required
+            className="g-jp"
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`vocab-reading-${vocab.id}`}>Чтение</FieldLabel>
+          <Input
+            id={`vocab-reading-${vocab.id}`}
+            name="reading"
+            defaultValue={vocab.reading}
+            required
+            className="g-jp"
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`vocab-meaning-${vocab.id}`}>Значение</FieldLabel>
+          <Input
+            id={`vocab-meaning-${vocab.id}`}
+            name="meaning"
+            defaultValue={vocab.meaning}
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`vocab-unit-${vocab.id}`}>Юнит</FieldLabel>
+          <NativeSelect
+            id={`vocab-unit-${vocab.id}`}
+            name="unitId"
+            defaultValue={vocab.unitId ?? ""}
+          >
+            <option value="">— без юнита —</option>
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                Юнит {unit.position} · {unit.title}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
+        <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
+          {pending ? "Сохраняем…" : "Сохранить слово"}
+        </Button>
+      </form>
+
+      <div className="mt-7 border-t border-gojo-ink/10 pt-5">
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={deleting}
+          className="w-full"
+          onClick={() =>
+            startDelete(async () => {
+              const formData = new FormData();
+              formData.set("vocabId", vocab.id);
+              await deleteVocabAction(formData);
+              toast.success("Слово удалено");
+              router.refresh();
+              onSuccess();
+            })
+          }
+        >
+          {deleting ? "Удаляем…" : "Удалить слово"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function plural(n: number, one: string, few: string, many: string) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
 }
 
 function ResendInviteButton({

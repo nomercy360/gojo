@@ -11,36 +11,41 @@ import {
 } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { TeacherActionState } from "../actions";
 
-function back(levelId: number | string): never {
-  revalidatePath("/teacher/curriculum");
-  redirect(`/teacher/curriculum?level=${levelId}`);
-}
-
-export async function createUnitAction(formData: FormData) {
+export async function createUnitAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
   const levelId = Number(formData.get("levelId") ?? 0);
   const title = String(formData.get("title") ?? "").trim();
   const sourceBook = String(formData.get("sourceBook") ?? "").trim() || null;
   const sourceChapter = String(formData.get("sourceChapter") ?? "").trim() || null;
-  if (!levelId || !title) return;
+  if (!levelId || !title) return { error: "Укажи название юнита" };
 
   try {
     await createTeacherUnit({ levelId, title, sourceBook, sourceChapter });
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
-    throw e;
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось создать юнит" };
   }
-  back(levelId);
+  revalidatePath("/teacher");
+  return { ok: true };
 }
 
-export async function updateUnitAction(formData: FormData) {
+export async function updateUnitAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
   const unitId = String(formData.get("unitId") ?? "");
-  const levelId = String(formData.get("levelId") ?? "1");
   const title = String(formData.get("title") ?? "").trim();
   const positionRaw = String(formData.get("position") ?? "").trim();
   const sourceBook = String(formData.get("sourceBook") ?? "").trim() || null;
   const sourceChapter = String(formData.get("sourceChapter") ?? "").trim() || null;
-  if (!unitId || !title) return;
+  if (!unitId || !title) return { error: "Укажи название юнита" };
 
   try {
     await updateTeacherUnit(unitId, {
@@ -50,72 +55,89 @@ export async function updateUnitAction(formData: FormData) {
       sourceChapter,
     });
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
-    throw e;
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось сохранить юнит" };
   }
-  back(levelId);
+  revalidatePath("/teacher");
+  return { ok: true };
 }
 
 export async function deleteUnitAction(formData: FormData) {
   const unitId = String(formData.get("unitId") ?? "");
-  const levelId = String(formData.get("levelId") ?? "1");
   if (!unitId) return;
 
   try {
     await deleteTeacherUnit(unitId);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
-    throw e;
   }
-  back(levelId);
+  revalidatePath("/teacher");
 }
 
-export async function addVocabAction(formData: FormData) {
+export async function addVocabAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
   const levelId = Number(formData.get("levelId") ?? 0);
   const word = String(formData.get("word") ?? "").trim();
   const reading = String(formData.get("reading") ?? "").trim();
   const meaning = String(formData.get("meaning") ?? "").trim();
   const unitId = String(formData.get("unitId") ?? "") || null;
-  if (!levelId || !word || !reading || !meaning) return;
+  if (!levelId || !word || !reading || !meaning)
+    return { error: "Заполни слово, чтение и значение" };
 
   try {
     await createLevelVocab({ levelId, word, reading, meaning, unitId });
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
-    if (e instanceof ApiError && e.status === 400) back(levelId);
-    throw e;
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 400 && e.message.includes("word_already_in_level")) {
+        return { error: "Это слово уже есть на уровне" };
+      }
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось добавить слово" };
   }
-  back(levelId);
+  revalidatePath("/teacher");
+  return { ok: true };
 }
 
-export async function updateVocabAction(formData: FormData) {
+export async function updateVocabAction(
+  _prev: TeacherActionState,
+  formData: FormData,
+): Promise<TeacherActionState> {
   const vocabId = String(formData.get("vocabId") ?? "");
-  const levelId = String(formData.get("levelId") ?? "1");
   const word = String(formData.get("word") ?? "").trim();
   const reading = String(formData.get("reading") ?? "").trim();
   const meaning = String(formData.get("meaning") ?? "").trim();
   const unitId = String(formData.get("unitId") ?? "") || null;
-  if (!vocabId || !word || !reading || !meaning) return;
+  if (!vocabId || !word || !reading || !meaning)
+    return { error: "Заполни слово, чтение и значение" };
 
   try {
     await updateLevelVocab(vocabId, { word, reading, meaning, unitId });
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
-    throw e;
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось сохранить слово" };
   }
-  back(levelId);
+  revalidatePath("/teacher");
+  return { ok: true };
 }
 
 export async function deleteVocabAction(formData: FormData) {
   const vocabId = String(formData.get("vocabId") ?? "");
-  const levelId = String(formData.get("levelId") ?? "1");
   if (!vocabId) return;
 
   try {
     await deleteLevelVocab(vocabId);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
-    throw e;
   }
-  back(levelId);
+  revalidatePath("/teacher");
 }
