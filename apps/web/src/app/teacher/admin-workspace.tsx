@@ -1684,20 +1684,9 @@ function NewAdminPanel({ onSuccess }: { onSuccess: () => void }) {
           placeholder="teacher@gojolearn.ru"
         />
       </Field>
-      <Field>
-        <FieldLabel htmlFor="new-admin-telegram">Telegram ID (необязательно)</FieldLabel>
-        <Input
-          id="new-admin-telegram"
-          name="telegramId"
-          type="number"
-          min="1"
-          step="1"
-          placeholder="Числовой ID"
-        />
-      </Field>
       {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
       <Button type="submit" size="lg" disabled={pending} className="w-full rounded-xl">
-        {pending ? "Создаём..." : "Создать администратора"}
+        {pending ? "Отправляем..." : "Отправить приглашение"}
       </Button>
     </form>
   );
