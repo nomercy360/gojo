@@ -32,7 +32,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function LessonDetailPage({ params }: Props) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (isTeacherUser(user)) redirect(`/teacher/lessons/${id}`);
+  if (isTeacherUser(user)) redirect(`/teacher?lesson=${id}`);
 
   let lesson: LessonDto;
   try {

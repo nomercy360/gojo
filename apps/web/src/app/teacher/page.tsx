@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 export default async function TeacherPage({
   searchParams,
 }: {
-  searchParams: Promise<{ collection?: string; panel?: string; level?: string }>;
+  searchParams: Promise<{ collection?: string; panel?: string; level?: string; lesson?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
@@ -137,6 +137,7 @@ export default async function TeacherPage({
       }}
       initialCollection={initialCollection}
       initialPanel={initialPanel}
+      initialLessonId={params.lesson}
     />
   );
 }

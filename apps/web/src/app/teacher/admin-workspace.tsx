@@ -63,11 +63,9 @@ import { toast } from "sonner";
 import {
   type ResendInviteState,
   type TeacherActionState,
-  cancelLessonAction,
   createAdminAction,
   resendStudentInviteAction,
   updateAdminAction,
-  updateLessonAction,
   updateStudentAction,
 } from "./actions";
 import { CreateLessonForm } from "./create-form";
@@ -88,6 +86,7 @@ import {
   sendLeadLinkAction,
   updateLeadAction,
 } from "./leads/actions";
+import { LessonPanel } from "./lesson-panel";
 import { CreateStudentForm } from "./students/new/create-form";
 
 export type DashboardStudent = StudentDirectoryEntry & {
@@ -149,6 +148,7 @@ export function AdminWorkspace({
   currentUser,
   initialCollection = "home",
   initialPanel,
+  initialLessonId,
 }: {
   students: DashboardStudent[];
   lessons: TeacherLessonDto[];
@@ -162,17 +162,20 @@ export function AdminWorkspace({
   currentUser: { email: string; nickname: string | null; avatarUrl: string | null };
   initialCollection?: Collection;
   initialPanel?: "new-student" | "new-lesson";
+  initialLessonId?: string;
 }) {
   const router = useRouter();
   const [collection, setCollection] = useState<Collection>(initialCollection);
   const [query, setQuery] = useState("");
-  const [panel, setPanel] = useState<Panel>(
-    initialPanel === "new-student"
-      ? { kind: "new-student" }
-      : initialPanel === "new-lesson"
-        ? { kind: "new-lesson" }
-        : null,
-  );
+  const [panel, setPanel] = useState<Panel>(() => {
+    if (initialPanel === "new-student") return { kind: "new-student" };
+    if (initialPanel === "new-lesson") return { kind: "new-lesson" };
+    if (initialLessonId) {
+      const record = lessons.find((lesson) => lesson.id === initialLessonId);
+      if (record) return { kind: "lesson", record };
+    }
+    return null;
+  });
 
   useEffect(() => setCollection(initialCollection), [initialCollection]);
 
@@ -365,6 +368,7 @@ export function AdminWorkspace({
                 onNewLesson={() => setPanel({ kind: "new-lesson" })}
                 onOpenLead={(record) => setPanel({ kind: "lead", record })}
                 onOpenStudent={(record) => setPanel({ kind: "student", record })}
+                onOpenLesson={(record) => setPanel({ kind: "lesson", record })}
                 onBrowse={selectCollection}
               />
             </>
@@ -490,16 +494,23 @@ export function AdminWorkspace({
 
       <RecordSheet
         panel={
-          // The lead panel stays open across state transitions (trial created,
-          // trial done, link sent) — re-resolve the record so router.refresh()
-          // shows the fresh state instead of the snapshot taken on open.
+          // Record panels stay open across mutations — re-resolve the record
+          // so router.refresh() shows the fresh state instead of the snapshot
+          // taken on open.
           panel?.kind === "lead"
             ? { ...panel, record: leads.find((l) => l.id === panel.record.id) ?? panel.record }
-            : panel
+            : panel?.kind === "lesson"
+              ? {
+                  ...panel,
+                  record: lessons.find((l) => l.id === panel.record.id) ?? panel.record,
+                }
+              : panel
         }
         plans={plans}
         directory={directory}
         units={units}
+        lessons={lessons}
+        onOpenLesson={(record) => setPanel({ kind: "lesson", record })}
         onClose={closePanel}
       />
     </main>
@@ -887,12 +898,16 @@ function RecordSheet({
   plans,
   directory,
   units,
+  lessons,
+  onOpenLesson,
   onClose,
 }: {
   panel: Panel;
   plans: PaymentPlanDto[];
   directory: StudentDirectoryEntry[];
   units: TeacherUnit[];
+  lessons: TeacherLessonDto[];
+  onOpenLesson: (lesson: TeacherLessonDto) => void;
   onClose: () => void;
 }) {
   const title =
@@ -957,7 +972,12 @@ function RecordSheet({
           ) : panel?.kind === "student" ? (
             <StudentPanel student={panel.record} plans={plans} onSuccess={onClose} />
           ) : panel?.kind === "lesson" ? (
-            <LessonPanel lesson={panel.record} units={units} onSuccess={onClose} />
+            <LessonPanel
+              lesson={panel.record}
+              units={units}
+              directory={directory}
+              onSuccess={onClose}
+            />
           ) : panel?.kind === "lead" ? (
             <LeadPanel
               lead={panel.record}
@@ -966,6 +986,12 @@ function RecordSheet({
                   ? (directory.find((s) => s.id === panel.record.studentId) ?? null)
                   : null
               }
+              trialLesson={
+                panel.record.trialLessonId
+                  ? (lessons.find((l) => l.id === panel.record.trialLessonId) ?? null)
+                  : null
+              }
+              onOpenLesson={onOpenLesson}
               onSuccess={onClose}
             />
           ) : panel?.kind === "admin" ? (
@@ -2020,163 +2046,6 @@ function StudentPanel({
   );
 }
 
-function LessonPanel({
-  lesson,
-  units,
-  onSuccess,
-}: {
-  lesson: TeacherLessonDto;
-  units: TeacherUnit[];
-  onSuccess: () => void;
-}) {
-  const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
-    updateLessonAction,
-    {},
-  );
-  const router = useRouter();
-  const [title, setTitle] = useState(lesson.title);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [duration, setDuration] = useState(String(durationMinutes(lesson)));
-  const [meetingUrl, setMeetingUrl] = useState(lesson.meetingUrl ?? "");
-  const [unitId, setUnitId] = useState(lesson.unitId ?? "");
-
-  useEffect(() => {
-    const localStart = new Date(lesson.startsAt);
-    setTitle(lesson.title);
-    setDate(formatDateInput(localStart));
-    setTime(formatTimeInput(localStart));
-    setDuration(String(durationMinutes(lesson)));
-    setMeetingUrl(lesson.meetingUrl ?? "");
-    setUnitId(lesson.unitId ?? "");
-  }, [lesson]);
-
-  const startsAt = localDateTimeIso(date, time);
-
-  useEffect(() => {
-    if (!state.ok) return;
-    toast.success("Урок сохранён");
-    router.refresh();
-    onSuccess();
-  }, [onSuccess, router, state.ok]);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between rounded-xl border border-gojo-ink/10 bg-gojo-paper p-4">
-        <div>
-          <div className="text-xs text-gojo-ink-muted">Статус</div>
-          <div className="mt-1">
-            <LessonStatusBadge status={lesson.status} />
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-xs text-gojo-ink-muted">Студенты</div>
-          <div className="font-serif text-2xl font-bold">{lesson.studentCount}</div>
-        </div>
-      </div>
-
-      <form action={formAction} onReset={(event) => event.preventDefault()} className="space-y-5">
-        <Input type="hidden" name="lessonId" value={lesson.id} />
-        <Input type="hidden" name="startsAt" value={startsAt} />
-        <Field>
-          <FieldLabel htmlFor={`title-${lesson.id}`}>Название</FieldLabel>
-          <Input
-            id={`title-${lesson.id}`}
-            name="title"
-            required
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-        </Field>
-        <TimeZoneNote />
-        <div className="grid grid-cols-2 gap-3">
-          <Field>
-            <FieldLabel htmlFor={`date-${lesson.id}`}>Дата</FieldLabel>
-            <Input
-              id={`date-${lesson.id}`}
-              name="date"
-              type="date"
-              required
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`time-${lesson.id}`}>Время</FieldLabel>
-            <Input
-              id={`time-${lesson.id}`}
-              name="time"
-              type="time"
-              required
-              value={time}
-              onChange={(event) => setTime(event.target.value)}
-            />
-          </Field>
-        </div>
-        <Field>
-          <FieldLabel htmlFor={`duration-${lesson.id}`}>Длительность</FieldLabel>
-          <NativeSelect
-            id={`duration-${lesson.id}`}
-            name="duration"
-            value={duration}
-            onChange={(event) => setDuration(event.target.value)}
-          >
-            {[30, 50, 60, 90].map((minutes) => (
-              <option key={minutes} value={minutes}>
-                {minutes} минут
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        {units.length > 0 ? (
-          <Field>
-            <FieldLabel htmlFor={`unit-${lesson.id}`}>Юнит программы</FieldLabel>
-            <NativeSelect
-              id={`unit-${lesson.id}`}
-              name="unitId"
-              value={unitId}
-              onChange={(event) => setUnitId(event.target.value)}
-            >
-              <option value="">— без юнита —</option>
-              {units.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  Уровень {unit.levelId} · {unit.position}. {unit.title}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-        ) : null}
-        <Field>
-          <FieldLabel htmlFor={`meeting-${lesson.id}`}>Ссылка на Zoom / Meet</FieldLabel>
-          <Input
-            id={`meeting-${lesson.id}`}
-            name="meetingUrl"
-            type="url"
-            value={meetingUrl}
-            onChange={(event) => setMeetingUrl(event.target.value)}
-            placeholder="https://meet.google.com/..."
-          />
-        </Field>
-        {state.error ? <p className="text-sm font-bold text-gojo-error">{state.error}</p> : null}
-        <Button type="submit" disabled={pending || !startsAt} className="w-full">
-          {pending ? "Сохраняем..." : "Сохранить изменения"}
-        </Button>
-      </form>
-
-      {lesson.status === "scheduled" ? (
-        <div className="border-t border-gojo-ink/10 pt-6">
-          <form action={cancelLessonAction}>
-            <Input type="hidden" name="lessonId" value={lesson.id} />
-            <Button type="submit" variant="destructive" className="w-full">
-              Отменить
-            </Button>
-          </form>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 // The lead drawer is state-driven: one primary action per lifecycle state,
 // expanding inline (progressive disclosure) instead of opening another layer.
 // Status is machine-driven; the only manual override is reject. The CRM
@@ -2186,10 +2055,14 @@ type LeadSubAction = "trial" | "trialDone" | "sendLink" | "reject";
 function LeadPanel({
   lead,
   linkedStudent,
+  trialLesson,
+  onOpenLesson,
   onSuccess,
 }: {
   lead: TeacherLeadDto;
   linkedStudent: StudentDirectoryEntry | null;
+  trialLesson: TeacherLessonDto | null;
+  onOpenLesson: (lesson: TeacherLessonDto) => void;
   onSuccess: () => void;
 }) {
   const [state, formAction, pending] = useActionState<TeacherActionState, FormData>(
@@ -2235,13 +2108,15 @@ function LeadPanel({
         ) : null}
       </div>
 
-      {lead.trialLessonId ? (
-        <Link
-          href={`/teacher/lessons/${lead.trialLessonId}`}
-          className={buttonVariants({ variant: "secondary", className: "w-full" })}
+      {trialLesson ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full"
+          onClick={() => onOpenLesson(trialLesson)}
         >
           Пробный урок{lead.assessedLevel ? " · пройден" : ""} <ArrowUpRight />
-        </Link>
+        </Button>
       ) : null}
 
       <LeadStateAction

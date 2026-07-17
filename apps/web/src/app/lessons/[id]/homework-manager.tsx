@@ -39,9 +39,11 @@ const ATTENDANCE_LABEL: Record<AttendanceStatus, string> = {
 export function HomeworkManager({
   lessonId,
   initialStudents,
+  onChanged,
 }: {
   lessonId: string;
   initialStudents: LessonStudentDto[];
+  onChanged?: () => void;
 }) {
   const [students, setStudents] = useState(initialStudents);
   const [pending, startTransition] = useTransition();
@@ -57,6 +59,7 @@ export function HomeworkManager({
               : s,
           ),
         );
+        onChanged?.();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не получилось");
       }
@@ -71,6 +74,7 @@ export function HomeworkManager({
           list.map((s) => (s.studentId === studentId ? { ...s, jlptLevel: updated.jlptLevel } : s)),
         );
         toast.success("Уровень обновлён");
+        onChanged?.();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не получилось");
       }
@@ -86,6 +90,7 @@ export function HomeworkManager({
             s.studentId === studentId ? { ...s, attendanceStatus: updated.attendanceStatus } : s,
           ),
         );
+        onChanged?.();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не получилось");
       }
@@ -111,6 +116,7 @@ export function HomeworkManager({
           ),
         );
         toast.success("Заметки сохранены");
+        onChanged?.();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Не получилось");
       }

@@ -190,7 +190,7 @@ export default async function TeacherStudentProfilePage({ params }: Props) {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <Link
-                          href={`/teacher/lessons/${lesson.lessonId}`}
+                          href={`/teacher?lesson=${lesson.lessonId}`}
                           className="font-bold hover:text-gojo-orange"
                         >
                           {lesson.title}

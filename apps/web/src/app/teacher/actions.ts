@@ -7,16 +7,97 @@ import {
   createAdmin,
   createLesson,
   deleteLessonMaterial,
+  fetchLessonCards,
+  fetchLessonMaterials,
+  fetchLessonStudents,
+  fetchLessonSubmissions,
   removeLessonStudent,
   resendStudentInvite,
   updateAdmin,
   updateLesson,
   updateStudent,
+  uploadLessonMaterial,
 } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type TeacherActionState = { error?: string; ok?: boolean };
+
+export type LessonWorkData = Awaited<ReturnType<typeof getLessonWorkAction>>;
+
+// The lesson side panel loads its working data (roster, cards, materials,
+// submissions) on open — the workspace page only ships the lesson list.
+export async function getLessonWorkAction(lessonId: string) {
+  const [students, cards, materials, submissions] = await Promise.all([
+    fetchLessonStudents(lessonId),
+    fetchLessonCards(lessonId),
+    fetchLessonMaterials(lessonId),
+    fetchLessonSubmissions(lessonId),
+  ]);
+  return { students, cards, materials, submissions };
+}
+
+export async function updateLessonRosterAction(
+  lessonId: string,
+  add: string[],
+  remove: string[],
+): Promise<TeacherActionState> {
+  try {
+    for (const studentId of add) await addLessonStudent(lessonId, studentId);
+    for (const studentId of remove) await removeLessonStudent(lessonId, studentId);
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 403) return { error: "Нет прав учителя" };
+      if (e.status === 400 && e.message.includes("too_many_students")) {
+        return { error: "На уроке уже 8 студентов" };
+      }
+      if (e.status === 400 && e.message.includes("student_already_attended")) {
+        return { error: "Студент уже отмечен на уроке — убрать нельзя" };
+      }
+      if (e.status === 400 && e.message.includes("lesson_cancelled")) {
+        return { error: "Урок отменён — состав менять нельзя" };
+      }
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось обновить состав урока" };
+  }
+  revalidatePath("/teacher");
+  return { ok: true };
+}
+
+export type MaterialUploadState = { error?: string; ok?: boolean };
+
+export async function uploadMaterialAction(
+  _prev: MaterialUploadState,
+  formData: FormData,
+): Promise<MaterialUploadState> {
+  const lessonId = String(formData.get("lessonId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const file = formData.get("file");
+
+  if (!lessonId) return { error: "Не найден урок" };
+  if (!(file instanceof File) || file.size === 0) return { error: "Добавь файл" };
+
+  const upload = new FormData();
+  upload.set("file", file);
+  if (title) upload.set("title", title);
+
+  try {
+    await uploadLessonMaterial(lessonId, upload);
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 401) redirect("/admin/login");
+      if (e.status === 403) return { error: "Нет прав учителя" };
+      if (e.status === 413) return { error: "Файл больше 10 МБ" };
+      return { error: `API ${e.status}: ${e.message}` };
+    }
+    return { error: "Не удалось загрузить материал" };
+  }
+
+  revalidatePath(`/lessons/${lessonId}`);
+  return { ok: true };
+}
 
 export async function createLessonAction(
   _prev: TeacherActionState,
@@ -95,7 +176,6 @@ export async function updateMeetingUrlAction(
   }
 
   revalidatePath("/teacher");
-  revalidatePath(`/teacher/lessons/${lessonId}`);
   return { ok: true };
 }
 
@@ -339,7 +419,6 @@ export async function updateLessonAction(
   }
 
   revalidatePath("/teacher");
-  revalidatePath(`/teacher/lessons/${lessonId}`);
   return { ok: true };
 }
 
@@ -369,7 +448,6 @@ export async function addLessonStudentAction(
   }
 
   revalidatePath("/teacher");
-  revalidatePath(`/teacher/lessons/${lessonId}`);
   return { ok: true };
 }
 
@@ -396,7 +474,6 @@ export async function removeLessonStudentAction(
   }
 
   revalidatePath("/teacher");
-  revalidatePath(`/teacher/lessons/${lessonId}`);
   return { ok: true };
 }
 
@@ -410,7 +487,6 @@ export async function cancelLessonAction(formData: FormData) {
     if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
   }
   revalidatePath("/teacher");
-  revalidatePath(`/teacher/lessons/${lessonId}`);
 }
 
 export async function deleteLessonMaterialAction(formData: FormData) {
@@ -423,7 +499,7 @@ export async function deleteLessonMaterialAction(formData: FormData) {
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) redirect("/admin/login");
   }
-  revalidatePath(`/teacher/lessons/${lessonId}`);
+  revalidatePath(`/lessons/${lessonId}`);
 }
 
 function parseBrowserInstant(value: FormDataEntryValue | null): Date | null {

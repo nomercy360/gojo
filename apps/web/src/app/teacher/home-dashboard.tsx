@@ -2,7 +2,7 @@
 
 import { LocalTime } from "@/components/local-time";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TeacherLeadDto, TeacherLessonDto } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,6 @@ import {
   Plus,
   Video,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -37,6 +36,7 @@ export function HomeDashboard({
   onNewLesson,
   onOpenLead,
   onOpenStudent,
+  onOpenLesson,
   onBrowse,
 }: {
   lessons: TeacherLessonDto[];
@@ -45,6 +45,7 @@ export function HomeDashboard({
   onNewLesson: () => void;
   onOpenLead: (lead: TeacherLeadDto) => void;
   onOpenStudent: (student: DashboardStudent) => void;
+  onOpenLesson: (lesson: TeacherLessonDto) => void;
   onBrowse: (collection: "students" | "lessons" | "leads") => void;
 }) {
   // Day bucketing depends on the browser timezone, so compute after mount to
@@ -115,7 +116,7 @@ export function HomeDashboard({
           ) : (
             <div className="mt-3 divide-y divide-gojo-ink/8 rounded-2xl border border-gojo-ink/10 bg-gojo-paper">
               {derived.todayLessons.map((lesson) => (
-                <ScheduleRow key={lesson.id} lesson={lesson} />
+                <ScheduleRow key={lesson.id} lesson={lesson} onOpen={onOpenLesson} />
               ))}
             </div>
           )}
@@ -140,10 +141,11 @@ export function HomeDashboard({
                 onShowAll={() => onBrowse("lessons")}
               >
                 {derived?.unprocessed.slice(0, 8).map((lesson) => (
-                  <Link
+                  <button
                     key={lesson.id}
-                    href={`/teacher/lessons/${lesson.id}`}
-                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition hover:bg-gojo-ink/5"
+                    type="button"
+                    onClick={() => onOpenLesson(lesson)}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-gojo-ink/5"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-bold">
@@ -174,7 +176,7 @@ export function HomeDashboard({
                         <Badge variant="outline">домашка · {lesson.pendingHomework}</Badge>
                       ) : null}
                     </span>
-                  </Link>
+                  </button>
                 ))}
               </QueueSection>
 
@@ -259,7 +261,13 @@ export function HomeDashboard({
   );
 }
 
-function ScheduleRow({ lesson }: { lesson: TeacherLessonDto }) {
+function ScheduleRow({
+  lesson,
+  onOpen,
+}: {
+  lesson: TeacherLessonDto;
+  onOpen: (lesson: TeacherLessonDto) => void;
+}) {
   const [editingLink, setEditingLink] = useState(false);
   const duration = Math.round(
     (new Date(lesson.endsAt).getTime() - new Date(lesson.startsAt).getTime()) / 60000,
@@ -310,12 +318,9 @@ function ScheduleRow({ lesson }: { lesson: TeacherLessonDto }) {
               нет ссылки
             </button>
           )}
-          <Link
-            href={`/teacher/lessons/${lesson.id}`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={() => onOpen(lesson)}>
             Открыть
-          </Link>
+          </Button>
         </div>
       </div>
       {editingLink && !lesson.meetingUrl ? (

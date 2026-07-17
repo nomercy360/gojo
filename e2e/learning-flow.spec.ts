@@ -110,8 +110,9 @@ test.describe("connected learning journey", () => {
       });
 
       await test.step("admin approves the submission in the UI", async () => {
-        await adminPage.goto(`/teacher/lessons/${lessonId}`);
-        await expectPageHeading(adminPage, title);
+        // The lesson opens as a side panel in the workspace, not a standalone page.
+        await adminPage.goto(`/teacher?lesson=${lessonId}`);
+        await expect(adminPage.getByRole("heading", { name: title })).toBeVisible();
         const submission = adminPage.locator("li").filter({
           hasText: "毎日、日本語を勉強します。新しい言葉を覚えます。",
         });
