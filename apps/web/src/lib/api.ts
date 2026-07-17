@@ -258,6 +258,17 @@ export function cancelLesson(lessonId: string) {
   return apiFetch<{ ok: boolean }>(`/teacher/lessons/${lessonId}`, { method: "DELETE" });
 }
 
+export type HomeworkDueEntry = {
+  lessonId: string;
+  title: string;
+  startsAt: string;
+  state: "todo" | "needs_revision" | "in_review";
+};
+
+export function fetchHomeworkDue(): Promise<HomeworkDueEntry[]> {
+  return apiFetch("/homework/due");
+}
+
 export function resendStudentInvite(studentId: string) {
   return apiFetch<{ ok: boolean; sentEmail: boolean; sentTelegram: boolean }>(
     `/teacher/students/${studentId}/resend-invite`,

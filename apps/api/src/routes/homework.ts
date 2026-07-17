@@ -1,7 +1,7 @@
-import { bookings, homeworkSubmissions } from "@gojo/db";
+import { bookings, homework, homeworkSubmissions, lessons } from "@gojo/db";
 import { submitHomeworkInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
@@ -21,6 +21,54 @@ async function requireBooking(lessonId: string, studentId: string) {
     .limit(1);
   if (!booking) throw new HTTPException(403, { message: "not booked on this lesson" });
 }
+
+// Homework the student still owes (or is waiting on): attended lessons whose
+// homework isn't marked done/missed by the teacher. The dashboard renders this
+// so open homework isn't buried inside per-lesson pages.
+homeworkRoute.get("/due", async (c) => {
+  const user = c.get("user")!;
+  const rows = await db
+    .select({
+      lessonId: lessons.id,
+      title: lessons.title,
+      startsAt: lessons.startsAt,
+      homeworkStatus: homework.status,
+      latestSubmissionStatus: sql<
+        string | null
+      >`(select hs.status from homework_submissions hs where hs.lesson_id = ${lessons.id} and hs.student_id = ${user.id} order by hs.created_at desc limit 1)`,
+    })
+    .from(bookings)
+    .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
+    .leftJoin(
+      homework,
+      and(eq(homework.lessonId, bookings.lessonId), eq(homework.studentId, user.id)),
+    )
+    .where(
+      and(
+        eq(bookings.studentId, user.id),
+        eq(bookings.attendanceStatus, "attended"),
+        isNull(lessons.deletedAt),
+      ),
+    )
+    .orderBy(desc(lessons.startsAt))
+    .limit(30);
+
+  const due = rows
+    .filter((r) => !r.homeworkStatus || r.homeworkStatus === "pending")
+    .map((r) => ({
+      lessonId: r.lessonId,
+      title: r.title,
+      startsAt: r.startsAt.toISOString(),
+      state:
+        r.latestSubmissionStatus === "needs_revision"
+          ? ("needs_revision" as const)
+          : r.latestSubmissionStatus === "submitted" || r.latestSubmissionStatus === "ai_reviewed"
+            ? ("in_review" as const)
+            : ("todo" as const),
+    }));
+
+  return c.json(due);
+});
 
 // Own submission history for a lesson, newest first.
 homeworkRoute.get("/lessons/:lessonId", async (c) => {

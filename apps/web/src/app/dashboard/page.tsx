@@ -2,7 +2,13 @@ import { CalendarSection } from "@/components/calendar-section";
 import { LocalTime } from "@/components/local-time";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { fetchLessons, fetchMyPayments, fetchStudentStats } from "@/lib/api";
+import {
+  type HomeworkDueEntry,
+  fetchHomeworkDue,
+  fetchLessons,
+  fetchMyPayments,
+  fetchStudentStats,
+} from "@/lib/api";
 import { isTeacherUser } from "@/lib/roles";
 import { getCurrentUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -30,10 +36,11 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   if (isTeacherUser(user)) redirect("/teacher");
 
-  const [stats, paymentAccount, lessons] = await Promise.all([
+  const [stats, paymentAccount, lessons, homeworkDue] = await Promise.all([
     fetchStudentStats().catch(() => EMPTY_STATS),
     fetchMyPayments().catch(() => null),
     fetchLessons().catch((): LessonDto[] => []),
+    fetchHomeworkDue().catch((): HomeworkDueEntry[] => []),
   ]);
 
   const level = getLevelState(user.jlptLevel, user.quizLevel);
@@ -58,6 +65,7 @@ export default async function DashboardPage() {
           <ActiveDashboard
             stats={stats}
             lessons={lessons}
+            homeworkDue={homeworkDue}
             level={activeLevelLabel(level)}
             activeUntil={paymentAccount.access.activeUntil}
             lessonCredits={paymentAccount.access.lessonCredits}
@@ -168,12 +176,14 @@ function UnpaidDashboard({ level }: { level: DashboardLevelState }) {
 function ActiveDashboard({
   stats,
   lessons,
+  homeworkDue,
   level,
   activeUntil,
   lessonCredits,
 }: {
   stats: StudentStatsDto;
   lessons: LessonDto[];
+  homeworkDue: HomeworkDueEntry[];
   level: string;
   activeUntil: string | null;
   lessonCredits: number;
@@ -183,6 +193,8 @@ function ActiveDashboard({
   return (
     <div className="space-y-5">
       {nextLesson ? <NextLesson lesson={nextLesson} /> : null}
+
+      <HomeworkDueCard items={homeworkDue} />
 
       <StatusStrip activeUntil={activeUntil} lessonsLeft={lessonCredits} level={level} />
 
@@ -214,6 +226,57 @@ function ActiveDashboard({
 
       <ContactStrip />
     </div>
+  );
+}
+
+const HOMEWORK_STATE_LABEL: Record<HomeworkDueEntry["state"], string> = {
+  todo: "Нужно сдать",
+  needs_revision: "Нужны правки",
+  in_review: "На проверке",
+};
+
+function HomeworkDueCard({ items }: { items: HomeworkDueEntry[] }) {
+  const actionable = items.filter((item) => item.state !== "in_review");
+  if (items.length === 0) return null;
+
+  return (
+    <Card className="gap-0 p-7">
+      <Eyebrow muted>Домашние задания</Eyebrow>
+      <p className="g-body mt-2 text-[14px] text-gojo-ink-muted">
+        {actionable.length > 0
+          ? `Открытых заданий: ${actionable.length}. Задание сдаётся на странице урока.`
+          : "Всё сдано — ждём проверку преподавателя."}
+      </p>
+      <ul className="mt-4 divide-y divide-black/5">
+        {items.map((item) => (
+          <li key={item.lessonId}>
+            <Link
+              href={`/lessons/${item.lessonId}`}
+              className="group flex items-center justify-between gap-4 py-3"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-[15px] font-bold text-gojo-ink group-hover:text-gojo-orange">
+                  {item.title}
+                </span>
+                <span className="text-[12px] text-gojo-ink-muted">
+                  <LocalTime iso={item.startsAt} options={{ day: "numeric", month: "long" }} />
+                </span>
+              </span>
+              <span
+                className={cn(
+                  "g-mono shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]",
+                  item.state === "in_review"
+                    ? "bg-gojo-ink/5 text-gojo-ink-muted"
+                    : "bg-gojo-orange-soft text-gojo-orange",
+                )}
+              >
+                {HOMEWORK_STATE_LABEL[item.state]}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 
