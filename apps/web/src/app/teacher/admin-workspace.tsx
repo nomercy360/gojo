@@ -1929,12 +1929,15 @@ function StudentPanel({
             onChange={(event) => {
               const planId = event.target.value;
               setAssignedPlanId(planId);
-              if (planId === "monthly-standard" && !accessEndDate) {
+              if (planId === "recorded-30" && !accessEndDate) {
                 const defaultEnd = new Date();
                 defaultEnd.setDate(defaultEnd.getDate() + 30);
                 setAccessEndDate(formatDateInput(defaultEnd));
               }
-              if (planId === "bundle-8" && Number(lessonCredits) < 1) {
+              if (
+                (planId === "individual-8" || planId === "group-8") &&
+                Number(lessonCredits) < 1
+              ) {
                 setLessonCredits("8");
               }
             }}
@@ -1950,7 +1953,7 @@ function StudentPanel({
             Назначение тарифа открывает доступ без отдельной оплаты.
           </p>
         </Field>
-        {assignedPlanId === "monthly-standard" ? (
+        {assignedPlanId === "recorded-30" ? (
           <Field>
             <FieldLabel htmlFor={`access-end-${student.id}`}>Доступ до (включительно)</FieldLabel>
             <Input
@@ -1968,7 +1971,7 @@ function StudentPanel({
             />
             <Input type="hidden" name="lessonCredits" value="0" />
           </Field>
-        ) : assignedPlanId === "bundle-8" ? (
+        ) : assignedPlanId === "individual-8" || assignedPlanId === "group-8" ? (
           <Field>
             <FieldLabel htmlFor={`lesson-credits-${student.id}`}>Осталось уроков</FieldLabel>
             <Input

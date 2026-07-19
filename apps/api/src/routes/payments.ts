@@ -16,22 +16,32 @@ import {
 
 export const paymentPlans: PaymentPlanDto[] = [
   {
-    id: "monthly-standard",
-    title: "Месяц занятий",
-    description: "Доступ к регулярным урокам и материалам на 30 дней.",
-    amountValue: "12000.00",
-    currency: "RUB",
-    lessonCredits: 0,
-    durationDays: 30,
-  },
-  {
-    id: "bundle-8",
-    title: "Пакет 8 уроков",
-    description: "8 индивидуальных или групповых занятий без помесячного ограничения.",
-    amountValue: "16000.00",
+    id: "individual-8",
+    title: "Индивидуально — 8 занятий",
+    description: "8 индивидуальных онлайн-занятий по 90 минут и доступ к учебным материалам.",
+    amountValue: "23200.00",
     currency: "RUB",
     lessonCredits: 8,
     durationDays: 0,
+  },
+  {
+    id: "group-8",
+    title: "Группа — 8 занятий",
+    description: "8 групповых онлайн-занятий по 90 минут в группе до 8 человек.",
+    amountValue: "8720.00",
+    currency: "RUB",
+    lessonCredits: 8,
+    durationDays: 0,
+  },
+  {
+    id: "recorded-30",
+    title: "Заочный — 30 дней",
+    description:
+      "Записи 8 групповых занятий, учебные материалы, карточки и AI-практика на 30 дней.",
+    amountValue: "6400.00",
+    currency: "RUB",
+    lessonCredits: 0,
+    durationDays: 30,
   },
 ];
 

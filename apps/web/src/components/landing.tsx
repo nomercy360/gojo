@@ -697,7 +697,7 @@ export function Landing() {
             marginBottom: "0",
           }}
         >
-          Все тарифы — месячная подписка. Первый урок бесплатно — платишь только если решишь
+          Разовая оплата без автопродления. Первый урок бесплатно — платишь только если решишь
           продолжать.
         </p>
 
@@ -711,13 +711,13 @@ export function Landing() {
             <div className="pricing-divider" />
             <div className="pricing-price-wrap">
               <span className="pricing-currency">₽</span>
-              <span className="pricing-price">30 000</span>
+              <span className="pricing-price">23 200</span>
             </div>
-            <div className="pricing-period">в месяц · при оплате подпиской</div>
-            <div className="pricing-old">Поурочно: ₽ 40 000 / мес</div>
+            <div className="pricing-period">за 8 занятий · ₽2 900 за занятие</div>
+            <div className="pricing-old">90 минут · без автопродления</div>
             <div className="pricing-features">
               <div className="pricing-feature">
-                <span className="pricing-feature-dot">✓</span>8 индивидуальных уроков в месяц
+                <span className="pricing-feature-dot">✓</span>8 индивидуальных занятий
               </div>
               <div className="pricing-feature">
                 <span className="pricing-feature-dot">✓</span>Полностью персональная программа
@@ -745,13 +745,13 @@ export function Landing() {
             <div className="pricing-divider" />
             <div className="pricing-price-wrap">
               <span className="pricing-currency">₽</span>
-              <span className="pricing-price">15 000</span>
+              <span className="pricing-price">8 720</span>
             </div>
-            <div className="pricing-period">в месяц · при оплате подпиской</div>
-            <div className="pricing-old">Поурочно: ₽ 22 000 / мес</div>
+            <div className="pricing-period">за 8 занятий · ₽1 090 за занятие</div>
+            <div className="pricing-old">90 минут · без автопродления</div>
             <div className="pricing-features">
               <div className="pricing-feature">
-                <span className="pricing-feature-dot">✓</span>10–12 групповых уроков в месяц
+                <span className="pricing-feature-dot">✓</span>8 групповых занятий
               </div>
               <div className="pricing-feature">
                 <span className="pricing-feature-dot">✓</span>Группы до 8 человек
@@ -779,11 +779,11 @@ export function Landing() {
             <div className="pricing-divider" />
             <div className="pricing-price-wrap">
               <span className="pricing-currency">₽</span>
-              <span className="pricing-price">10 000</span>
+              <span className="pricing-price">6 400</span>
             </div>
-            <div className="pricing-period">в месяц · при оплате подпиской</div>
+            <div className="pricing-period">за 30 дней · разовая оплата</div>
             <div className="pricing-old" style={{ color: "#b0b0b0" }}>
-              Поурочно: ₽ 14 000 / мес
+              Записи 8 занятий · ₽800 за занятие
             </div>
             <div className="pricing-features">
               <div className="pricing-feature">
@@ -848,8 +848,9 @@ export function Landing() {
                 <span className="faq-q-icon">+</span>
               </summary>
               <div className="faq-a">
-                Тарифы открыты — они выше на странице: от ₽10 000 в месяц. Для первой когорты это{" "}
-                <strong>специальная цена</strong> — запишись сейчас, и мы закрепим её за тобой.
+                Тарифы открыты — они выше на странице: от ₽6 400. Все платежи разовые, без
+                автопродления. Для первой когорты это <strong>специальная цена</strong> — запишись
+                сейчас, и мы закрепим её за тобой.
               </div>
             </details>
 
@@ -941,8 +942,9 @@ export function Landing() {
                 <span className="faq-q-icon">+</span>
               </summary>
               <div className="faq-a">
-                Да. В первые две недели — без вопросов. Дальше — пропорционально оставшимся
-                занятиям. Условия пропишем в договоре до оплаты.
+                Да. До начала оказания услуг вернём всю сумму, после начала — за вычетом стоимости
+                уже оказанных услуг и фактически понесённых расходов. Подробные условия указаны в
+                публичной оферте до оплаты.
               </div>
             </details>
 
@@ -1081,6 +1083,9 @@ export function Landing() {
         <div className="footer-links">
           <a href="/privacy" className="footer-link">
             Политика конфиденциальности
+          </a>
+          <a href="/offer" className="footer-link">
+            Публичная оферта
           </a>
           <a
             href="https://t.me/gojoedu"

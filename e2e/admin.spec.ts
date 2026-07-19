@@ -30,7 +30,7 @@ test.describe("admin", () => {
       data: {
         email: `forbidden-${Date.now()}@example.com`,
         name: "Forbidden Direct Student",
-        planId: "bundle-8",
+        planId: "group-8",
         activeUntil: null,
         lessonCredits: 8,
       },
@@ -122,7 +122,7 @@ test.describe("admin", () => {
 
       let dialog = page.getByRole("dialog");
       const plan = dialog.getByLabel("Тариф и доступ");
-      await plan.selectOption("monthly-standard");
+      await plan.selectOption("recorded-30");
       const accessEnd = dialog.getByLabel("Доступ до (включительно)");
       await expect(accessEnd).toBeVisible();
       const futureDate = await page.evaluate(() => {
@@ -148,7 +148,7 @@ test.describe("admin", () => {
             credits: access?.lessonCredits,
           };
         })
-        .toEqual({ plan: "monthly-standard", active: true, credits: 0 });
+        .toEqual({ plan: "recorded-30", active: true, credits: 0 });
 
       const studentContext = await browser.newContext({ storageState: mutableStudentAuthFile });
       try {
@@ -164,7 +164,7 @@ test.describe("admin", () => {
       row = page.locator("tbody tr").filter({ hasText: e2eAccounts.mutableStudent.email });
       await row.getByRole("button").first().click();
       dialog = page.getByRole("dialog");
-      await dialog.getByLabel("Тариф и доступ").selectOption("bundle-8");
+      await dialog.getByLabel("Тариф и доступ").selectOption("group-8");
       const credits = dialog.getByLabel("Осталось уроков");
       await expect(credits).toHaveValue("8");
       await dialog.getByRole("button", { name: "Сохранить студента" }).click();
@@ -180,7 +180,7 @@ test.describe("admin", () => {
             credits: access?.lessonCredits,
           };
         })
-        .toEqual({ plan: "bundle-8", activeUntil: null, credits: 8 });
+        .toEqual({ plan: "group-8", activeUntil: null, credits: 8 });
     } finally {
       await resetMutableStudent(studentId);
     }

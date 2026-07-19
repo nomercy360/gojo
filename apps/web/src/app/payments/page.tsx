@@ -63,7 +63,11 @@ export default async function PaymentsPage({
           {account.access.isActive
             ? "Здесь можно проверить текущий доступ, историю операций и при необходимости продлить занятия. "
             : "Оплата проходит через ЮKassa. Сейчас это разовый платёж без автоматического продления и повторных списаний. После успешного платежа доступ обновится автоматически. "}
-          Сведения об обработке данных — в{" "}
+          Нажимая кнопку оплаты, ты принимаешь условия{" "}
+          <Link href="/offer" className="font-bold text-gojo-orange underline">
+            публичной оферты
+          </Link>
+          . Сведения об обработке данных — в{" "}
           <Link href="/privacy" className="font-bold text-gojo-orange underline">
             Политике
           </Link>
@@ -111,6 +115,13 @@ export default async function PaymentsPage({
                         <Button type="submit" className="mt-5 w-full">
                           Оплатить через ЮKassa
                         </Button>
+                        <p className="mt-3 text-xs leading-relaxed text-gojo-ink-muted">
+                          Разовый платёж без автопродления. Условия — в{" "}
+                          <Link href="/offer" className="font-bold underline">
+                            публичной оферте
+                          </Link>
+                          .
+                        </p>
                       </div>
                     </form>
                   </Card>

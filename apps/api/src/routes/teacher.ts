@@ -716,19 +716,20 @@ teacherRoute.patch("/students/:studentId", zValidator("json", updateStudentInput
   const body = c.req.valid("json");
   const normalizedEmail = body.email.toLowerCase();
 
-  if (body.assignedPlanId && !paymentPlans.some((plan) => plan.id === body.assignedPlanId)) {
+  const assignedPlan = paymentPlans.find((plan) => plan.id === body.assignedPlanId);
+  if (body.assignedPlanId && !assignedPlan) {
     throw new HTTPException(400, { message: "unknown_plan" });
   }
 
   const activeUntil = body.activeUntil ? new Date(body.activeUntil) : null;
-  if (body.assignedPlanId === "monthly-standard") {
+  if (assignedPlan?.durationDays) {
     if (!activeUntil || activeUntil.getTime() <= Date.now()) {
       throw new HTTPException(400, { message: "invalid_access_end" });
     }
     if (body.lessonCredits !== 0) {
       throw new HTTPException(400, { message: "monthly_plan_cannot_have_credits" });
     }
-  } else if (body.assignedPlanId === "bundle-8") {
+  } else if (assignedPlan?.lessonCredits) {
     if (activeUntil || body.lessonCredits < 1) {
       throw new HTTPException(400, { message: "invalid_lesson_credits" });
     }

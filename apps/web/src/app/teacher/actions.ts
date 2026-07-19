@@ -323,14 +323,16 @@ export async function updateStudentAction(
   if (!Number.isInteger(currentLevel) || currentLevel < 1 || currentLevel > 30) {
     return { error: "Уровень программы должен быть от 1 до 30" };
   }
-  if (assignedPlanId === "monthly-standard") {
+  const isDurationPlan = assignedPlanId === "recorded-30";
+  const isLessonPlan = assignedPlanId === "individual-8" || assignedPlanId === "group-8";
+  if (isDurationPlan) {
     const end = activeUntil ? new Date(activeUntil) : null;
     if (!end || Number.isNaN(end.getTime()) || end.getTime() <= Date.now()) {
       return { error: "Укажи будущую дату окончания доступа" };
     }
   }
   if (
-    assignedPlanId === "bundle-8" &&
+    isLessonPlan &&
     (!Number.isInteger(lessonCredits) || lessonCredits < 1 || lessonCredits > 1000)
   ) {
     return { error: "Количество оставшихся уроков должно быть от 1 до 1000" };
@@ -348,8 +350,8 @@ export async function updateStudentAction(
       quizLevel,
       currentLevel,
       assignedPlanId,
-      activeUntil: assignedPlanId === "monthly-standard" ? activeUntil : null,
-      lessonCredits: assignedPlanId === "bundle-8" ? lessonCredits : 0,
+      activeUntil: isDurationPlan ? activeUntil : null,
+      lessonCredits: isLessonPlan ? lessonCredits : 0,
     });
   } catch (e) {
     if (e instanceof ApiError) {

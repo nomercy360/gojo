@@ -43,8 +43,8 @@ describe("POST /yookassa/webhook", () => {
     await db.insert(payments).values({
       userId,
       idempotenceKey: crypto.randomUUID(),
-      planId: "bundle-8",
-      amountValue: "16000.00",
+      planId: "group-8",
+      amountValue: "8720.00",
       currency: "RUB",
       providerPaymentId,
     });
