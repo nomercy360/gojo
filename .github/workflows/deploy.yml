@@ -51,6 +51,7 @@ jobs:
             NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://gojolearn.ru/api' }}
             NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${{ vars.TELEGRAM_BOT_USERNAME || 'gojolearn_bot' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_YANDEX_METRICA_COUNTER_ID=${{ vars.YANDEX_METRICA_COUNTER_ID || '110915443' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/gojo-${{ matrix.app }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/gojo-${{ matrix.app }}:${{ steps.tag.outputs.sha }}

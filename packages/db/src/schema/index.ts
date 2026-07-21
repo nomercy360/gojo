@@ -9,4 +9,3 @@ export * from "./flashcards.ts";
 export * from "./progress.ts";
 export * from "./payments.ts";
 export * from "./notifications.ts";
-export * from "./events.ts";

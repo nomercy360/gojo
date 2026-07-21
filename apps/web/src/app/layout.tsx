@@ -1,6 +1,7 @@
 import { PrivacyChoices } from "@/components/privacy-choices";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
+import { YandexMetrica } from "@/components/yandex-metrica";
 import type { Metadata, Viewport } from "next";
 import {
   Fraunces,
@@ -12,7 +13,7 @@ import {
   PT_Serif,
   Unbounded,
 } from "next/font/google";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({
@@ -90,6 +91,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${inter.variable} ${ptSerif.variable} ${unbounded.variable} ${notoSansJp.variable} ${notoSerifJp.variable} ${jetbrainsMono.variable} ${fraunces.variable} ${manrope.variable}`}
     >
       <body>
+        <Suspense fallback={null}>
+          <YandexMetrica />
+        </Suspense>
         <SiteHeader />
         {children}
         <PrivacyChoices />

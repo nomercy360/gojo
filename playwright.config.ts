@@ -44,6 +44,9 @@ export default defineConfig({
           name: "web",
           command: "bun run dev:web",
           url: webURL,
+          // A throwaway counter id keeps the consent test exercising the real
+          // tag path while making it impossible to reach the live counter.
+          env: { NEXT_PUBLIC_YANDEX_METRICA_COUNTER_ID: "99999999" },
           reuseExistingServer: !process.env.CI,
           timeout: 120_000,
           stderr: "pipe",

@@ -80,15 +80,24 @@ test("landing kana preview teaches both signs before revealing the word", async 
   expect(Math.abs((completedCard?.height ?? 0) - (initialCard?.height ?? 0))).toBeLessThan(1);
 });
 
+// The tag only loads when the web server was started with
+// NEXT_PUBLIC_YANDEX_METRICA_COUNTER_ID, which playwright.config.ts sets to a
+// throwaway id. Reusing a plain `bun dev` server fails the positive assertion —
+// export the var there too.
 test("analytics choice can be changed from the privacy page", async ({ page }) => {
+  await page.route("**/mc.yandex.ru/metrika/tag.js*", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" }),
+  );
   await page.goto("/privacy");
   await page.getByRole("button", { name: "Только необходимые" }).click();
+  await expect(page.locator('script[src*="mc.yandex.ru/metrika/tag.js"]')).toHaveCount(0);
 
   await page.getByRole("button", { name: "Настроить аналитику" }).click();
   await Promise.all([
     page.waitForNavigation(),
     page.getByRole("button", { name: "Разрешить аналитику" }).click(),
   ]);
+  await expect(page.locator('script[src*="mc.yandex.ru/metrika/tag.js"]')).toHaveCount(1);
   await page.evaluate(() => localStorage.setItem("gojo:anon-id", "review-test-id"));
 
   await page.getByRole("button", { name: "Настроить аналитику" }).click();
@@ -100,10 +109,11 @@ test("analytics choice can be changed from the privacy page", async ({ page }) =
     .poll(() =>
       page.evaluate(() => ({
         consent: localStorage.getItem("gojo:analytics-consent"),
-        anonymousId: localStorage.getItem("gojo:anon-id"),
+        legacyAnonymousId: localStorage.getItem("gojo:anon-id"),
       })),
     )
-    .toEqual({ consent: "declined", anonymousId: null });
+    .toEqual({ consent: "declined", legacyAnonymousId: null });
+  await expect(page.locator('script[src*="mc.yandex.ru/metrika/tag.js"]')).toHaveCount(0);
 });
 
 test("guest is redirected away from protected pages", async ({ page }) => {

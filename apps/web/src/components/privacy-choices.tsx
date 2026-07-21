@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const CONSENT_KEY = "gojo:analytics-consent";
-const ANON_KEY = "gojo:anon-id";
 const OPEN_CHOICES_EVENT = "gojo:open-privacy-choices";
 
 export function PrivacyChoices() {
@@ -29,7 +28,7 @@ export function PrivacyChoices() {
     try {
       previous = localStorage.getItem(CONSENT_KEY);
       localStorage.setItem(CONSENT_KEY, value);
-      if (value === "declined") localStorage.removeItem(ANON_KEY);
+      localStorage.removeItem("gojo:anon-id");
       stored = true;
     } catch {
       stored = false;
@@ -52,7 +51,7 @@ export function PrivacyChoices() {
       <aside aria-label="Настройки конфиденциальности">
         <p className="flex-1 text-[12px] leading-relaxed text-gojo-ink-muted">
           Необходимое хранилище поддерживает вход и настройки. С вашего разрешения мы также
-          используем обезличенный идентификатор для аналитики и диагностики ошибок. Подробнее — в{" "}
+          используем Яндекс.Метрику для аналитики и инструменты диагностики ошибок. Подробнее — в{" "}
           <Link href="/privacy" className="font-bold text-gojo-orange underline">
             Политике
           </Link>

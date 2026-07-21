@@ -32,6 +32,10 @@ ENV NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=$NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
 # Same build-time-inlining rule applies to the client-side Sentry DSN.
 ARG NEXT_PUBLIC_SENTRY_DSN=""
 ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+# Empty by default so local/preview image builds never report to the live
+# Yandex Metrica counter; CI passes the real counter id for production.
+ARG NEXT_PUBLIC_YANDEX_METRICA_COUNTER_ID=""
+ENV NEXT_PUBLIC_YANDEX_METRICA_COUNTER_ID=$NEXT_PUBLIC_YANDEX_METRICA_COUNTER_ID
 RUN cd apps/web && bun run build
 
 EXPOSE 3000

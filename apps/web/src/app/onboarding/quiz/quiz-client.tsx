@@ -869,7 +869,12 @@ export function QuizClient({
       startTransition(async () => {
         try {
           const result = await submitQuizAction({ answers, declared: declared ?? undefined });
-          track("quiz_completed", { level: result.level, correct: result.correct });
+          track("quiz_completed", {
+            level: result.level,
+            assessment: result.assessment,
+            correct: result.correct,
+            total: result.total,
+          });
           setStage({ kind: "result", result });
         } catch (err) {
           toast.error(err instanceof Error ? err.message : "Не удалось сохранить результат");

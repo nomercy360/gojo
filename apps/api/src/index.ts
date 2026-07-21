@@ -10,7 +10,6 @@ import { type AuthContext, loadSession } from "./auth/middleware.ts";
 import { env } from "./env.ts";
 import { startReminderLoop } from "./reminders.ts";
 import { authRoute } from "./routes/auth.ts";
-import { eventsRoute } from "./routes/events.ts";
 import { homeworkRoute } from "./routes/homework.ts";
 import { kanjiRoute } from "./routes/kanji.ts";
 import { leadsRoute } from "./routes/leads.ts";
@@ -79,8 +78,6 @@ app.get("/health", (c) => c.json({ ok: true, service: "gojo-api" }));
 // Public landing lead forms (book-a-lesson / get-the-guide) — no auth.
 app.route("/leads", leadsRoute);
 
-// Public product-funnel events (guest kana trainer etc.) — no auth.
-app.route("/events", eventsRoute);
 app.route("/login", loginRoute);
 
 // Telegram account linking + one-tap login callbacks — no session cookie required.

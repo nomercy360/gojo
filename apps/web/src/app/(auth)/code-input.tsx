@@ -63,7 +63,7 @@ export function CodeInput({
               if (event.key === "ArrowLeft" && index > 0) refs.current[index - 1]?.focus();
               if (event.key === "ArrowRight" && index < 5) refs.current[index + 1]?.focus();
             }}
-            className={`g-display h-14 w-12 rounded-xl border-[1.5px] bg-card text-center text-2xl font-semibold text-foreground outline-none transition-[border-color,box-shadow] focus:border-ring focus:ring-4 focus:ring-ring/15 ${
+            className={`ym-disable-keys g-display h-14 w-12 rounded-xl border-[1.5px] bg-card text-center text-2xl font-semibold text-foreground outline-none transition-[border-color,box-shadow] focus:border-ring focus:ring-4 focus:ring-ring/15 ${
               digits[index] ? "border-primary" : "border-border"
             }`}
           />

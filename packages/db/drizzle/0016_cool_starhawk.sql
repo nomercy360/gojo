@@ -1,0 +1,1 @@
+DROP TABLE "funnel_events" CASCADE;

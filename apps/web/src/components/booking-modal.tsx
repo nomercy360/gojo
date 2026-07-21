@@ -54,7 +54,7 @@ export function BookingModal({
 
   useEffect(() => {
     if (!open) return;
-    track("booking_open", { source });
+    track("booking_open", { placement: source });
     setView("choose");
     setPrivacyAccepted(false);
     setSubmitting(false);
@@ -98,7 +98,11 @@ export function BookingModal({
         alreadyExists: Boolean(result.alreadyExists),
         reason: result.reason,
       });
-      track("lead_submitted", { source, channel: "email" });
+      track("lead_submitted", {
+        placement: source,
+        channel: "email",
+        result: result.reason ?? (result.alreadyExists ? "existing" : "new"),
+      });
       setView("sent");
     } catch {
       toast.error("Не удалось отправить заявку. Проверь email и попробуй ещё раз.");
@@ -159,6 +163,9 @@ export function BookingModal({
                 href={telegramLeadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  track("telegram_lead_clicked", { placement: source, channel: "telegram" })
+                }
               >
                 <Send aria-hidden="true" />
                 Написать боту в Telegram
@@ -289,7 +296,17 @@ export function BookingModal({
               </p>
               <p className="booking-sent-telegram">
                 Есть Telegram?{" "}
-                <a href={telegramLeadUrl} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={telegramLeadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    track("telegram_lead_clicked", {
+                      placement: `${source}_email_success`,
+                      channel: "telegram",
+                    })
+                  }
+                >
                   Так быстрее →
                 </a>
               </p>
