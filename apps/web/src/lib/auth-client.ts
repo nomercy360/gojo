@@ -13,6 +13,7 @@ export const authClient = createAuthClient({
         nickname: { type: "string", required: false },
         jlptLevel: { type: "string", required: false },
         quizLevel: { type: "string", required: false },
+        timeZone: { type: "string", required: false },
       },
     }),
   ],

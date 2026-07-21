@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { track } from "@/lib/analytics";
-import { telegramBotStartUrl } from "@/lib/telegram";
+import { telegramBotStartUrl, telegramLeadStartUrl } from "@/lib/telegram";
+import { DEFAULT_TIME_ZONE } from "@gojo/shared";
 import { ArrowLeft, Check, Mail, Send, X } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ export function BookingModal({
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submission, setSubmission] = useState<SubmissionResult>({ alreadyExists: false });
+  const [telegramLeadUrl, setTelegramLeadUrl] = useState(TELEGRAM_LEAD_URL);
 
   const emailValid = name.trim().length > 1 && email.includes("@") && privacyAccepted;
 
@@ -57,6 +59,8 @@ export function BookingModal({
     setPrivacyAccepted(false);
     setSubmitting(false);
     setSubmission({ alreadyExists: false });
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIME_ZONE;
+    setTelegramLeadUrl(telegramLeadStartUrl(timeZone));
   }, [open, source]);
 
   useEffect(() => {
@@ -84,6 +88,7 @@ export function BookingModal({
           goal: note.trim() || undefined,
           personalDataConsent: true,
           consentVersion: "2026-07-16",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIME_ZONE,
         }),
       });
       if (!response.ok) throw new Error("lead_submission_failed");
@@ -151,7 +156,7 @@ export function BookingModal({
             <div className="booking-choice-view">
               <a
                 className="booking-telegram-hero"
-                href={TELEGRAM_LEAD_URL}
+                href={telegramLeadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -284,7 +289,7 @@ export function BookingModal({
               </p>
               <p className="booking-sent-telegram">
                 Есть Telegram?{" "}
-                <a href={TELEGRAM_LEAD_URL} target="_blank" rel="noopener noreferrer">
+                <a href={telegramLeadUrl} target="_blank" rel="noopener noreferrer">
                   Так быстрее →
                 </a>
               </p>

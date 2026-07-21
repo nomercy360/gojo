@@ -13,6 +13,7 @@ import { type AuthContext, requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
 import { env } from "../env.ts";
 import { AUTO_COMPLETE_AFTER_END_MS } from "../lib/lesson-state.ts";
+import { formatLessonNotificationTime } from "../lib/lesson-time.ts";
 import { sendEmail } from "../mailer.ts";
 import { logNotification, sendTelegramMessage } from "../reminders.ts";
 import { toLessonDto } from "./mappers.ts";
@@ -290,6 +291,7 @@ type LessonConfirmationRecipient = {
   userId?: string;
   email?: string | null;
   telegramId?: number | null;
+  timeZone?: string | null;
 };
 
 function isDeliverableEmail(email: string | null | undefined): email is string {
@@ -310,29 +312,31 @@ export async function sendLessonConfirmation(
   recipient: LessonConfirmationRecipient,
   title: string,
   startsAt: Date,
+  meetingUrl?: string | null,
 ) {
   const [student] = recipient.userId
     ? await db
-        .select({ email: userTable.email, telegramId: userTable.telegramId })
+        .select({
+          email: userTable.email,
+          telegramId: userTable.telegramId,
+          timeZone: userTable.timeZone,
+        })
         .from(userTable)
         .where(eq(userTable.id, recipient.userId))
         .limit(1)
     : [];
   const email = recipient.email ?? student?.email;
   const telegramId = recipient.telegramId ?? student?.telegramId;
-  const when = startsAt.toLocaleString("ru-RU", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const when = formatLessonNotificationTime(startsAt, recipient.timeZone ?? student?.timeZone);
   let delivered = false;
 
   if (telegramId != null) {
     try {
       const sent = await sendTelegramMessage(
         telegramId,
-        `✅ Ты записан на урок «${title}» — ${when}`,
+        `✅ Ты записан на урок «${title}» — ${when}${
+          meetingUrl ? `\n\nПодключиться к уроку: ${meetingUrl}` : ""
+        }`,
         "lesson.booking_confirmation",
         recipient.userId,
       );
@@ -365,10 +369,13 @@ export async function sendLessonConfirmation(
     try {
       const safeTitle = escapeHtml(title);
       const subjectTitle = title.replace(/[\r\n]+/g, " ");
+      const joinLink = meetingUrl
+        ? `<p><a href="${escapeHtml(meetingUrl)}">Подключиться к уроку</a></p>`
+        : "";
       await sendEmail(
         email,
         `Урок «${subjectTitle}» запланирован`,
-        `<p>Ты записан на урок <strong>«${safeTitle}»</strong>.</p><p>Начало: <strong>${escapeHtml(when)}</strong>.</p><p><a href="${env.WEB_ORIGIN}/lessons">Открыть расписание</a></p>`,
+        `<p>Ты записан на урок <strong>«${safeTitle}»</strong>.</p><p>Начало: <strong>${escapeHtml(when)}</strong>.</p>${joinLink}<p><a href="${env.WEB_ORIGIN}/lessons">Открыть расписание</a></p>`,
       );
       await logNotification(
         "lesson.booking_confirmation",

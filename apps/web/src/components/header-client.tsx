@@ -3,7 +3,11 @@
 import { AdminAccountMenu } from "@/components/admin-account-menu";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { type Session, authClient } from "@/lib/auth-client";
-import { linkPendingBookingLead, migrateGuestTrainerProgress } from "@/lib/post-login-sync";
+import {
+  linkPendingBookingLead,
+  migrateGuestTrainerProgress,
+  syncBrowserTimeZone,
+} from "@/lib/post-login-sync";
 import { isTeacherUser } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import type { UserDto } from "@gojo/shared";
@@ -39,6 +43,7 @@ export function HeaderClient({
         jlptLevel?: string | null;
         quizLevel?: string | null;
         telegramId?: number | null;
+        timeZone?: string;
       })
     | undefined;
   const user: UserDto | null = sessionUser
@@ -52,6 +57,7 @@ export function HeaderClient({
         jlptLevel: sessionUser.jlptLevel ?? null,
         quizLevel: sessionUser.quizLevel ?? null,
         telegramId: sessionUser.telegramId ?? null,
+        timeZone: sessionUser.timeZone ?? serverUser?.timeZone ?? "Europe/Moscow",
         createdAt: new Date(sessionUser.createdAt).toISOString(),
       }
     : serverUser;
@@ -59,6 +65,8 @@ export function HeaderClient({
   const loginRoute = pathname === "/login" || pathname === "/admin/login";
   const [scrolled, setScrolled] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const userId = user?.id;
+  const userTimeZone = user?.timeZone;
 
   useEffect(() => {
     if (!overlayRoute) return;
@@ -71,10 +79,11 @@ export function HeaderClient({
   // Post-login sync runs here on
   // the first authenticated page load. Both helpers are idempotent.
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let cancelled = false;
     (async () => {
-      if (migrateGuestTrainerProgress(user.id) && !cancelled) {
+      await syncBrowserTimeZone(userTimeZone);
+      if (migrateGuestTrainerProgress(userId) && !cancelled) {
         toast.success("Прогресс тренажёра сохранён");
       }
       const linked = await linkPendingBookingLead();
@@ -83,7 +92,7 @@ export function HeaderClient({
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [userId, userTimeZone]);
 
   // Landing and the teacher workspace own their navigation.
   if (pathname === "/" || pathname.startsWith("/teacher")) return null;

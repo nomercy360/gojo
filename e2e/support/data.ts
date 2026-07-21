@@ -43,6 +43,7 @@ export async function createLeadConversionFixture(input: {
   name: string;
   goal?: string;
   level?: string;
+  timeZone?: string;
 }) {
   const startsAt = new Date(Date.now() - 60 * 60_000);
   const [lesson] = await db
@@ -67,6 +68,8 @@ export async function createLeadConversionFixture(input: {
       email: input.email,
       goal: input.goal,
       level: input.level,
+      assessedLevel: ["N5", "N4", "N3", "N2"].includes(input.level ?? "") ? input.level : "N5",
+      timeZone: input.timeZone,
       trialLessonId: lesson.id,
     })
     .returning({ id: leads.id });
@@ -118,6 +121,7 @@ export async function resetMutableStudent(userId: string) {
       quizLevel: null,
       sourceLeadId: null,
       notes: null,
+      timeZone: "Europe/Moscow",
       updatedAt: new Date(),
     })
     .where(eq(user.id, userId));

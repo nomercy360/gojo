@@ -478,6 +478,7 @@ export type TeacherLeadDto = {
   name: string;
   telegram: string | null;
   telegramId: number | null;
+  timeZone: string;
   email: string | null;
   phone: string | null;
   level: string | null;

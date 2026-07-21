@@ -15,6 +15,7 @@ test("guest creates a booking lead", async ({ request }) => {
         name: "Максуд",
         telegram: "@maksud_e2e",
         email: `e2e-lead-${Date.now()}@gojo.local`,
+        timeZone: "Asia/Tokyo",
       },
     });
     expect(response.status()).toBe(201);
@@ -26,6 +27,7 @@ test("guest creates a booking lead", async ({ request }) => {
       kind: "booking",
       name: "Максуд",
       telegram: "maksud_e2e",
+      timeZone: "Asia/Tokyo",
       personalDataConsentVersion: consent.consentVersion,
     });
     expect(row?.personalDataConsentAt).toBeInstanceOf(Date);

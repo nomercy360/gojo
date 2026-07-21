@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { leads, user as userTable, verification } from "@gojo/db";
+import { DEFAULT_TIME_ZONE, timeZoneSchema } from "@gojo/shared";
 import { and, eq, gt, inArray, lt } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
@@ -67,6 +68,8 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<voi
     if (command === "/start" && payload === "lead") {
       // Conversion CTA: this payload files a booking lead, never an account.
       await handleStartCommand(from, chatId);
+    } else if (command === "/start" && payload?.startsWith("lead-")) {
+      await handleStartCommand(from, chatId, decodeLeadTimeZone(payload));
     } else if (command === "/start" && payload) {
       // Deep-link account linking: t.me/<bot>?start=<link-token>.
       await handleLinkCommand(from, chatId, payload);
@@ -173,11 +176,28 @@ async function handleLoginCommand(from: TelegramFrom, chatId: number): Promise<v
   await createRequestLead(from, chatId);
 }
 
-async function handleStartCommand(from: TelegramFrom, chatId: number): Promise<void> {
+async function handleStartCommand(
+  from: TelegramFrom,
+  chatId: number,
+  timeZone?: string,
+): Promise<void> {
   const account = await findTelegramAccount(from.id);
   if (!account) {
-    await createRequestLead(from, chatId);
+    await createRequestLead(from, chatId, timeZone);
     return;
+  }
+
+  if (timeZone) {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(userTable)
+        .set({ timeZone, updatedAt: new Date() })
+        .where(eq(userTable.id, account.id));
+      await tx
+        .update(leads)
+        .set({ timeZone, updatedAt: new Date() })
+        .where(eq(leads.telegramId, from.id));
+    });
   }
 
   if (account.role === "student") {
@@ -290,7 +310,11 @@ async function sendLoginButton(chatId: number, userId: string): Promise<void> {
   );
 }
 
-async function createRequestLead(from: TelegramFrom, chatId: number): Promise<void> {
+async function createRequestLead(
+  from: TelegramFrom,
+  chatId: number,
+  timeZone?: string,
+): Promise<void> {
   const now = Date.now();
   const last = recentRequests.get(from.id) ?? 0;
   const throttled = now - last < REQUEST_THROTTLE_MS;
@@ -303,7 +327,9 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
   const name =
     [from.first_name, from.last_name].filter(Boolean).join(" ") || username || `id${from.id}`;
 
-  if (!throttled) {
+  // A timezone-bearing website deep link may follow a direct /start within the
+  // throttle window. Still process it so the existing lead is enriched.
+  if (!throttled || timeZone) {
     // chat_id is stable and deliverable; usernames can change and are only a
     // display/login alias. Prefer the id for deduplication.
     const existing = await db
@@ -324,9 +350,15 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
         name,
         telegram: username ?? null,
         telegramId: from.id,
+        timeZone: timeZone ?? DEFAULT_TIME_ZONE,
         notes: `Заявка из Telegram-бота (id ${from.id}${username ? `, @${username}` : ""})`,
       });
       void notifyLead({ kind: "bot", name, telegram: username });
+    } else if (timeZone) {
+      await db
+        .update(leads)
+        .set({ timeZone, updatedAt: new Date() })
+        .where(eq(leads.id, existing[0]!.id));
     }
   }
 
@@ -336,6 +368,16 @@ async function createRequestLead(from: TelegramFrom, chatId: number): Promise<vo
       "Если у вас уже есть аккаунт, войдите на сайте — после этого вход по кнопке будет работать здесь.",
     "auth.telegram_request",
   );
+}
+
+function decodeLeadTimeZone(payload: string): string | undefined {
+  try {
+    const value = Buffer.from(payload.slice("lead-".length), "base64url").toString("utf8");
+    const parsed = timeZoneSchema.safeParse(value);
+    return parsed.success ? parsed.data : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // Telegram redirects login_url buttons here with a signed identity in the query

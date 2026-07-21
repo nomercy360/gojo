@@ -8,8 +8,34 @@ import {
   resetMutableStudent,
 } from "./support/data";
 
+const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
+
 test.describe("lead conversion", () => {
   test.use({ storageState: adminAuthFile });
+
+  test("copies the lead timezone to a converted student", async ({ request }) => {
+    const teacherId = await findUserId(e2eAccounts.admin.email);
+    const fixture = await createLeadConversionFixture({
+      teacherId,
+      email: `timezone-conversion-${Date.now()}@example.com`,
+      name: "E2E Timezone Conversion",
+      level: "N5",
+      timeZone: "Asia/Tokyo",
+    });
+    let studentId: string | undefined;
+
+    try {
+      const response = await request.post(`${apiURL}/teacher/leads/${fixture.leadId}/send-link`, {
+        data: {},
+      });
+      expect(response).toBeOK();
+      const result = await getLeadConversion(fixture.leadId);
+      studentId = result.student?.id;
+      expect(result.student?.timeZone).toBe("Asia/Tokyo");
+    } finally {
+      await cleanLeadConversionFixture({ ...fixture, studentId });
+    }
+  });
 
   test("creates an unpaid student and relinks the trial lesson", async ({ page }) => {
     const teacherId = await findUserId(e2eAccounts.admin.email);
@@ -20,6 +46,7 @@ test.describe("lead conversion", () => {
       name: "E2E Converted Lead",
       goal: "Подготовиться к поездке",
       level: "N5",
+      timeZone: "Asia/Tokyo",
     });
     let studentId: string | undefined;
 
@@ -52,6 +79,7 @@ test.describe("lead conversion", () => {
             jlptLevel: result.student?.jlptLevel,
             quizLevel: result.student?.quizLevel,
             notes: result.student?.notes,
+            timeZone: result.student?.timeZone,
             bookingStudentId: result.booking?.studentId,
             assignedPlanId: result.access?.assignedPlanId ?? null,
             activeUntil: result.access?.activeUntil ?? null,
@@ -66,6 +94,7 @@ test.describe("lead conversion", () => {
           jlptLevel: "N5",
           quizLevel: "N5",
           notes: "Цель: Подготовиться к поездке",
+          timeZone: "Asia/Tokyo",
           bookingStudentId: expect.any(String),
           assignedPlanId: null,
           activeUntil: null,

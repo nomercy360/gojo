@@ -22,6 +22,7 @@ export function toUserDto(u: User): UserDto {
     jlptLevel: u.jlptLevel ?? null,
     quizLevel: u.quizLevel ?? null,
     telegramId: u.telegramId ?? null,
+    timeZone: u.timeZone,
     createdAt: u.createdAt.toISOString(),
   };
 }

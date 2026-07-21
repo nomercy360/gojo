@@ -1,7 +1,7 @@
-import { user as userTable } from "@gojo/db";
+import { leads, user as userTable } from "@gojo/db";
 import { updateProfileInput } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthContext, requireAuth } from "../auth/middleware.ts";
@@ -40,10 +40,30 @@ usersRoute.patch("/me", requireAuth, zValidator("json", updateProfileInput), asy
   if (body.nickname !== undefined) patch.nickname = body.nickname;
   if (body.avatarUrl !== undefined) patch.image = body.avatarUrl || null;
   if (body.telegramId !== undefined) patch.telegramId = body.telegramId;
+  if (body.timeZone !== undefined) patch.timeZone = body.timeZone;
 
   let row: typeof userTable.$inferSelect | undefined;
   try {
-    [row] = await db.update(userTable).set(patch).where(eq(userTable.id, u.id)).returning();
+    row = await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(userTable)
+        .set(patch)
+        .where(eq(userTable.id, u.id))
+        .returning();
+      if (updated && body.timeZone !== undefined) {
+        await tx
+          .update(leads)
+          .set({ timeZone: body.timeZone, updatedAt: new Date() })
+          .where(
+            or(
+              eq(leads.userId, u.id),
+              eq(leads.studentId, u.id),
+              eq(leads.email, u.email.toLowerCase()),
+            ),
+          );
+      }
+      return updated;
+    });
   } catch (err) {
     // Unique violation — this Telegram ID is already linked to another account.
     if (err instanceof Error && "code" in err && (err as { code?: string }).code === "23505") {

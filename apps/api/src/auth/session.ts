@@ -1,3 +1,4 @@
+import { DEFAULT_TIME_ZONE } from "@gojo/shared";
 import { makeSignature } from "better-auth/crypto";
 import { auth } from "../auth.ts";
 
@@ -11,6 +12,7 @@ type NewUser = {
   name: string;
   role?: "student" | "admin";
   nickname?: string;
+  timeZone?: string;
 };
 
 /** Find a user by email, or create one (passwordless). Returns the user id. */
@@ -23,6 +25,7 @@ export async function findOrCreateUserByEmail(input: NewUser): Promise<string> {
     name: input.name,
     emailVerified: false,
     role: input.role ?? "student",
+    timeZone: input.timeZone ?? DEFAULT_TIME_ZONE,
     ...(input.nickname ? { nickname: input.nickname } : {}),
   });
   return created.id;

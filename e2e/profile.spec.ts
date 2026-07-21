@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { e2eAccounts, mutableStudentAuthFile } from "./support/auth";
-import { findUserId, resetMutableStudent } from "./support/data";
+import { deleteLead, findLead, findUserId, resetMutableStudent } from "./support/data";
 
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3001";
 
@@ -30,5 +30,31 @@ test.describe("profile", () => {
       data: { name: "x".repeat(201) },
     });
     expect(response.status()).toBe(400);
+  });
+
+  test("timezone update stays in sync on the account and its lead", async ({ request }) => {
+    let leadId: string | undefined;
+    try {
+      const created = await request.post(`${apiURL}/leads`, {
+        data: {
+          kind: "booking",
+          name: "E2E Timezone Lead",
+          email: e2eAccounts.mutableStudent.email,
+          timeZone: "Europe/Moscow",
+          personalDataConsent: true,
+          consentVersion: "2026-07-16",
+        },
+      });
+      leadId = ((await created.json()) as { id: string }).id;
+
+      const updated = await request.patch(`${apiURL}/users/me`, {
+        data: { timeZone: "Asia/Tokyo" },
+      });
+      expect(updated).toBeOK();
+      await expect(updated.json()).resolves.toMatchObject({ timeZone: "Asia/Tokyo" });
+      await expect(findLead(leadId)).resolves.toMatchObject({ timeZone: "Asia/Tokyo" });
+    } finally {
+      await deleteLead(leadId);
+    }
   });
 });

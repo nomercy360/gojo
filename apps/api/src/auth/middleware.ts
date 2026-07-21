@@ -12,6 +12,7 @@ export type SessionUser = {
   jlptLevel?: string | null;
   quizLevel?: string | null;
   currentLevel?: number | null;
+  timeZone: string;
 };
 
 export type AuthContext = {

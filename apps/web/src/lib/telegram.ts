@@ -5,3 +5,9 @@ export const TELEGRAM_BOT_URL = `https://t.me/${BOT_USERNAME}`;
 export function telegramBotStartUrl(source: string) {
   return `${TELEGRAM_BOT_URL}?start=${encodeURIComponent(source)}`;
 }
+
+/** Telegram has no timezone field, so carry the browser's IANA zone in the lead deep link. */
+export function telegramLeadStartUrl(timeZone: string) {
+  const encoded = btoa(timeZone).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  return telegramBotStartUrl(`lead-${encoded}`);
+}

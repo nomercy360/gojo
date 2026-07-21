@@ -42,6 +42,7 @@ authRoute.post("/dev-login", zValidator("json", devLoginInput), async (c) => {
       role: u?.role ?? body.role,
       jlptLevel: u?.jlptLevel ?? null,
       quizLevel: u?.quizLevel ?? null,
+      timeZone: u?.timeZone ?? "Europe/Moscow",
       createdAt: (u?.createdAt ?? new Date()).toISOString(),
     },
   });
@@ -58,6 +59,7 @@ authRoute.get("/me", async (c) => {
     role: u.role,
     jlptLevel: u.jlptLevel ?? null,
     quizLevel: u.quizLevel ?? null,
+    timeZone: u.timeZone ?? "Europe/Moscow",
     createdAt: new Date().toISOString(),
   });
 });

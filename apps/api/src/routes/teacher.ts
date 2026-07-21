@@ -188,6 +188,7 @@ teacherRoute.get("/leads", async (c) => {
       name: r.lead.name,
       telegram: r.lead.telegram,
       telegramId: r.lead.telegramId,
+      timeZone: r.lead.timeZone,
       email: r.lead.email,
       phone: r.lead.phone,
       level: r.lead.level,
@@ -282,15 +283,18 @@ teacherRoute.post(
           userId: lead.userId,
           email: lead.email,
           telegramId: lead.telegramId,
+          timeZone: lead.timeZone,
         },
         lesson.title,
         lesson.startsAt,
+        lesson.meetingUrl,
       );
     } else {
       await sendLessonConfirmation(
-        { email: lead.email, telegramId: lead.telegramId },
+        { email: lead.email, telegramId: lead.telegramId, timeZone: lead.timeZone },
         lesson.title,
         lesson.startsAt,
+        lesson.meetingUrl,
       );
     }
 
@@ -403,6 +407,7 @@ teacherRoute.post("/leads/:id/send-link", zValidator("json", sendLeadLinkInput),
           quizLevel: quizLevel ? sql`coalesce(${userTable.quizLevel}, ${quizLevel})` : undefined,
           sourceLeadId: sql`coalesce(${userTable.sourceLeadId}, ${lead.id})`,
           notes: goalNote ? sql`coalesce(${userTable.notes}, ${goalNote})` : undefined,
+          timeZone: lead.timeZone,
           updatedAt: now,
         })
         .where(eq(userTable.id, studentId));
@@ -416,6 +421,7 @@ teacherRoute.post("/leads/:id/send-link", zValidator("json", sendLeadLinkInput),
         quizLevel,
         telegramId: lead.telegramId,
         telegramUsername: lead.telegram,
+        timeZone: lead.timeZone,
         sourceLeadId: lead.id,
         notes: goalNote,
         personalDataConsentAt: lead.personalDataConsentAt,
@@ -1158,6 +1164,7 @@ teacherRoute.post("/lessons", zValidator("json", createLessonInput), async (c) =
         { bookingId: booking.id, userId: booking.studentId },
         created.lesson.title,
         created.lesson.startsAt,
+        created.lesson.meetingUrl,
       ),
     ),
   );
@@ -1320,6 +1327,7 @@ teacherRoute.post("/lessons/:id/students", zValidator("json", addLessonStudentIn
       { bookingId: added.id, userId: studentId },
       lesson.title,
       lesson.startsAt,
+      lesson.meetingUrl,
     );
   }
   return c.json({ ok: true, added: Boolean(added) }, added ? 201 : 200);

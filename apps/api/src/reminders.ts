@@ -2,6 +2,7 @@ import { bookings, lessons, notificationLogs, personalEvents, user as userTable 
 import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { db } from "./db.ts";
 import { env } from "./env.ts";
+import { formatLessonNotificationTime } from "./lib/lesson-time.ts";
 
 // Sends a Telegram reminder ~15min before a student's self-scheduled
 // personal_events entry, if they've linked a telegramId (see users.ts PATCH
@@ -78,6 +79,7 @@ async function checkAndSendReminders(): Promise<void> {
       title: personalEvents.title,
       startsAt: personalEvents.startsAt,
       telegramId: userTable.telegramId,
+      timeZone: userTable.timeZone,
     })
     .from(personalEvents)
     .innerJoin(userTable, eq(userTable.id, personalEvents.userId))
@@ -92,10 +94,10 @@ async function checkAndSendReminders(): Promise<void> {
   for (const row of due) {
     if (row.telegramId == null) continue;
     try {
-      const time = row.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+      const when = formatLessonNotificationTime(row.startsAt, row.timeZone);
       const sent = await sendTelegramMessage(
         row.telegramId,
-        `⏰ Напоминание: «${row.title}» в ${time} (через ~${REMINDER_LEAD_MINUTES} мин)`,
+        `⏰ Напоминание: «${row.title}» — ${when} (через ~${REMINDER_LEAD_MINUTES} мин)`,
         "personal_event.reminder_15m",
       );
       if (!sent) continue;
@@ -116,6 +118,7 @@ async function checkAndSendReminders(): Promise<void> {
       title: lessons.title,
       startsAt: lessons.startsAt,
       telegramId: userTable.telegramId,
+      timeZone: userTable.timeZone,
     })
     .from(bookings)
     .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
@@ -132,12 +135,7 @@ async function checkAndSendReminders(): Promise<void> {
   for (const row of lessonDue24h) {
     if (row.telegramId == null) continue;
     try {
-      const when = row.startsAt.toLocaleString("ru-RU", {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const when = formatLessonNotificationTime(row.startsAt, row.timeZone);
       const sent = await sendTelegramMessage(
         row.telegramId,
         `🎌 Завтра урок: «${row.title}» — ${when}`,
@@ -159,6 +157,7 @@ async function checkAndSendReminders(): Promise<void> {
       title: lessons.title,
       startsAt: lessons.startsAt,
       telegramId: userTable.telegramId,
+      timeZone: userTable.timeZone,
     })
     .from(bookings)
     .innerJoin(lessons, eq(lessons.id, bookings.lessonId))
@@ -175,10 +174,10 @@ async function checkAndSendReminders(): Promise<void> {
   for (const row of lessonDue15m) {
     if (row.telegramId == null) continue;
     try {
-      const time = row.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+      const when = formatLessonNotificationTime(row.startsAt, row.timeZone);
       const sent = await sendTelegramMessage(
         row.telegramId,
-        `⏰ Урок «${row.title}» в ${time} (через ~15 мин)`,
+        `⏰ Урок «${row.title}» — ${when} (через ~15 мин)`,
         "lesson.reminder_15m",
       );
       if (!sent) continue;

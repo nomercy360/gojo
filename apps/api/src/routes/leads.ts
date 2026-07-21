@@ -1,4 +1,5 @@
 import { bookings, leads, studentAccess, user as userTable } from "@gojo/db";
+import { DEFAULT_TIME_ZONE, timeZoneSchema } from "@gojo/shared";
 import { zValidator } from "@hono/zod-validator";
 import { type SQL, and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -66,6 +67,7 @@ const leadInput = z
     personalDataConsent: z.literal(true),
     consentVersion: z.literal(CONSENT_VERSION),
     marketingConsent: z.boolean().optional().default(false),
+    timeZone: timeZoneSchema.default(DEFAULT_TIME_ZONE),
   })
   .refine((d) => Boolean(d.telegram || d.email || d.phone), {
     message: "Укажи хотя бы один способ связи",
@@ -109,6 +111,12 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
           .where(eq(userTable.email, data.email))
           .limit(1)
       : [];
+    if (existingUser) {
+      await tx
+        .update(userTable)
+        .set({ timeZone: data.timeZone, updatedAt: new Date() })
+        .where(eq(userTable.id, existingUser.id));
+    }
     const [canonicalLead] = await tx
       .select({ name: leads.name })
       .from(leads)
@@ -144,6 +152,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
           telegram: data.telegram ?? undefined,
           email: data.email ?? undefined,
           phone: data.phone ?? undefined,
+          timeZone: data.timeZone,
           goal: data.goal ?? undefined,
           personalDataConsentAt: consentedAt,
           personalDataConsentVersion: data.consentVersion,
@@ -173,6 +182,7 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
         telegram: data.telegram,
         email: data.email,
         phone: data.phone,
+        timeZone: data.timeZone,
         level: data.level,
         goal: data.goal,
         userId: existingUser?.id ?? null,

@@ -1,4 +1,4 @@
-import type { UserDto } from "@gojo/shared";
+import { DEFAULT_TIME_ZONE, type UserDto } from "@gojo/shared";
 import { cookies, headers } from "next/headers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -60,6 +60,7 @@ type RawUser = {
   jlptLevel?: string | null;
   quizLevel?: string | null;
   telegramId?: number | null;
+  timeZone?: string;
   createdAt?: string | Date;
 };
 
@@ -74,6 +75,7 @@ function toUserDto(u: RawUser): UserDto {
     jlptLevel: u.jlptLevel ?? null,
     quizLevel: u.quizLevel ?? null,
     telegramId: u.telegramId ?? null,
+    timeZone: u.timeZone ?? DEFAULT_TIME_ZONE,
     createdAt:
       typeof u.createdAt === "string" ? u.createdAt : (u.createdAt ?? new Date()).toString(),
   };

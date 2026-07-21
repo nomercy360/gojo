@@ -24,6 +24,8 @@ export const leads = pgTable("leads", {
   // Deliverable Telegram identity captured by the bot. A username alone
   // cannot receive OTPs; private bot chat_id equals the Telegram user id.
   telegramId: bigint({ mode: "number" }),
+  /** Preferred IANA time zone captured by the lead form; Telegram-only leads use Moscow. */
+  timeZone: text().notNull().default("Europe/Moscow"),
   // Email is optional and normalized to lowercase. Still the dedup/link key
   // whenever it's present, and the channel the quiz result email uses.
   email: text(),

@@ -1,5 +1,6 @@
 import { createDb } from "@gojo/db";
 import { account, leads, session, user, verification } from "@gojo/db";
+import { DEFAULT_TIME_ZONE } from "@gojo/shared";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
@@ -83,6 +84,7 @@ export const auth = betterAuth({
       currentLevel: { type: "number", required: false, input: false },
       telegramId: { type: "number", required: false, input: false },
       telegramUsername: { type: "string", required: false, input: false },
+      timeZone: { type: "string", defaultValue: DEFAULT_TIME_ZONE, input: false },
     },
   },
   trustedOrigins: [
