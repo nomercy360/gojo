@@ -812,17 +812,28 @@ function ResultScreen({
           </a>
         )}
 
+        {/* past kana you already consume Japanese content — that's who the miner guide serves */}
+        {!isStart && (
+          <a
+            href="/miner"
+            onClick={() => track("quiz_to_miner")}
+            style={{
+              ...btnGhost,
+              display: "block",
+              textAlign: "center",
+              textDecoration: "none",
+              marginTop: 10,
+            }}
+          >
+            Бесплатный гайд: словарь-майнер за 30 минут
+          </a>
+        )}
+
         {isLoggedIn ? (
           <a href="/lessons" style={quietLink}>
             ← Мои уроки
           </a>
-        ) : (
-          !isStart && (
-            <a href="/kana" style={quietLink}>
-              Тренажёр каны — учись бесплатно
-            </a>
-          )
-        )}
+        ) : null}
         <Button
           variant="unstyled"
           type="button"

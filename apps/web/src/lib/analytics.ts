@@ -21,10 +21,15 @@ export type ProductEventName =
   | "quiz_open"
   | "quiz_declared"
   | "quiz_to_kana"
+  | "quiz_to_miner"
   | "quiz_completed"
   | "booking_open"
   | "telegram_lead_clicked"
-  | "lead_submitted";
+  | "lead_submitted"
+  | "miner_open"
+  | "miner_form_submitted"
+  | "miner_download_clicked"
+  | "miner_archive_clicked";
 
 export type YandexMetricaFunction = {
   (...args: unknown[]): void;
@@ -59,10 +64,16 @@ const GOAL_IDS: Record<ProductEventName, string> = {
   quiz_open: "quiz_open",
   quiz_declared: "quiz_declared",
   quiz_to_kana: "quiz_to_kana",
+  quiz_to_miner: "quiz_to_miner",
   quiz_completed: "quiz_completed",
   booking_open: "ym-open-leadform",
   telegram_lead_clicked: "ym-open-chat",
   lead_submitted: "ym-submit-leadform",
+  miner_open: "miner_open",
+  // The guide funnel's conversion goal: contact captured, guide handed over.
+  miner_form_submitted: "ym-submit-guideform",
+  miner_download_clicked: "miner_download_clicked",
+  miner_archive_clicked: "miner_archive_clicked",
 };
 
 export function hasAnalyticsConsent(): boolean {

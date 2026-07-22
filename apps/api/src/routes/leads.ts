@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../auth/middleware.ts";
 import { db } from "../db.ts";
+import { env } from "../env.ts";
 import { notifyLead } from "../lead-notifications.ts";
 import { sendEmail } from "../mailer.ts";
 
@@ -165,7 +166,9 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
       return { id: existingLead.id, alreadyExists: true, canonicalName };
     }
 
-    if (access?.trialUsed) {
+    // The spent-trial gate is about booking a lesson — it must not block a lead
+    // who only asked for the guide.
+    if (data.kind === "booking" && access?.trialUsed) {
       return {
         id: undefined,
         alreadyExists: true,
@@ -202,26 +205,51 @@ leadsRoute.post("/", zValidator("json", leadInput), async (c) => {
   void notifyLead({ ...data, name: result.canonicalName });
 
   let emailSent = false;
-  if (data.kind === "booking" && data.email) {
+  if (data.email) {
+    const message =
+      data.kind === "guide" ? guideEmail(result.canonicalName) : bookingEmail(result.canonicalName);
     try {
-      await sendEmail(
-        data.email,
-        "Заявка принята — Gojo Learn",
-        `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
-          <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
-          <h1>Заявка принята</h1>
-          <p>${escapeHtml(result.canonicalName)}, спасибо! Мы свяжемся в течение 24 часов, чтобы согласовать время.</p>
-          <p>Первый урок длится 25 минут онлайн: познакомимся, определим уровень и покажем план. Без продаж.</p>
-          <p style="font-size:12px;color:#6b6b6b">Gojo Learn · школа японского языка</p>
-        </div>`,
-      );
+      await sendEmail(data.email, message.subject, message.html);
       emailSent = true;
     } catch (error) {
-      console.error("booking confirmation email failed:", error);
+      console.error(`${data.kind} confirmation email failed:`, error);
     }
   }
   return c.json({ ok: true, ...result, emailSent }, 201);
 });
+
+function bookingEmail(name: string) {
+  return {
+    subject: "Заявка принята — Gojo Learn",
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
+      <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
+      <h1>Заявка принята</h1>
+      <p>${escapeHtml(name)}, спасибо! Мы свяжемся в течение 24 часов, чтобы согласовать время.</p>
+      <p>Первый урок длится 25 минут онлайн: познакомимся, определим уровень и покажем план. Без продаж.</p>
+      <p style="font-size:12px;color:#6b6b6b">Gojo Learn · школа японского языка</p>
+    </div>`,
+  };
+}
+
+/**
+ * Durable copy of the lead magnet. The guide is already on screen by the time
+ * this sends — the email exists so the link survives the closed tab, and so the
+ * follow-up has a thread to land in.
+ */
+function guideEmail(name: string) {
+  const guideUrl = `${env.WEB_ORIGIN}/guides/gojo-vocabulary-miner.pdf`;
+  return {
+    subject: "Твой гайд: личный словарь-майнер — Gojo Learn",
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#252525">
+      <p style="margin:0 0 8px;color:#e8420a;font-weight:700">gojo</p>
+      <h1>Гайд на месте</h1>
+      <p>${escapeHtml(name)}, вот пошаговая инструкция по сборке словаря-майнера: Anki + Yomitan + asbplayer, настройка примерно за 30 минут.</p>
+      <p><a href="${guideUrl}" style="display:inline-block;padding:12px 22px;border-radius:10px;background:#e8420a;color:#ffffff;text-decoration:none;font-weight:700">Скачать гайд (PDF)</a></p>
+      <p>Файлы к гайду — словари, готовый конфиг Yomitan, коды аддонов и стартовая колода Anki — лежат в закрепе нашего Telegram-сообщества: <a href="https://t.me/gojoedu">t.me/gojoedu</a>. Там же можно спросить, если что-то не заведётся.</p>
+      <p style="font-size:12px;color:#6b6b6b">Gojo Learn · школа японского языка</p>
+    </div>`,
+  };
+}
 
 function escapeHtml(value: string): string {
   return value.replace(

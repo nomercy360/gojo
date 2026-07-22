@@ -964,6 +964,40 @@ export function Landing() {
         </div>
       </section>
 
+      {/* ⑦ GUIDE — ловим тех, кто дочитал до цены, но пока не готов записаться */}
+      <section className="section-lm" id="guide">
+        <div className="lm-inner">
+          <div>
+            <div className="section-label">Бесплатный гайд</div>
+            <h2 className="lm-title">
+              Слова запоминаются <em>сами</em>
+            </h2>
+            <p className="lm-body">
+              Anki + Yomitan + asbplayer — настройка за 30 минут. Дальше любое видео, статья или
+              манга становятся источником карточек: одно нажатие, и слово улетает в Anki с
+              контекстом, аудио, частотностью и переводом.
+            </p>
+            <ul className="lm-list">
+              <li>5 шагов со скриншотами — от установки Anki до субтитров на YouTube</li>
+              <li>Готовый конфиг Yomitan и колода Anki с правильными полями</li>
+              <li>Русские словари, питч-акцент, частотность и уровни JLPT</li>
+            </ul>
+            <Link href="/miner" className="btn-primary">
+              Забрать гайд
+            </Link>
+          </div>
+          <div className="lm-cover">
+            <img
+              src="/landing/miner-cover.webp"
+              alt="Обложка гайда «Личный словарь-майнер»"
+              width={1080}
+              height={1350}
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="section-cta" id="cta">
         <h2 className="cta-title">
           Попробуй японский —<br />
