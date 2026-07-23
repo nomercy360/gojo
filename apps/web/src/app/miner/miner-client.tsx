@@ -99,9 +99,17 @@ export function MinerClient() {
   const [submitting, setSubmitting] = useState(false);
   const [delivered, setDelivered] = useState(false);
 
-  // A bare handle, with or without @ — the API normalizes, we only gate the button.
-  const handleValid = /^@?[a-zA-Z0-9_]{3,32}$/.test(telegram.trim());
-  const valid = name.trim().length > 1 && handleValid && consent;
+  // Gate the button on the same handle forms the API accepts: it strips a
+  // t.me/ link, protocol and leading @ before validating (see leads.ts), so we
+  // must too — otherwise pasting a profile link leaves the button silently
+  // disabled. Name mirrors the API's min(1).
+  const normalizedHandle = telegram
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^t\.me\//i, "")
+    .replace(/^@/, "");
+  const handleValid = /^[a-zA-Z0-9_]{3,32}$/.test(normalizedHandle);
+  const valid = name.trim().length >= 1 && handleValid && consent;
 
   useEffect(() => {
     track("miner_open");
@@ -137,7 +145,7 @@ export function MinerClient() {
       // sending people to an inbox before they get any value.
       setDelivered(true);
     } catch {
-      toast.error("Не удалось отправить. Проверь ник в Telegram и попробуй ещё раз.");
+      toast.error("Не удалось отправить. Проверь данные и попробуй ещё раз.");
     } finally {
       setSubmitting(false);
     }

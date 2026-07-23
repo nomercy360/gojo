@@ -66,8 +66,13 @@ export function HomeDashboard({
           l.pendingAttendance + l.pendingHomework > 0,
       )
       .sort((a, b) => b.endsAt.localeCompare(a.endsAt));
+    // Guide (lead-magnet) leads are high-volume PDF downloads, not people
+    // waiting to be contacted about a trial — they must not enter the worklist
+    // or they bury the booking queue this triage home exists to protect. They
+    // stay browsable in the leads collection.
     const staleLeads = leads.filter(
       (lead) =>
+        lead.kind !== "guide" &&
         !["converted", "lost"].includes(lead.status) &&
         (lead.status === "new" ||
           (lead.nextFollowUpAt && new Date(lead.nextFollowUpAt).getTime() <= now.getTime())),
@@ -82,7 +87,9 @@ export function HomeDashboard({
     return { todayLessons, unprocessed, staleLeads, accessRisk };
   }, [lessons, leads, students, now]);
 
-  const newLeadCount = leads.filter((lead) => lead.status === "new").length;
+  const newLeadCount = leads.filter(
+    (lead) => lead.kind !== "guide" && lead.status === "new",
+  ).length;
   const activeStudentCount = students.filter((s) => s.isActive).length;
 
   return (
